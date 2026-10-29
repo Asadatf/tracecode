@@ -1,3 +1,27 @@
+# Specs — read before coding, update when behaviour changes
+
+This project is spec-driven. The specs are the contract; code follows them.
+
+- **Read the relevant spec before writing code.** `specs/00-product.md`
+  (problem, users, core loop, scope), `specs/01-architecture.md` (stack,
+  data model, API contracts), `specs/02-trace-contract.md` (the
+  engine ↔ visualiser interface — change it only with both track owners'
+  agreement), and the feature's file in `specs/features/`.
+  If a change has no spec and isn't a trivial fix, write one from
+  `specs/features/_TEMPLATE.md` first.
+- **Update the spec in the same PR when behaviour changes.** A new or
+  changed acceptance criterion, model, route, or contract lands in the
+  spec alongside the code — never a spec that describes last week's app.
+  If the code and spec disagree, ask which one is right; don't silently
+  pick one.
+- **Don't expand scope past the spec.** Anything listed under "Out of
+  scope" in `specs/00-product.md` needs the spec changed (and agreed)
+  first.
+- **Record decisions with real trade-offs as an ADR** in `decisions/`
+  (copy `decisions/0000-template.md`, next number, add it to
+  `decisions/README.md`). Reverse a decision with a new ADR that
+  supersedes the old one; don't rewrite history.
+
 <!-- BEGIN:pr-workflow -->
 
 # PR workflow — non-negotiable

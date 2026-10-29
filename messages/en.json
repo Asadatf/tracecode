@@ -1,11 +1,11 @@
 {
 	"HomePage": {
 		"meta": {
-			"title": "Web template: a Next.js 16 starting point",
-			"description": "A Next.js 16 template with Tailwind v4, next-intl, Supabase Auth, PostHog and Sentry wired in, ready to replace page by page."
+			"title": "TraceCode: see why your code failed, step by step",
+			"description": "Practice coding problems and, when a solution fails, replay its execution step by step: variables, loops and pointers, with progressive hints."
 		},
-		"title": "Web template",
-		"description": "This page renders — pnpm dev to confirm the App Router, Tailwind v4, and next-intl wiring all work before you start replacing it."
+		"title": "TraceCode",
+		"description": "Coding practice where failed solutions replay step by step, so you see exactly why they failed."
 	},
 	"SiteFooter": {
 		"privacy": "Privacy",
