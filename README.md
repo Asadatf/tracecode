@@ -1,29 +1,20 @@
-# Web template
+# TraceCode
 
-A production-ready starting point for a Next.js web project: dashboards,
-marketing sites, client portals, internal tools. Every convention here was
-either proven in a production app or is a deliberate fix for a real problem
-found in one (see `AGENTS.md` and `docs/rules/` for the specifics).
+Coding practice where failed solutions replay step by step, so you see
+exactly why they failed. Built by Team D for 8x Playmakers ("Learning that
+sticks", Coding track).
 
-It is built to be worked on with an AI coding agent: the rules are written
-for agents to follow, the Claude Code skills in `.claude/skills/` do the
-setup, and every Claude Code session can be logged to `.claude-logs/`.
+When your solution fails a test, TraceCode replays its execution one step
+at a time (variables, loops, pointers), so you see where your mental
+model and the program part ways. Progressive hints nudge you without
+giving the answer away, and once you pass, you rebuild the solution from
+blocks to lock in the structure.
 
-**This is a living template, not a finished product.** It gets copied, not
-imported — a new project generated from it owns its copy outright and is
-expected to diverge. Improvements that would help every future project
-belong back here; project-specific choices don't.
-
-## What you get out of the box
-
-- A Next.js 16 app that actually builds, lints, typechecks, and passes a
-  real Playwright e2e test — this isn't a scaffold that's never been run.
-- A settled answer to how migrations work: you edit the schema, CI
-  generates and commits the migration.
-- Auth, observability, and i18n wired in and working, not just listed as
-  dependencies.
-- Twelve topic-scoped rule files an AI coding agent (or a new engineer) can
-  actually follow, instead of one CLAUDE.md nobody reads end to end.
+The product and its v1 scope live in [`specs/00-product.md`](specs/00-product.md);
+the architecture in [`specs/01-architecture.md`](specs/01-architecture.md);
+per-feature specs in `specs/features/`; decisions in `decisions/`. Read the
+relevant spec before changing behaviour, and update it when behaviour
+changes (see `AGENTS.md`).
 
 ## Stack
 
@@ -42,11 +33,12 @@ belong back here; project-specific choices don't.
 ## Project structure
 
 ```
-template-web/
+tracecode/
 ├── .claude/skills/          Claude Code skills — see "Skills" below
 ├── .claude-logs/            tracked (not gitignored) — AI session transcripts ship with the branch
 ├── .github/workflows/       ci.yml, deploy-migrations.yml, claude-code-review.yml
 ├── .githooks/commit-msg     installed automatically by `pnpm install`
+├── decisions/              ADRs — one file per architectural decision
 ├── docs/
 │   ├── rules/                one file per engineering rule (see below)
 │   ├── STANDARDS.md          what every repo from this template carries, and the check that proves it
@@ -56,6 +48,7 @@ template-web/
 ├── prisma/schema/            multi-file schema — the only thing you hand-edit
 │   └── migrations/           CI-generated only, never by hand
 ├── prisma/run-once.sql       one-off SQL, applied once per database on the next deploy
+├── specs/                  product, architecture and per-feature specs (spec-driven development)
 ├── scripts/                  commit-msg check, migration generator, run-once SQL runner, env-var check, standards check, RLS check
 ├── src/
 │   ├── app/[locale]/         App Router pages, error.tsx, not-found.tsx, [...rest]/ (404 plumbing)
@@ -72,19 +65,6 @@ template-web/
 ├── DESIGN.md                  design-token/component conventions
 └── .env.example               every variable explained inline
 ```
-
-## Getting a new project from this template
-
-Use GitHub's **template repository** feature — `gh repo create <new-name>
---template 8xsocial/template-web`, or the "Use this template" button on
-the repo page. That produces one fresh commit with no connection to this
-repo's history.
-
-Don't fork it (forks are for contributing back via PRs, which will never
-happen between an independent project and this template) and don't just
-`git clone` + repoint `origin` (that drags this template's own scaffolding
-history into the new project forever). Once you have the new repo, run the
-`template-setup` skill — see below.
 
 ## Setup
 
@@ -131,7 +111,7 @@ Supabase Auth by default for any project with real user accounts —
 already wired (`src/proxy.ts`, `src/lib/supabase/`), nothing to scaffold.
 Auth and session only; Prisma still owns every byte of application data.
 Landing pages with nothing to sign into remove it entirely — exact steps
-in `docs/rules/auth.md`. `template-setup` asks which one applies.
+in `docs/rules/auth.md`. TraceCode has accounts, so it stays.
 
 ## Testing
 
@@ -206,22 +186,17 @@ Never run a manual production deploy command — CI/CD handles it (see
 
 ## Before you start replacing things
 
-1. Run the `template-setup` skill first — it renames the placeholders
-   above for you and asks the questions that shape what else you'll need.
-2. Read `AGENTS.md`, `DESIGN.md`, and `docs/rules/*.md` — the migration
-   workflow, the Server/Client Component rules, and the token conventions
-   are not optional style preferences, they're enforced in CI (or, where
-   noted, by `local-review`'s manual pass).
-3. Delete `prisma/schema/example.prisma` once you've written real models,
-   and `e2e/smoke.spec.ts` once real e2e coverage exists.
-4. Confirm the auth decision `template-setup` made, and decide on state
-   management beyond the TanStack Query default and whichever
-   i18n/Tailwind-major/Prisma-major open decisions apply to this project.
-5. Set up GitHub and Vercel per the Deployment section above before
-   merging your first PR — without `MIGRATIONS_TOKEN` specifically, the
-   CI-generated migration commit's own run sits in `action_required`
-   waiting for manual approval (the migration still lands, but a green PR
-   can be a false signal until that's set up).
+1. Read `AGENTS.md`, `DESIGN.md`, `docs/rules/*.md` and `specs/` — the
+   migration workflow, the Server/Client Component rules, and the token
+   conventions are enforced in CI (or by `local-review`'s manual pass).
+2. Delete `prisma/schema/example.prisma` once real models exist, and
+   `e2e/smoke.spec.ts` once real e2e coverage exists.
+3. Settle the open decisions: whether v1 makes AI calls (and which
+   provider/model — then run `/ai-usage-setup`), and the code-execution
+   sandbox (see `specs/01-architecture.md`).
+4. Set up GitHub and Vercel per the Deployment section above before
+   merging the first PR — without `MIGRATIONS_TOKEN` the CI-generated
+   migration commit's own run sits in `action_required`.
 
 ## Scripts
 
