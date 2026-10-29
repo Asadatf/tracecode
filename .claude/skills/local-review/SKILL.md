@@ -80,6 +80,7 @@ Diff the branch against its merge-base (`git diff $(git merge-base main HEAD)...
 - **Docstrings** — flag comments that just restate the code below them; that's noise, not documentation. A missing comment on a genuinely non-obvious invariant is a real finding, an unnecessary one is too.
 - **Naming** — camelCase for JS/TS, PascalCase for components/types, `SCREAMING_SNAKE_CASE` only for true constants, snake_case only inside `@map`/`@@map` on the Prisma side.
 - **Feature scope** (`docs/rules/feature-approach.md`) — if the diff is a brand-new feature, did the PR/commit description show an 80/20 tradeoff was considered, or does it look like the fullest possible version was built without that being asked for? If it's an adjustment to something existing, scope-mimimization is the wrong lens — check test/edge-case coverage instead.
+- **Specs** — run `/spec-check`: behaviour changes need a spec update in the same branch, trace-contract changes need `specs/02-trace-contract.md` to match, and every acceptance criterion the branch implements needs a test. See `specs/README.md`.
 - **Commit messages** — `git log <merge-base>..HEAD --oneline` matches Conventional Commits. Catch this locally; it's the same rule the push-time hook and CI's `commits` job enforce, just cheaper to fix before either runs.
 
 ## 3. Report

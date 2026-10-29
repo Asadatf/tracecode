@@ -1,26 +1,28 @@
 # Specs — read before coding, update when behaviour changes
 
-This project is spec-driven. The specs are the contract; code follows them.
+This project is spec-driven: the specs are the contract, code follows
+them. The full workflow is in [`specs/README.md`](specs/README.md) — read
+it once; the short version:
 
 - **Read the relevant spec before writing code.** `specs/00-product.md`
-  (problem, users, core loop, scope), `specs/01-architecture.md` (stack,
-  data model, API contracts), `specs/02-trace-contract.md` (the
-  engine ↔ visualiser interface — change it only with both track owners'
-  agreement), and the feature's file in `specs/features/`.
-  If a change has no spec and isn't a trivial fix, write one from
-  `specs/features/_TEMPLATE.md` first.
-- **Update the spec in the same PR when behaviour changes.** A new or
-  changed acceptance criterion, model, route, or contract lands in the
-  spec alongside the code — never a spec that describes last week's app.
-  If the code and spec disagree, ask which one is right; don't silently
-  pick one.
-- **Don't expand scope past the spec.** Anything listed under "Out of
-  scope" in `specs/00-product.md` needs the spec changed (and agreed)
-  first.
-- **Record decisions with real trade-offs as an ADR** in `decisions/`
-  (copy `decisions/0000-template.md`, next number, add it to
-  `decisions/README.md`). Reverse a decision with a new ADR that
-  supersedes the old one; don't rewrite history.
+  (scope, out of scope), `specs/01-architecture.md` (data model, API
+  contracts), `specs/02-trace-contract.md` (the engine ↔ visualiser
+  interface), and the feature's file in `specs/features/`. Don't build
+  against a spec whose status is still `Draft`.
+- **New feature or behaviour with no spec:** write one from
+  `specs/features/_TEMPLATE.md` first and get it agreed.
+- **Update the spec in the same PR when behaviour changes.** A bug fix
+  that restores specified behaviour needs no spec edit (add a regression
+  test, name the AC in the commit); a case no spec covered goes into its
+  Edge cases; refactors and chores need nothing. The table in
+  `specs/README.md` is the rule.
+- **The trace contract changes only with both track owners' agreement**,
+  and spec, Zod schemas and fixture change together.
+- **Code and spec disagree?** Ask which is right; don't silently pick one.
+- **Don't expand scope** past "Out of scope" in `specs/00-product.md`
+  without agreeing the spec change first.
+- **Trade-off decisions get an ADR** in `decisions/`; reverse one with a
+  superseding ADR, never by editing it.
 
 <!-- BEGIN:pr-workflow -->
 
