@@ -14,6 +14,11 @@ This file holds the two things that genuinely are Claude-Code-specific.
 that produced a change belongs on the branch that ships it. Stage it
 immediately before every `git push`, separately from the code commit.
 
+The hook that writes it is committed: `.claude/settings.json` registers
+`.claude/hooks/extract-log.py` on `UserPromptSubmit` and `Stop`, so every
+clone logs without per-machine setup (Claude Code asks once to trust the
+project's hooks). `scripts/onboard.sh` checks it's in place.
+
 ## Skills
 
 See `.claude/skills/*/SKILL.md` for full detail. In short:
@@ -28,6 +33,15 @@ See `.claude/skills/*/SKILL.md` for full detail. In short:
 - `ai-usage-setup` — wire up (or strip out) AI spend tracking for this
   project, and pick which providers and models it may call.
   `template-setup` asks the question that leads here.
+
+**Specs** (workflow: `specs/README.md`)
+
+- `spec-feature` — before building any new feature or behaviour change:
+  drafts `specs/features/<name>.md` from the template, then stops for
+  approval. Writes no code.
+- `spec-check` — diff vs. specs: behaviour changes without a spec update,
+  trace-contract drift, untested acceptance criteria, out-of-scope work.
+  `local-review` runs it.
 
 **The ship path**
 

@@ -10,11 +10,35 @@ model and the program part ways. Progressive hints nudge you without
 giving the answer away, and once you pass, you rebuild the solution from
 blocks to lock in the structure.
 
-The product and its v1 scope live in [`specs/00-product.md`](specs/00-product.md);
-the architecture in [`specs/01-architecture.md`](specs/01-architecture.md);
-per-feature specs in `specs/features/`; decisions in `decisions/`. Read the
-relevant spec before changing behaviour, and update it when behaviour
-changes (see `AGENTS.md`).
+## New here? Start here
+
+1. **Set up:** clone, then run `./scripts/onboard.sh` (details in
+   [Getting started](#getting-started)).
+2. **Read, in order:**
+   - [`specs/README.md`](specs/README.md): how we work with specs, fixes
+     and decisions, plus the **status board** (what's agreed, what's
+     draft, what's next).
+   - [`specs/00-product.md`](specs/00-product.md): problem, users, core
+     loop, v1 scope, out of scope, how users see progress.
+   - [`specs/02-trace-contract.md`](specs/02-trace-contract.md): the
+     contract between the Python engine (Track A) and the visual debugger
+     (Track B), with a full Two Sum fixture.
+   - [`specs/features/fail-and-replay.md`](specs/features/fail-and-replay.md):
+     the first milestone, Two Sum → failing test → step-through replay.
+   - `AGENTS.md`: the rules every coding agent follows (and so do we).
+3. **Work:** see [Working in this repo](#working-in-this-repo):
+   branches, commits, PRs, CI and merging.
+
+## Where we are
+
+- Repo set up from the 8x `template-web` template; all CI gates green.
+- Specs and ADR-0001 (Python in the browser via Pyodide) are **drafts**;
+  agreeing the trace contract and the track split is the next step.
+- No app code yet. The order of work is: agree the contract → one shared
+  PR with the contract's Zod schemas + fixture → Track A and Track B in
+  parallel → integrate on Two Sum.
+
+The live version of this is the status board in `specs/README.md`.
 
 ## Stack
 
@@ -66,19 +90,94 @@ tracecode/
 └── .env.example               every variable explained inline
 ```
 
-## Setup
+## Getting started
 
 ```bash
-pnpm install                       # also installs the commit-msg git hook + generates the Prisma client
-cp .env.example .env.local         # fill in DATABASE_URL/DIRECT_URL at minimum
-pnpm exec prisma migrate dev       # first migration, local only — see AGENTS.md
-pnpm dev
+git clone https://github.com/Asadatf/tracecode.git && cd tracecode
+./scripts/onboard.sh
+pnpm dev                           # http://localhost:3000
 ```
 
-Open http://localhost:3000 — English is served unprefixed, and `/en`
-redirects back to `/`. Sentry,
-PostHog, and Supabase Auth all no-op or fail open locally until you set
-their env vars; nothing else requires them to run.
+`scripts/onboard.sh` is safe to re-run. It:
+
+- checks Node ≥ 22.18 and, if nvm is installed, switches to the version
+  in `.nvmrc` (older Node can't load the unit tests, so every push would
+  be blocked; run `nvm alias default 22` so new shells use it too);
+- enables pnpm via corepack and runs `pnpm install`, which also installs
+  the **git hooks** (`.githooks/`: commit-message format, secrets scan,
+  pre-push lint/typecheck/tests) and generates the Prisma client;
+- creates `.env.local` from `.env.example` if missing. Sentry, PostHog and
+  Supabase no-op or fail open locally until their values are set; get
+  the shared Supabase values from a teammate, never from a commit;
+- checks the **agent session-log hook**: `.claude/settings.json` runs
+  `.claude/hooks/extract-log.py` after every prompt and reply, writing the
+  session to `.claude-logs/`. Claude Code asks once to trust the
+  project's hooks; say yes;
+- checks your git identity and that `gh` (GitHub CLI) is signed in.
+
+Once a database exists: `pnpm exec prisma migrate dev` for the first local
+migration (see Database & migrations).
+
+## Working in this repo
+
+### The loop
+
+1. **Spec first.** New feature or behaviour change: write or update the
+   spec (`/spec-feature` in Claude Code) and get it agreed. Bug fix:
+   check the table in `specs/README.md`, since most fixes need no spec edit.
+2. **Branch** from an up-to-date `main`: `feat/<topic>`, `fix/<topic>`,
+   `chore/<topic>`, `docs/<topic>`. Never commit to `main` directly.
+3. **Build** against the spec. Each acceptance criterion (AC1, AC2…) gets
+   a test that names it.
+4. **Review locally before pushing:** `/local-review` in Claude Code (it
+   runs lint, typecheck, format, env check, tests, build, `/spec-check`
+   and a rules pass). Without Claude Code:
+   `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build`.
+   CI is not the dev loop: every push to an open PR is a paid CI run.
+5. **Commit:** few commits, not one per tweak. The format is Conventional
+   Commits, enforced by a hook and in CI:
+
+   ```
+   feat(trace): highlight pointers that run off the end of the array
+
+   Why, in a sentence or two.
+
+   Changelog: The debugger now shows when an index points past the array.
+   ```
+
+   `Changelog:` is one plain-words sentence for users, or `Changelog: None`
+   for anything they won't notice. See `docs/rules/commits.md`.
+
+6. **Session log:** commit `.claude-logs/` (or `.codex-logs/`) in its own
+   commit right before pushing, so the transcript ships with the change.
+   Never let a real secret into a transcript (`docs/rules/secrets.md`).
+7. **Open the PR as a draft** while it's still moving:
+   `gh pr create --draft`. When it's done, write the real title and
+   description (what, why, how it was verified, which spec/ACs), add a
+   `## Screenshots` Before/After if it changes what people see, then
+   `gh pr ready`. See `docs/rules/pull-requests.md`.
+8. **Merge only on green:** `gh pr checks <number> --watch`, then merge
+   once every check passes. Never merge with a check pending or failing,
+   and never `--admin` or `--auto`. If it touches the trace contract or
+   shared code, get the other teammate's review first.
+
+### Parallel work: two tracks
+
+- **Track A, execution/tracing:** Pyodide Web Worker, test harness,
+  `sys.settrace` tracer; produces `RunResult`.
+- **Track B, visualiser:** editor, results panel, step-through debugger;
+  consumes `RunResult` and builds against the fixture in
+  `specs/02-trace-contract.md` until the engine lands.
+
+The contract is the only coupling. Changing it needs both owners and
+updates the spec, the Zod schemas and the fixture in one PR.
+
+### Agents
+
+Claude Code, Codex, Cursor and the rest all read `AGENTS.md`. Claude Code
+also gets the skills in `.claude/skills/`; the ones you'll use most are
+`/spec-feature`, `/local-review`, `/e2e-review`, `/create-issue` and
+`/cicd` (review → PR → CI → review comments).
 
 ## Environment variables
 
@@ -133,6 +232,8 @@ their actual trace/screenshot rather than guessing from the error message.
 | `e2e-review`                                                               | Before opening a PR for a UI/flow change                  | Boots the app, runs Playwright, reviews failures against their trace/screenshot, flags uncovered new flows                                                                         |
 | `ai-usage-setup`                                                           | Once, when the project's AI answer is settled             | Wires AI spend tracking for the chosen providers and models, or strips it out — one of the two, never half                                                                         |
 | `ai-usage-check`                                                           | On any branch touching an AI call or model                | Model map against live OpenRouter prices, pricing/failure-isolation tests, one real priced row written and read back                                                               |
+| `spec-feature`                                                             | Before any new feature or behaviour change                | Drafts `specs/features/<name>.md` from the template, then stops for approval; writes no code                                                                                       |
+| `spec-check`                                                               | Run by `local-review`, or on demand                       | Diff vs. specs: behaviour changes without a spec update, trace-contract drift, untested ACs, out-of-scope work                                                                     |
 | `staging-migration`, `sql-preview`, `seed-for-pr`, `local-feature-testing` | Day-to-day dev loop                                       | See each `SKILL.md` for detail                                                                                                                                                     |
 
 ## Rules live in AGENTS.md, not CLAUDE.md
@@ -184,19 +285,14 @@ Never run a manual production deploy command — CI/CD handles it (see
   auto-deploy-on-push and a tag-gated release pattern (see
   `docs/rules/deployment.md`) — don't inherit one silently.
 
-## Before you start replacing things
+## Housekeeping
 
-1. Read `AGENTS.md`, `DESIGN.md`, `docs/rules/*.md` and `specs/` — the
-   migration workflow, the Server/Client Component rules, and the token
-   conventions are enforced in CI (or by `local-review`'s manual pass).
-2. Delete `prisma/schema/example.prisma` once real models exist, and
-   `e2e/smoke.spec.ts` once real e2e coverage exists.
-3. Settle the open decisions: whether v1 makes AI calls (and which
-   provider/model — then run `/ai-usage-setup`), and the code-execution
-   sandbox (see `specs/01-architecture.md`).
-4. Set up GitHub and Vercel per the Deployment section above before
-   merging the first PR — without `MIGRATIONS_TOKEN` the CI-generated
-   migration commit's own run sits in `action_required`.
+- Delete `prisma/schema/example.prisma` once real models exist, and
+  `e2e/smoke.spec.ts` once real e2e coverage exists.
+- Whether v1 makes AI calls (hints) is open. Once decided, run
+  `/ai-usage-setup` to wire or remove spend tracking.
+- Before the first deploy: Supabase project and env vars, Vercel project,
+  and `MIGRATIONS_TOKEN` (see `docs/CI_CD_SETUP.md`).
 
 ## Scripts
 
