@@ -1,0 +1,88 @@
+name: Deploy migrations
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-migrations
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Skip the push that CREATES main, which is the template generation itself.
+    # At that moment the production database usually does not exist yet, so
+    # there is nothing to deploy to, and failing here would give every new
+    # project a red X on main.
+    #
+    # Skipping is safe because `prisma migrate deploy` is cumulative: the first
+    # real push to main applies this migration and every later one.
+    #
+    # Deliberately keyed on `created`, which means "this push made the branch",
+    # and NOT on whether the secret is empty. Those are different facts, and
+    # conflating them is the trap: skipping on an empty secret would turn a
+    # genuinely misconfigured project green forever. A missing secret on any
+    # later push is real, and stays loud. See the guard step below.
+    if: github.event_name == 'workflow_dispatch' || !github.event.created
+    environment: production-database
+    env:
+      # Session-pooler URL (port 5432), not the transaction pooler (6543)
+      # — migrate deploy holds an advisory lock across statements that
+      # transaction-mode pgbouncer can't sustain. DIRECT_URL is set to the
+      # same value: the schema declares directUrl = env("DIRECT_URL")
+      # unconditionally, so Prisma's schema validation fails without it
+      # regardless of whether this specific command reads it (see ci.yml's
+      # migrations job for the same note) — and since PRODUCTION_DATABASE_URL
+      # is already the session-pooler connection, there's no second URL to
+      # provide.
+      DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+    steps:
+      # No database yet is normal for a new project or a prototype, so an empty
+      # secret is a notice, not a failure, and the steps below are skipped. Set
+      # the repository variable REQUIRE_PRODUCTION_DATABASE to "true" once the
+      # project has a production database: from then on an empty secret fails
+      # loudly instead of passing green forever. Prisma's own error for the
+      # empty case (`P1012 ... DIRECT_URL resolved to an empty string`) names
+      # neither the secret nor where it goes, hence this step.
+      - name: Check for a database URL
+        id: db
+        env:
+          REQUIRE_DATABASE: ${{ vars.REQUIRE_PRODUCTION_DATABASE }}
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$REQUIRE_DATABASE" = "true" ]; then
+            echo "::error::PRODUCTION_DATABASE_URL is empty in the production-database environment. See docs/CI_CD_SETUP.md."
+            exit 1
+          else
+            echo "::notice::No PRODUCTION_DATABASE_URL in the production-database environment, so no migrations were deployed. See docs/CI_CD_SETUP.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.db.outputs.ready == 'true'
+      - uses: pnpm/action-setup@v4
+        if: steps.db.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.db.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile # postinstall runs `prisma generate`
+        if: steps.db.outputs.ready == 'true'
+      - name: Apply migrations to production
+        if: steps.db.outputs.ready == 'true'
+        run: pnpm exec prisma migrate deploy
+      # prisma/run-once.sql: the current one-off, applied once per database and
+      # recorded in _run_once_sql so it never repeats (docs/rules/migrations.md).
+      # After the migrations so it can use what they just created, before the
+      # drift check so it cannot smuggle in schema the Prisma files don't
+      # declare. Picks up DIRECT_URL/DATABASE_URL from the job env above.
+      - name: Apply run-once SQL to production
+        if: steps.db.outputs.ready == 'true'
+        run: node scripts/run-once-sql.mjs
+      - name: Verify zero drift against the live database
+        if: steps.db.outputs.ready == 'true'
+        run: pnpm exec prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema --exit-code

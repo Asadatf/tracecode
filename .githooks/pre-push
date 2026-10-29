@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+# Pre-push gate — the required, automated half of /local-review, run locally
+# BEFORE a push spends a CI run + AI-review round + Actions minutes. Enforces
+# docs/rules/commits.md ("don't push to find out whether it compiles"). The
+# manual rule-compliance pass and the full production build live in the
+# /local-review skill — run that before you make a PR reviewable.
+#
+# A gate whose script this repo's package.json doesn't define is skipped and
+# named at the end, so a repo missing a gate says so instead of passing quietly.
+# Checked in package.json rather than with --if-present, which yarn has no
+# equivalent for and pnpm forwards to the script when it follows the name.
+# Genuine exception (a check that can only run in a real CI runner): git push --no-verify
+if [ -f pnpm-lock.yaml ]; then RUN="pnpm run"; elif [ -f yarn.lock ]; then RUN="yarn run"; else RUN="npm run"; fi
+echo "pre-push: running required local gates via '$RUN' (format, lint, typecheck, env, events, tests)…"
+fail=0
+ran=""
+skipped=""
+# has() reads package.json, so one it can't read would look like every script
+# missing and every gate skipped. Fail loudly on that instead.
+if ! pkg_err=$(node -e 'try { require("./package.json") } catch (e) { console.error(e.message); process.exit(1) }' 2>&1); then
+  echo "  ✗ package.json can't be read, so no gate can run:"
+  printf '%s\n' "$pkg_err" | head -3
+  echo ""
+  echo "Push blocked. Fix package.json, then re-push."
+  exit 1
+fi
+has() { node -e 'process.exit(require("./package.json").scripts?.[process.argv[1]] ? 0 : 1)' "$1" 2>/dev/null; }
+gate() {
+  if ! has "$1"; then skipped="$skipped $1"; return 0; fi
+  if out=$($RUN "$1" 2>&1); then ran="$ran $1"; else echo "  ✗ $1"; printf '%s\n' "$out" | tail -25; fail=1; fi
+}
+gate format:check
+gate lint
+gate typecheck
+gate check:env
+gate check:events
+gate test
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "Push blocked. Fix the above (for formatting just run '$RUN format'), then re-push."
+  echo "Use 'git push --no-verify' ONLY for a check that genuinely can only run in CI."
+  exit 1
+fi
+echo "pre-push: passed:${ran:- nothing}"
+if [ -n "$skipped" ]; then echo "pre-push: not defined in package.json, so not run:$skipped"; fi
+echo "Before making this PR reviewable, run /local-review for the production build + a manual rule pass. Every push to a reviewable PR is a paid CI + review round — don't iterate in the open."
+exit 0
