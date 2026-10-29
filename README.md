@@ -98,6 +98,13 @@ git clone https://github.com/Asadatf/tracecode.git && cd tracecode
 pnpm dev                           # http://localhost:3000
 ```
 
+**OS support:** tested on macOS; it's plain bash, so Linux should work too.
+**On Windows, use WSL2** (Ubuntu): install it with `wsl --install`, then
+clone and run everything _inside_ WSL (under `~/`, not `/mnt/c/`, which is
+very slow), with Claude Code running in WSL too. Native Windows isn't
+supported: the script needs bash and nvm, and the session-log hook expects
+`python3` and Unix paths, so your sessions wouldn't be logged.
+
 `scripts/onboard.sh` is safe to re-run. It:
 
 - checks Node ≥ 22.18 and, if nvm is installed, switches to the version
