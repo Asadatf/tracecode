@@ -38,7 +38,9 @@ export interface EngineCallOptions {
 }
 
 function defaultCreateWorker(): WorkerLike {
-	const url = URL.createObjectURL(new Blob([buildWorkerSource()], { type: 'application/javascript' }))
+	const url = URL.createObjectURL(
+		new Blob([buildWorkerSource()], { type: 'application/javascript' })
+	)
 	const worker = new Worker(url)
 	// The worker has its source by the time construction returns; free the URL.
 	setTimeout(() => URL.revokeObjectURL(url), 0)
@@ -75,7 +77,11 @@ export class TraceEngine {
 				executionTimeoutMs: request.limits.timeoutMs,
 				extract: (response) => (response.type === 'run_result' ? response.result : undefined),
 				onTimeout: () => ({ status: 'timeout', tests: [] }),
-				onEngineError: (message) => ({ status: 'engine_error', error: { type: 'engine', message }, tests: [] }),
+				onEngineError: (message) => ({
+					status: 'engine_error',
+					error: { type: 'engine', message },
+					tests: []
+				}),
 				onStatus: options?.onStatus
 			})
 		)
@@ -89,7 +95,10 @@ export class TraceEngine {
 				executionTimeoutMs: request.limits.timeoutMs,
 				extract: (response) => (response.type === 'trace_result' ? response.result : undefined),
 				onTimeout: () => ({ status: 'timeout' }),
-				onEngineError: (message) => ({ status: 'engine_error', error: { type: 'engine', message, line: 1 } }),
+				onEngineError: (message) => ({
+					status: 'engine_error',
+					error: { type: 'engine', message, line: 1 }
+				}),
 				onStatus: options?.onStatus
 			})
 		)
@@ -143,7 +152,10 @@ export class TraceEngine {
 
 			const armExecTimer = () => {
 				clearTimers()
-				execTimer = setTimeout(() => settle(spec.onTimeout(), { shouldRecycle: true }), spec.executionTimeoutMs)
+				execTimer = setTimeout(
+					() => settle(spec.onTimeout(), { shouldRecycle: true }),
+					spec.executionTimeoutMs
+				)
 			}
 
 			worker.onmessage = (event) => {
@@ -175,7 +187,11 @@ export class TraceEngine {
 				armExecTimer()
 			} else {
 				initTimer = setTimeout(
-					() => settle(spec.onEngineError(`Pyodide did not initialize within ${this.#initTimeoutMs}ms`), { shouldRecycle: true }),
+					() =>
+						settle(
+							spec.onEngineError(`Pyodide did not initialize within ${this.#initTimeoutMs}ms`),
+							{ shouldRecycle: true }
+						),
 					this.#initTimeoutMs
 				)
 			}
@@ -198,6 +214,9 @@ export function runCode(request: RunRequest, options?: EngineCallOptions): Promi
 }
 
 // Trace one input on the shared engine (lazy worker, reused while healthy).
-export function traceCode(request: TraceRequest, options?: EngineCallOptions): Promise<TraceResult> {
+export function traceCode(
+	request: TraceRequest,
+	options?: EngineCallOptions
+): Promise<TraceResult> {
 	return sharedEngine().traceCode(request, options)
 }
