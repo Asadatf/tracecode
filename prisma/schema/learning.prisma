@@ -1,0 +1,94 @@
+// Learning progress persistence. One row per official submission and its test
+// results, plus replay/hint events and per-problem progress. Deliberately does
+// NOT store raw Pyodide trace steps — a replay is regenerated locally from the
+// saved `source` + the problem's test args (docs: cheaper, and no trace leaves
+// the browser, per specs/02-trace-contract.md).
+//
+// Every table here is user-scoped, so each one's create migration ENABLEs ROW
+// LEVEL SECURITY (no policy, never FORCE) — a sanctioned hand-written migration
+// per docs/rules/migrations.md; `pnpm check:rls` enforces it in CI.
+//
+// Client-reported pass/fail is untrusted TELEMETRY, not server-verified grading
+// (ADR-0001): these rows record what the learner's browser said happened.
+
+model Attempt {
+	id          String   @id @default(uuid()) @db.Uuid
+	userId      String   @db.Uuid
+	problemSlug String
+	createdAt   DateTime @default(now()) @db.Timestamptz(6)
+	source      String
+	status      String
+	testsPassed Int
+	testsTotal  Int
+	allPassed   Boolean
+
+	user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+	testResults AttemptTestResult[]
+	replays     ReplaySession[]
+
+	@@index([userId, problemSlug])
+	@@map("attempts")
+}
+
+model AttemptTestResult {
+	id           String  @id @default(uuid()) @db.Uuid
+	attemptId    String  @db.Uuid
+	testId       String
+	passed       Boolean
+	expected     Json
+	actual       Json?
+	errorType    String?
+	errorMessage String?
+
+	attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@index([attemptId])
+	@@map("attempt_test_results")
+}
+
+model ReplaySession {
+	id         String   @id @default(uuid()) @db.Uuid
+	userId     String   @db.Uuid
+	attemptId  String   @db.Uuid
+	testId     String
+	startedAt  DateTime @default(now()) @db.Timestamptz(6)
+	testPassed Boolean
+
+	user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+	attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@index([userId])
+	@@index([attemptId])
+	@@map("replay_sessions")
+}
+
+model LearningEvent {
+	id          String   @id @default(uuid()) @db.Uuid
+	userId      String   @db.Uuid
+	problemSlug String
+	type        String // 'replay_inspected' | 'hint_revealed' | 'milestone_reached'
+	detail      String? // small enum-ish token (hint id, milestone name) — never PII/free text
+	createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@index([userId, problemSlug])
+	@@map("learning_events")
+}
+
+model ProblemProgress {
+	userId          String    @db.Uuid
+	problemSlug     String
+	status          String // 'attempted' | 'solved'
+	attempts        Int       @default(0)
+	bestTestsPassed Int       @default(0)
+	testsTotal      Int       @default(0)
+	firstSolvedAt   DateTime? @db.Timestamptz(6)
+	latestSolvedAt  DateTime? @db.Timestamptz(6)
+	updatedAt       DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@id([userId, problemSlug])
+	@@map("problem_progress")
+}

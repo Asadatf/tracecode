@@ -17,5 +17,12 @@ model User {
 	updatedAt   DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
 	adminMember AdminMember?
 
+	// Learning domain (prisma/schema/learning.prisma). Virtual back-relations —
+	// no column on users; the FK columns live on the child tables.
+	attempts        Attempt[]
+	replaySessions  ReplaySession[]
+	learningEvents  LearningEvent[]
+	problemProgress ProblemProgress[]
+
 	@@map("users")
 }
