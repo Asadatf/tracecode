@@ -5,7 +5,10 @@
    both declares them as real CSS variables and generates the matching
    Tailwind utilities (e.g. --radius-lg below gives you `rounded-lg`). */
 @theme {
-	--font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	/* DM Sans / JetBrains Mono are loaded by next/font in [locale]/layout.tsx,
+	   which sets --font-dm-sans / --font-jetbrains-mono on <html>. */
+	--font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-mono: var(--font-jetbrains-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
 	--radius-sm: 6px;
 	--radius: 10px;
 	--radius-lg: 16px;
@@ -17,44 +20,49 @@
    live rather than inlining today's computed value at build time. See
    DESIGN.md for the full token table and naming rationale. */
 :root {
-	--bg: #fafafa;
+	--bg: #f4f5f2;
 	--surface: #ffffff;
-	--surface-hover: #f0f1f3;
-	--border: #e5e7eb;
-	--border-strong: #cbd2db;
-	--text: #16181d;
-	--text-muted: #5b6472;
-	--text-faint: #8891a0;
-	--accent: #2454b8;
-	--accent-hover: #1c4292;
+	--surface-subtle: #fafbf9;
+	--surface-hover: #eef2ec;
+	--border: #e1e6df;
+	--border-strong: #c6d3cb;
+	--text: #17231e;
+	--text-muted: #4d5852;
+	--text-faint: #5c675f;
+	--accent: #087a56;
+	--accent-hover: #065c41;
 	--accent-ink: #ffffff;
-	--success: #1a7f4b;
+	--success: #087a56;
 	--warning: #a5580a;
-	--danger: #b3261e;
+	--danger: #b44837;
+	--danger-soft: #fbefec;
 }
 
 @media (prefers-color-scheme: dark) {
 	:root {
-		--bg: #101215;
-		--surface: #17191d;
-		--surface-hover: #202329;
-		--border: #2a2d33;
-		--border-strong: #3a3e46;
-		--text: #f2f3f5;
-		--text-muted: #a6adba;
-		--text-faint: #767d8a;
-		--accent: #5b8fe0;
-		--accent-hover: #7ba3e6;
-		--accent-ink: #0b1220;
-		--success: #35c37f;
+		--bg: #0f1412;
+		--surface: #161c19;
+		--surface-subtle: #1a211d;
+		--surface-hover: #1e2622;
+		--border: #26302b;
+		--border-strong: #36423c;
+		--text: #eef2ef;
+		--text-muted: #a9b5ae;
+		--text-faint: #8a968f;
+		--accent: #39a67e;
+		--accent-hover: #5cc19a;
+		--accent-ink: #08130e;
+		--success: #39a67e;
 		--warning: #e2a03f;
-		--danger: #e5675f;
+		--danger: #e5806f;
+		--danger-soft: #3a2724;
 	}
 }
 
 @theme inline {
 	--color-bg: var(--bg);
 	--color-surface: var(--surface);
+	--color-surface-subtle: var(--surface-subtle);
 	--color-surface-hover: var(--surface-hover);
 	--color-border: var(--border);
 	--color-border-strong: var(--border-strong);
@@ -67,6 +75,7 @@
 	--color-success: var(--success);
 	--color-warning: var(--warning);
 	--color-danger: var(--danger);
+	--color-danger-soft: var(--danger-soft);
 }
 
 body {
