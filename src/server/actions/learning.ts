@@ -3,8 +3,10 @@
 import { z } from 'zod'
 import { validatedAction } from './validated-action'
 import { db, Prisma } from '@/server/db/client'
-import { getLearnerId } from '@/server/learning/current-user'
+import { currentLearnerId } from '@/server/auth/session'
+import { assertOwnedBy } from '@/lib/auth/ownership'
 import { jsonSchema } from '@/lib/trace/contract'
+import { linkedReplayWrites } from '@/lib/learning/replay-writes'
 
 // Persistence for authenticated learners. Browser-reported pass/fail is stored
 // as TELEMETRY, not authoritative grading (ADR-0001). When no one is signed in,
@@ -35,7 +37,7 @@ export const saveAttempt = validatedAction({
 		tests: z.array(testResultInput)
 	}),
 	handler: async (input) => {
-		const userId = await getLearnerId()
+		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
 
 		const attempt = await db.attempt.create({
@@ -98,24 +100,17 @@ export const recordReplaySession = validatedAction({
 		testPassed: z.boolean()
 	}),
 	handler: async (input) => {
-		const userId = await getLearnerId()
+		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
-		await db.replaySession.create({
-			data: {
-				userId,
-				attemptId: input.attemptId,
-				testId: input.testId,
-				testPassed: input.testPassed
-			}
+		// attemptId is browser-supplied: it must name one of THIS learner's attempts.
+		const attempt = await db.attempt.findUnique({
+			where: { id: input.attemptId },
+			select: { userId: true }
 		})
-		await db.learningEvent.create({
-			data: {
-				userId,
-				problemSlug: input.problemSlug,
-				type: 'replay_inspected',
-				detail: input.testId
-			}
-		})
+		assertOwnedBy(attempt?.userId, userId)
+		const writes = linkedReplayWrites(input)
+		await db.replaySession.create({ data: { userId, ...writes.session } })
+		await db.learningEvent.create({ data: { userId, ...writes.event } })
 		return { persisted: true as const }
 	}
 })
@@ -127,7 +122,7 @@ export const recordLearningEvent = validatedAction({
 		detail: z.string().optional()
 	}),
 	handler: async (input) => {
-		const userId = await getLearnerId()
+		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
 		await db.learningEvent.create({
 			data: {

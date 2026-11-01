@@ -23,6 +23,10 @@ import {
 	type Trace,
 	type Value
 } from '@/lib/trace/contract'
+import { saveAttempt, recordReplaySession, recordLearningEvent } from '@/server/actions/learning'
+import { resolveAttemptDbId } from '@/lib/learning/replay-link'
+import { hintRevealDetail } from '@/lib/learning/hint-event'
+import { replayInspectedEvent } from '@/lib/learning/replay-writes'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
@@ -36,6 +40,12 @@ interface LocalAttempt {
 	createdAt: string
 	source: string
 	result: RunResult
+	// Set once this attempt has been persisted to the server for a signed-in user.
+	dbId?: string
+	synced?: boolean
+	// The in-flight save (resolves to the server id, or undefined if not saved).
+	// A replay waits on this rather than on `dbId`, which it can't see in time.
+	saving?: Promise<string | undefined>
 }
 interface Outcome {
 	passed: boolean
@@ -57,17 +67,13 @@ function allPassed(result: RunResult): boolean {
 	)
 }
 
-// Module-scope so its try/catch stays outside any component (the React Compiler
-// cannot lower try statements inside a component).
-function tryParseJson(raw: string): { ok: true; value: Json } | { ok: false } {
-	try {
-		return { ok: true, value: JSON.parse(raw) as Json }
-	} catch {
-		return { ok: false }
-	}
-}
-
-export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
+export function PracticeWorkspace({
+	problem,
+	isAuthenticated = false
+}: {
+	problem: ProblemDefinition
+	isAuthenticated?: boolean
+}) {
 	const router = useRouter()
 	const meta = problemMeta(problem)
 	const [code, setCode] = useState(problem.starter)
@@ -84,9 +90,7 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 	useEffect(() => {
 		void warmUpEngine()
 	}, [])
-	const [customValues, setCustomValues] = useState<string[]>(() =>
-		problem.params.map((_, i) => JSON.stringify(problem.examples[0]?.args[i] ?? null))
-	)
+	const editorPanelRef = useRef<HTMLElement>(null)
 	const busyRef = useRef(false)
 	const tokenRef = useRef(0)
 
@@ -136,6 +140,75 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 		)
 	}
 
+	// Server persistence (signed-in only). Best-effort and non-blocking: a failed
+	// write never interrupts execution, and nothing claims "saved" unless the
+	// server confirms it (the attempt gets a dbId / synced flag only then).
+	function persistAttempt(
+		localId: string,
+		source: string,
+		result: RunResult
+	): Promise<string | undefined> | undefined {
+		if (!isAuthenticated) return undefined
+		return saveAttempt({
+			problemSlug: problem.slug,
+			source,
+			status: result.status,
+			testsPassed: result.tests.filter((t) => t.passed).length,
+			testsTotal: result.tests.length,
+			allPassed: allPassed(result),
+			tests: result.tests.map((t) => ({
+				testId: t.testId,
+				passed: t.passed,
+				expected: t.expected,
+				actual: t.actual,
+				errorType: t.error?.type,
+				errorMessage: t.error?.message
+			}))
+		}).then(
+			(res) => {
+				if (!res.ok || !res.data.persisted) return undefined
+				const dbId = res.data.attemptId
+				setAttempts((prev) =>
+					prev.map((a) => (a.id === localId ? { ...a, dbId, synced: true } : a))
+				)
+				return dbId
+			},
+			() => undefined
+		)
+	}
+
+	async function persistReplay(
+		attempt: LocalAttempt | undefined,
+		testId: string,
+		testPassed: boolean
+	) {
+		if (!isAuthenticated) return
+		const dbId = await resolveAttemptDbId(attempt)
+		const call =
+			dbId != null
+				? recordReplaySession({ attemptId: dbId, problemSlug: problem.slug, testId, testPassed })
+				: recordLearningEvent(replayInspectedEvent(problem.slug, testId))
+		void call.then(
+			() => {},
+			() => {}
+		)
+	}
+
+	function persistHint(detail: string) {
+		if (!isAuthenticated) return
+		void recordLearningEvent({ problemSlug: problem.slug, type: 'hint_revealed', detail }).then(
+			() => {},
+			() => {}
+		)
+	}
+
+	// The attempts list sits well below the editor, so restoring code there is
+	// invisible unless the editor is brought back into view.
+	function loadAttempt(source: string) {
+		setCode(source)
+		editorPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+	}
+
 	async function runTests() {
 		if (code.trim() === '') {
 			setNotice('Write some code before running the tests.')
@@ -156,9 +229,11 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 		if (result == null) return
 		setReplay(null)
 		setSubmitted({ source, result })
+		const localId = `a${Date.now()}`
+		const saving = persistAttempt(localId, source, result)
 		setAttempts((prev) => [
 			...prev,
-			{ id: `a${Date.now()}`, createdAt: new Date().toISOString(), source, result }
+			{ id: localId, createdAt: new Date().toISOString(), source, result, saving }
 		])
 		if (result.status === 'timeout') setNotice('Execution timed out — check for an infinite loop.')
 		if (result.status === 'engine_error')
@@ -200,65 +275,8 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 			outcome
 		})
 		setReplayRecords((prev) => [...prev, { attemptIndex, testPassed: tr?.passed === true }])
-	}
-
-	function parseCustomArgs(): { args: Json[] } | { error: string } {
-		const args: Json[] = []
-		for (let i = 0; i < problem.params.length; i++) {
-			const parsedResult = tryParseJson(customValues[i] ?? '')
-			if (!parsedResult.ok) return { error: `${problem.params[i]?.name}: not valid JSON.` }
-			const parsed = parsedResult.value
-			const exampleArg = problem.examples[0]?.args[i]
-			if (Array.isArray(exampleArg)) {
-				if (!Array.isArray(parsed))
-					return { error: `${problem.params[i]?.name} must be a JSON array.` }
-				if (parsed.length > 50)
-					return { error: `${problem.params[i]?.name} must have at most 50 elements.` }
-			}
-			args.push(parsed)
-		}
-		return { args }
-	}
-
-	async function runCustom() {
-		const parsed = parseCustomArgs()
-		if ('error' in parsed) {
-			setNotice(parsed.error)
-			return
-		}
-		const source = code
-		const result = await withEngine('Running custom input…', (onStatus) =>
-			traceCode(
-				{
-					code: source,
-					entry: problem.entry,
-					input: { args: parsed.args },
-					limits: { maxSteps: DEFAULT_LIMITS.maxSteps, timeoutMs: RUN_TIMEOUT_MS }
-				},
-				{ onStatus }
-			)
-		)
-		if (result == null) return
-		if (result.status !== 'completed' || result.trace == null) {
-			setNotice(`Custom run did not complete (${result.status}).`)
-			return
-		}
-		setReplay({
-			kind: 'custom',
-			label: `${labelFor(parsed.args)} · exploration (not scored)`,
-			source,
-			trace: result.trace,
-			outcome: null
-		})
-	}
-
-	function fillPreset(size: number) {
-		const arrayIndex = problem.params.findIndex((_, i) =>
-			Array.isArray(problem.examples[0]?.args[i])
-		)
-		if (arrayIndex < 0) return
-		const values = Array.from({ length: size }, (_, i) => ((i * 7 + 3) % 97) - 20)
-		setCustomValues((prev) => prev.map((v, i) => (i === arrayIndex ? JSON.stringify(values) : v)))
+		const attempt = attemptIndex >= 0 ? attempts[attemptIndex] : attempts.at(-1)
+		void persistReplay(attempt, test.id, tr?.passed === true)
 	}
 
 	// Teaching, tied to observed evidence + the learning-flow gates.
@@ -385,7 +403,7 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 					</section>
 
 					<div className={styles.right}>
-						<section className={styles.editorPanel}>
+						<section ref={editorPanelRef} className={styles.editorPanel}>
 							<div className={styles.editorTop}>
 								<div className={styles.file}>
 									<span className={styles.py}>Py</span> {problem.entry}.py
@@ -414,64 +432,6 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 									>
 										▶ Run code
 									</button>
-								</div>
-							</div>
-						</section>
-
-						<section className={styles.panel}>
-							<div className={styles.panelHead}>
-								<strong>⌘&nbsp; Custom input playground</strong>
-								<span className={styles.pill}>Exploration · not scored</span>
-							</div>
-							<div className={styles.customContent}>
-								<p className={styles.customHeadNote}>
-									Keep your Python function in the editor. Change the arguments below to explore
-									different execution paths, then replay the actual result.
-								</p>
-								<div className={styles.customFields}>
-									{problem.params.map((p, i) => (
-										<label key={p.name} className={styles.customField}>
-											<span>{p.name}</span>
-											<input
-												value={customValues[i] ?? ''}
-												onChange={(e) =>
-													setCustomValues((prev) =>
-														prev.map((v, idx) => (idx === i ? e.target.value : v))
-													)
-												}
-												aria-label={`Custom ${p.name}`}
-											/>
-										</label>
-									))}
-								</div>
-								<div className={styles.customControls}>
-									<button
-										type="button"
-										className={cn(styles.btn, styles.btnDark)}
-										onClick={runCustom}
-										disabled={busy}
-									>
-										▶ Run custom input
-									</button>
-									<button
-										type="button"
-										className={styles.btn}
-										onClick={() => fillPreset(10)}
-										disabled={busy}
-									>
-										10 elements
-									</button>
-									<button
-										type="button"
-										className={styles.btn}
-										onClick={() => fillPreset(20)}
-										disabled={busy}
-									>
-										20 elements
-									</button>
-									<span className={styles.customFeedback}>
-										Runs separately from the official tests.
-									</span>
 								</div>
 							</div>
 						</section>
@@ -516,14 +476,22 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 					<TeachingPanel
 						key={teaching.kind === 'diagnosis' ? teaching.id : teaching.kind}
 						prompt={teaching}
+						onReveal={(level) => {
+							const detail = hintRevealDetail(teaching, level)
+							if (detail != null) persistHint(detail)
+						}}
 					/>
 				)}
 
 				{attempts.length > 0 && (
 					<section className={cn(styles.panel, styles.coachPanel)} style={{ background: '#fff' }}>
 						<div className={styles.panelHead}>
-							<strong>Learning progress · This browser</strong>
-							<span className={styles.pill}>Local only</span>
+							<strong>Your attempts</strong>
+							<span className={styles.pill}>
+								{isAuthenticated
+									? 'Signed in · saved to your account'
+									: 'This session only · sign in to save'}
+							</span>
 						</div>
 						<div className={styles.progressGrid}>
 							<div className={styles.progressMetric}>
@@ -562,12 +530,13 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 														: attempt.result.status}
 												</strong>{' '}
 												<small>{new Date(attempt.createdAt).toLocaleTimeString()}</small>
+												{attempt.synced === true ? <small> · synced</small> : null}
 											</span>
 											<span className={styles.testActions}>
 												<button
 													type="button"
 													className={styles.btn}
-													onClick={() => setCode(attempt.source)}
+													onClick={() => loadAttempt(attempt.source)}
 													disabled={busy}
 												>
 													Load code
