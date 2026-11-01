@@ -4,3 +4,6 @@
 # Codex (see docs/rules/secrets.md).
 .claude-logs/
 .codex-logs/
+
+# Pyodide runtime copied from node_modules on postinstall — vendored, not ours to format.
+public/pyodide/

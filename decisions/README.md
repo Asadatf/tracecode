@@ -11,3 +11,4 @@ new ADR that supersedes it and set the old one's status to
 | ADR                                         | Title                             | Status   |
 | ------------------------------------------- | --------------------------------- | -------- |
 | [0001](0001-in-browser-python-execution.md) | Run and trace code in the browser | Proposed |
+| [0002](0002-self-host-pyodide.md)           | Self-host the Pyodide runtime     | Proposed |

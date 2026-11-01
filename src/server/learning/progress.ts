@@ -1,6 +1,6 @@
 import 'server-only'
 import { db } from '@/server/db/client'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getLearnerId } from './current-user'
 
 // Read a learner's persisted progress. A plain server-only helper (NOT a
 // component), so its try/catch is free of the React Compiler's constraints.
@@ -31,9 +31,7 @@ export interface LearningProgressView {
 }
 
 export async function getLearningProgress(): Promise<LearningProgressView> {
-	const supabase = await createServerSupabaseClient()
-	const { data } = await supabase.auth.getUser()
-	const userId = data.user?.id
+	const userId = await getLearnerId()
 	if (userId == null)
 		return { authenticated: false, available: false, progress: [], recentAttempts: [] }
 

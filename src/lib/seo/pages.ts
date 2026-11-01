@@ -17,7 +17,7 @@ export interface PublicPage {
 }
 
 export const PUBLIC_PAGES: readonly PublicPage[] = [
-	{ path: '/', messages: 'HomePage', lastModified: '2026-10-18' }
+	{ path: '/', messages: 'HomePage', lastModified: '2026-11-01' }
 ]
 
 export function publicPage(path: string): PublicPage {
