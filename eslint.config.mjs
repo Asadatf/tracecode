@@ -89,7 +89,15 @@ const LOGGER_IMPORTS = {
 const eslintConfig = defineConfig([
 	...nextVitals,
 	...nextTypescript,
-	globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'src/generated/**']),
+	globalIgnores([
+		'.next/**',
+		'out/**',
+		'build/**',
+		'next-env.d.ts',
+		'src/generated/**',
+		// Pyodide runtime copied from node_modules on postinstall (ADR-0002).
+		'public/pyodide/**'
+	]),
 	{
 		// See docs/rules/code-quality.md for the rationale behind both rules.
 		rules: {

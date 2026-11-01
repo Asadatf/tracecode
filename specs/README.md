@@ -94,13 +94,15 @@ supersedes it, and mark the old one `Superseded by NNNN`.
 
 Update this table in the same PR that changes a status.
 
-| Spec / ADR                                                   | Status   | Owner       |
-| ------------------------------------------------------------ | -------- | ----------- |
-| [`00-product.md`](00-product.md)                             | Draft    | Team        |
-| [`01-architecture.md`](01-architecture.md)                   | Draft    | Team        |
-| [`02-trace-contract.md`](02-trace-contract.md)               | Draft    | Track A + B |
-| [`features/fail-and-replay.md`](features/fail-and-replay.md) | Draft    | Track A + B |
-| [ADR-0001](../decisions/0001-in-browser-python-execution.md) | Proposed | Team        |
+| Spec / ADR                                                   | Status      | Owner       |
+| ------------------------------------------------------------ | ----------- | ----------- |
+| [`00-product.md`](00-product.md)                             | Draft       | Team        |
+| [`01-architecture.md`](01-architecture.md)                   | Draft       | Team        |
+| [`02-trace-contract.md`](02-trace-contract.md)               | Draft       | Track A + B |
+| [`features/fail-and-replay.md`](features/fail-and-replay.md) | Draft       | Track A + B |
+| [`features/home-page.md`](features/home-page.md)             | In progress | Asad        |
+| [ADR-0001](../decisions/0001-in-browser-python-execution.md) | Proposed    | Team        |
+| [ADR-0002](../decisions/0002-self-host-pyodide.md)           | Proposed    | Team        |
 
 **Open decisions** (bottom of `00-product.md`): track ownership; hints
 hand-authored vs. AI-generated (and which provider); the "mastered" rule;

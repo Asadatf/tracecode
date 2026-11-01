@@ -1,0 +1,478 @@
+{
+	"status": "completed",
+	"actual": {
+		"kind": "list",
+		"items": [
+			{
+				"kind": "int",
+				"value": 1
+			},
+			{
+				"kind": "int",
+				"value": 2
+			}
+		]
+	},
+	"trace": {
+		"source": [
+			"def two_sum(nums, target):",
+			"    for i in range(len(nums)):",
+			"        for j in range(i + 1, len(nums)):",
+			"            if nums[i] + nums[j] == target:",
+			"                return [i, j]",
+			"    return []"
+		],
+		"steps": [
+			{
+				"index": 0,
+				"event": "call",
+				"line": 1,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					}
+				}
+			},
+			{
+				"index": 1,
+				"event": "line",
+				"line": 2,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					}
+				}
+			},
+			{
+				"index": 2,
+				"event": "line",
+				"line": 3,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 0
+					}
+				}
+			},
+			{
+				"index": 3,
+				"event": "line",
+				"line": 4,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 0
+					},
+					"j": {
+						"kind": "int",
+						"value": 1
+					}
+				}
+			},
+			{
+				"index": 4,
+				"event": "line",
+				"line": 3,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 0
+					},
+					"j": {
+						"kind": "int",
+						"value": 1
+					}
+				}
+			},
+			{
+				"index": 5,
+				"event": "line",
+				"line": 4,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 0
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				}
+			},
+			{
+				"index": 6,
+				"event": "line",
+				"line": 3,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 0
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				}
+			},
+			{
+				"index": 7,
+				"event": "line",
+				"line": 2,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 0
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				}
+			},
+			{
+				"index": 8,
+				"event": "line",
+				"line": 3,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 1
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				}
+			},
+			{
+				"index": 9,
+				"event": "line",
+				"line": 4,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 1
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				}
+			},
+			{
+				"index": 10,
+				"event": "line",
+				"line": 5,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 1
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				}
+			},
+			{
+				"index": 11,
+				"event": "return",
+				"line": 5,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					},
+					"i": {
+						"kind": "int",
+						"value": 1
+					},
+					"j": {
+						"kind": "int",
+						"value": 2
+					}
+				},
+				"returnValue": {
+					"kind": "list",
+					"items": [
+						{
+							"kind": "int",
+							"value": 1
+						},
+						{
+							"kind": "int",
+							"value": 2
+						}
+					]
+				}
+			}
+		],
+		"truncated": false
+	}
+}
