@@ -4,8 +4,51 @@
 			"title": "TraceCode: see why your code failed, step by step",
 			"description": "Practice coding problems and, when a solution fails, replay its execution step by step: variables, loops and pointers, with progressive hints."
 		},
-		"title": "TraceCode",
-		"description": "Coding practice where failed solutions replay step by step, so you see exactly why they failed."
+		"title": "Practice Python. When it fails, watch it run.",
+		"description": "Solve short problems in the browser. If a test fails, step through your code line by line and see the values change, so you know why.",
+		"cta": "Solve Two Sum",
+		"seeAll": "See all problems"
+	},
+	"SiteHeader": {
+		"home": "TraceCode home",
+		"nav": "Main",
+		"problems": "Problems",
+		"progress": "Progress"
+	},
+	"TraceDemo": {
+		"label": "A replay of a failing Two Sum solution",
+		"result": "Expected {expected}, got {actual}",
+		"columns": {
+			"step": "step",
+			"line": "line",
+			"i": "i",
+			"j": "j",
+			"sum": "nums[i] + nums[j]"
+		},
+		"note": "Step 4: i and j are both 0, so the 3 is added to itself."
+	},
+	"ProblemTable": {
+		"heading": "Problems",
+		"columns": {
+			"number": "#",
+			"title": "Title",
+			"topics": "Topics",
+			"difficulty": "Difficulty",
+			"status": "Status"
+		},
+		"difficulty": {
+			"easy": "Easy",
+			"medium": "Medium",
+			"hard": "Hard"
+		},
+		"status": {
+			"solved": "Solved",
+			"attempted": "Attempted",
+			"not_started": "Not started",
+			"unknown": "—"
+		},
+		"empty": "No problems yet.",
+		"signIn": "Sign in to track your progress."
 	},
 	"SiteFooter": {
 		"privacy": "Privacy",
