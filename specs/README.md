@@ -101,6 +101,7 @@ Update this table in the same PR that changes a status.
 | [`02-trace-contract.md`](02-trace-contract.md)               | Draft       | Track A + B |
 | [`features/fail-and-replay.md`](features/fail-and-replay.md) | Draft       | Track A + B |
 | [`features/home-page.md`](features/home-page.md)             | In progress | Asad        |
+| [`features/progress-page.md`](features/progress-page.md)     | In progress | Asad        |
 | [ADR-0001](../decisions/0001-in-browser-python-execution.md) | Proposed    | Team        |
 | [ADR-0002](../decisions/0002-self-host-pyodide.md)           | Proposed    | Team        |
 
