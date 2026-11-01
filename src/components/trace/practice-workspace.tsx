@@ -1,10 +1,10 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
-import { runCode, traceCode } from '@/lib/trace/run-code'
+import { isEngineBooted, runCode, traceCode, warmUpEngine } from '@/lib/trace/run-code'
 import { problemMeta, type ProblemDefinition } from '@/lib/trace/problem'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { teach, type TeachingPrompt } from '@/lib/trace/teach'
@@ -77,6 +77,13 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 	const [replay, setReplay] = useState<ReplayState | null>(null)
 	const [status, setStatus] = useState<{ busy: boolean; label: string }>({ busy: false, label: '' })
 	const [notice, setNotice] = useState('')
+
+	// Start the Python download as the page opens (fail-and-replay AC1), so the
+	// first Run doesn't wait on it. Fire-and-forget: a failed warm-up just
+	// leaves the first Run to load Pyodide itself, with its own error handling.
+	useEffect(() => {
+		void warmUpEngine()
+	}, [])
 	const [customValues, setCustomValues] = useState<string[]>(() =>
 		problem.params.map((_, i) => JSON.stringify(problem.examples[0]?.args[i] ?? null))
 	)
@@ -102,7 +109,8 @@ export function PracticeWorkspace({ problem }: { problem: ProblemDefinition }) {
 		busyRef.current = true
 		const token = ++tokenRef.current
 		setNotice('')
-		setStatus({ busy: true, label })
+		// A Run during the warm-up queues behind it; say why it's waiting.
+		setStatus({ busy: true, label: isEngineBooted() ? label : 'Loading Python runtime…' })
 		const finish = () => {
 			busyRef.current = false
 			if (token === tokenRef.current) setStatus({ busy: false, label: '' })

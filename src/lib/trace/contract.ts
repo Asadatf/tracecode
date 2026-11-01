@@ -232,7 +232,9 @@ export type ProblemMeta = z.infer<typeof problemMetaSchema>
 export const DEFAULT_LIMITS = {
 	maxSteps: 2000,
 	timeoutMs: 3000,
-	initTimeoutMs: 30_000
+	// Generous: the first, uncached download is ~14 MB and takes 30 s+ on a
+	// slow connection. Execution time is bounded separately by timeoutMs.
+	initTimeoutMs: 120_000
 } as const
 
 export const VALUE_LIMITS = {
