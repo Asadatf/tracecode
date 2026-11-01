@@ -1,6 +1,7 @@
 import 'server-only'
 import { db } from '@/server/db/client'
 import { currentUserIdSafe } from '@/server/auth/session'
+import { recentAttemptsQuery } from '@/lib/learning/recent-attempts-query'
 
 // Read a learner's persisted progress. A plain server-only helper (NOT a
 // component), so its try/catch is free of the React Compiler's constraints.
@@ -52,7 +53,7 @@ export async function getLearningProgress(): Promise<LearningProgressView> {
 	try {
 		const [progress, attempts, replaysInspected, hintsRevealed] = await Promise.all([
 			db.problemProgress.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' } }),
-			db.attempt.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
+			db.attempt.findMany(recentAttemptsQuery(userId)),
 			db.learningEvent.count({ where: { userId, type: 'replay_inspected' } }),
 			db.learningEvent.count({ where: { userId, type: 'hint_revealed' } })
 		])

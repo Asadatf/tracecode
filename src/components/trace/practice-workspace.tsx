@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
-import { isEngineBooted, runCode, traceCode, warmUpEngine } from '@/lib/trace/run-code'
+import { analyzeCode, isEngineBooted, runCode, traceCode, warmUpEngine } from '@/lib/trace/run-code'
+import { withCodeFeatures } from '@/lib/learning/attempt-features'
 import { problemMeta, type ProblemDefinition } from '@/lib/trace/problem'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { teach, type TeachingPrompt } from '@/lib/trace/teach'
@@ -143,13 +144,18 @@ export function PracticeWorkspace({
 	// Server persistence (signed-in only). Best-effort and non-blocking: a failed
 	// write never interrupts execution, and nothing claims "saved" unless the
 	// server confirms it (the attempt gets a dbId / synced flag only then).
+	// M7.1: the source is parsed (never executed) for its structural features
+	// first — the same string that is saved, via withCodeFeatures. That queues
+	// right behind the Run on the same worker and never rejects; an unparseable
+	// source or an unavailable worker just means the attempt is saved without
+	// features, exactly as before.
 	function persistAttempt(
 		localId: string,
 		source: string,
 		result: RunResult
 	): Promise<string | undefined> | undefined {
 		if (!isAuthenticated) return undefined
-		return saveAttempt({
+		const payload = {
 			problemSlug: problem.slug,
 			source,
 			status: result.status,
@@ -164,17 +170,20 @@ export function PracticeWorkspace({
 				errorType: t.error?.type,
 				errorMessage: t.error?.message
 			}))
-		}).then(
-			(res) => {
-				if (!res.ok || !res.data.persisted) return undefined
-				const dbId = res.data.attemptId
-				setAttempts((prev) =>
-					prev.map((a) => (a.id === localId ? { ...a, dbId, synced: true } : a))
-				)
-				return dbId
-			},
-			() => undefined
-		)
+		}
+		return withCodeFeatures(payload, (code) => analyzeCode({ code }))
+			.then((withFeatures) => saveAttempt(withFeatures))
+			.then(
+				(res) => {
+					if (!res.ok || !res.data.persisted) return undefined
+					const dbId = res.data.attemptId
+					setAttempts((prev) =>
+						prev.map((a) => (a.id === localId ? { ...a, dbId, synced: true } : a))
+					)
+					return dbId
+				},
+				() => undefined
+			)
 	}
 
 	async function persistReplay(

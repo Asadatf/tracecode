@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { PracticeWorkspace } from '@/components/trace/practice-workspace'
+import { CodeFeatureBackfill } from '@/components/trace/code-feature-backfill'
 import { currentUserIdSafe } from '@/server/auth/session'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--tc-sans' })
@@ -44,6 +45,7 @@ export default async function PracticePage({
 	return (
 		<div className={`${dmSans.variable} ${jetBrainsMono.variable}`}>
 			<PracticeWorkspace problem={problem} isAuthenticated={isAuthenticated} />
+			{isAuthenticated && <CodeFeatureBackfill />}
 		</div>
 	)
 }
