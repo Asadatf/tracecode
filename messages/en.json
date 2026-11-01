@@ -50,6 +50,70 @@
 		"empty": "No problems yet.",
 		"signIn": "Sign in to track your progress."
 	},
+	"ProgressPage": {
+		"metaTitle": "Your progress — TraceCode",
+		"heading": "Your progress",
+		"unavailable": "Saved progress is unavailable right now.",
+		"none": "—",
+		"summary": {
+			"solved": "Solved",
+			"of": "of {total}",
+			"attempted": "Attempted",
+			"runs": "Runs"
+		},
+		"problems": {
+			"heading": "Problems",
+			"columns": {
+				"problem": "Problem",
+				"status": "Status",
+				"best": "Best result",
+				"runs": "Runs",
+				"solved": "Solved",
+				"action": "Action"
+			},
+			"status": {
+				"solved": "Solved",
+				"attempted": "Attempted",
+				"not_started": "Not started"
+			},
+			"best": "{passed}/{total} tests",
+			"action": {
+				"open": "Open",
+				"continue": "Continue",
+				"start": "Start"
+			}
+		},
+		"recent": {
+			"heading": "Recent runs",
+			"columns": {
+				"problem": "Problem",
+				"result": "Result",
+				"when": "When"
+			},
+			"result": "{passed}/{total} passed",
+			"empty": "No runs yet.",
+			"note": "Your last 10 runs."
+		},
+		"topics": {
+			"heading": "By topic",
+			"columns": {
+				"topic": "Topic",
+				"solved": "Solved"
+			}
+		},
+		"signedOut": {
+			"heading": "Nothing saved yet",
+			"body": "Progress is saved to your account once you're signed in. Until then, your runs on a problem page last only while that page is open.",
+			"cta": "Solve Two Sum",
+			"seeAll": "See all problems",
+			"showsHeading": "Once you're signed in, this page shows",
+			"shows": {
+				"problems": "which problems you've solved or attempted, and your best result on each",
+				"recent": "your last 10 runs, passed or failed",
+				"topics": "how many problems you've solved in each topic"
+			}
+		}
+	},
 	"SiteFooter": {
 		"privacy": "Privacy",
 		"terms": "Terms",

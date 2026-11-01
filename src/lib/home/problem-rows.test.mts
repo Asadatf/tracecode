@@ -23,13 +23,21 @@ test('AC7: a signed-in learner sees solved, attempted and not started', () => {
 		authenticated: true,
 		available: true,
 		progress: [
-			{ problemSlug: 'two-sum', status: 'solved', attempts: 3, bestTestsPassed: 3, testsTotal: 3 },
+			{
+				problemSlug: 'two-sum',
+				status: 'solved',
+				attempts: 3,
+				bestTestsPassed: 3,
+				testsTotal: 3,
+				firstSolvedAt: null
+			},
 			{
 				problemSlug: 'contains-duplicate',
 				status: 'attempted',
 				attempts: 1,
 				bestTestsPassed: 1,
-				testsTotal: 3
+				testsTotal: 3,
+				firstSolvedAt: null
 			}
 		],
 		recentAttempts: []
@@ -55,7 +63,14 @@ test('edge: a slug in saved progress but not in the registry adds no row', () =>
 		authenticated: true,
 		available: true,
 		progress: [
-			{ problemSlug: 'retired', status: 'solved', attempts: 1, bestTestsPassed: 1, testsTotal: 1 }
+			{
+				problemSlug: 'retired',
+				status: 'solved',
+				attempts: 1,
+				bestTestsPassed: 1,
+				testsTotal: 1,
+				firstSolvedAt: null
+			}
 		],
 		recentAttempts: []
 	})

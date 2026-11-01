@@ -13,6 +13,7 @@ export interface ProgressRow {
 	attempts: number
 	bestTestsPassed: number
 	testsTotal: number
+	firstSolvedAt: string | null
 }
 
 export interface AttemptRow {
@@ -48,7 +49,8 @@ export async function getLearningProgress(): Promise<LearningProgressView> {
 				status: p.status,
 				attempts: p.attempts,
 				bestTestsPassed: p.bestTestsPassed,
-				testsTotal: p.testsTotal
+				testsTotal: p.testsTotal,
+				firstSolvedAt: p.firstSolvedAt?.toISOString() ?? null
 			})),
 			recentAttempts: attempts.map((a) => ({
 				problemSlug: a.problemSlug,

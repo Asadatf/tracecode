@@ -22,8 +22,9 @@ export interface ProblemTable {
 	tracked: boolean
 }
 
-function capitalise(word: string): string {
-	return word.charAt(0).toUpperCase() + word.slice(1)
+// A concept tag as people read it: 'arrays' → 'Arrays'.
+export function topicLabel(tag: string): string {
+	return tag.charAt(0).toUpperCase() + tag.slice(1)
 }
 
 export function buildProblemTable(
@@ -41,7 +42,7 @@ export function buildProblemTable(
 			number: index + 1,
 			slug: problem.slug,
 			title: problem.title,
-			topics: problem.conceptTags.map(capitalise).join(', '),
+			topics: problem.conceptTags.map(topicLabel).join(', '),
 			difficulty: problem.difficulty,
 			status
 		}

@@ -1,9 +1,10 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { cn } from '@/lib/cn'
 
-// The thin top bar on the home page (specs/features/home-page.md, AC1/AC3).
-// No "Sign in" until there is a sign-in page (the spec's Decisions).
-export async function SiteHeader() {
+// The thin top bar (specs/features/home-page.md AC1/AC3, progress-page.md AC1).
+// No "Sign in" until there is a sign-in page (home-page.md, Decisions).
+export async function SiteHeader({ current }: { current?: 'progress' } = {}) {
 	const t = await getTranslations('SiteHeader')
 
 	return (
@@ -23,10 +24,23 @@ export async function SiteHeader() {
 					tracecode
 				</Link>
 				<nav aria-label={t('nav')} className="flex flex-wrap gap-x-6 gap-y-1">
-					<Link href="/#problems" className="text-text hover:text-accent font-semibold">
+					<Link
+						href="/#problems"
+						className={cn(
+							'hover:text-accent',
+							current == null ? 'text-text font-semibold' : 'text-text-muted'
+						)}
+					>
 						{t('problems')}
 					</Link>
-					<Link href="/progress" className="text-text-muted hover:text-accent">
+					<Link
+						href="/progress"
+						aria-current={current === 'progress' ? 'page' : undefined}
+						className={cn(
+							'hover:text-accent',
+							current === 'progress' ? 'text-text font-semibold' : 'text-text-muted'
+						)}
+					>
 						{t('progress')}
 					</Link>
 				</nav>
