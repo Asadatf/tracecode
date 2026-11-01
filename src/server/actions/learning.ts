@@ -6,6 +6,7 @@ import { db, Prisma } from '@/server/db/client'
 import { currentLearnerId } from '@/server/auth/session'
 import { assertOwnedBy } from '@/lib/auth/ownership'
 import { jsonSchema } from '@/lib/trace/contract'
+import { linkedReplayWrites } from '@/lib/learning/replay-writes'
 
 // Persistence for authenticated learners. Browser-reported pass/fail is stored
 // as TELEMETRY, not authoritative grading (ADR-0001). When no one is signed in,
@@ -107,22 +108,9 @@ export const recordReplaySession = validatedAction({
 			select: { userId: true }
 		})
 		assertOwnedBy(attempt?.userId, userId)
-		await db.replaySession.create({
-			data: {
-				userId,
-				attemptId: input.attemptId,
-				testId: input.testId,
-				testPassed: input.testPassed
-			}
-		})
-		await db.learningEvent.create({
-			data: {
-				userId,
-				problemSlug: input.problemSlug,
-				type: 'replay_inspected',
-				detail: input.testId
-			}
-		})
+		const writes = linkedReplayWrites(input)
+		await db.replaySession.create({ data: { userId, ...writes.session } })
+		await db.learningEvent.create({ data: { userId, ...writes.event } })
 		return { persisted: true as const }
 	}
 })

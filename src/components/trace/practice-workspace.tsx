@@ -26,6 +26,7 @@ import {
 import { saveAttempt, recordReplaySession, recordLearningEvent } from '@/server/actions/learning'
 import { resolveAttemptDbId } from '@/lib/learning/replay-link'
 import { hintRevealDetail } from '@/lib/learning/hint-event'
+import { replayInspectedEvent } from '@/lib/learning/replay-writes'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
@@ -199,11 +200,7 @@ export function PracticeWorkspace({
 		const call =
 			dbId != null
 				? recordReplaySession({ attemptId: dbId, problemSlug: problem.slug, testId, testPassed })
-				: recordLearningEvent({
-						problemSlug: problem.slug,
-						type: 'replay_inspected',
-						detail: testId
-					})
+				: recordLearningEvent(replayInspectedEvent(problem.slug, testId))
 		void call.then(
 			() => {},
 			() => {}
