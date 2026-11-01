@@ -235,5 +235,10 @@ json.dumps(result)
 `
 
 export const PYODIDE_VERSION = '0.27.7'
-export const PYODIDE_INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`
-export const PYODIDE_SCRIPT_URL = `${PYODIDE_INDEX_URL}pyodide.js`
+// Self-hosted (ADR-0002): scripts/copy-pyodide.mjs copies the pinned npm
+// package's runtime to public/pyodide/v<version>/ on install. The worker runs
+// from a Blob URL, so it needs an absolute URL — resolve it against an origin.
+export const PYODIDE_PATH = `/pyodide/v${PYODIDE_VERSION}/`
+export function pyodideIndexUrl(origin: string): string {
+	return new URL(PYODIDE_PATH, origin).href
+}

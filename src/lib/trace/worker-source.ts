@@ -1,4 +1,4 @@
-import { RUN_PROGRAM, TRACE_PROGRAM, PYODIDE_INDEX_URL, PYODIDE_SCRIPT_URL } from './trace-program'
+import { RUN_PROGRAM, TRACE_PROGRAM } from './trace-program'
 import { VALUE_LIMITS } from './contract'
 
 // The Web Worker body, built as a source string so it runs from a Blob URL —
@@ -6,14 +6,15 @@ import { VALUE_LIMITS } from './contract'
 // the browser integration test. It is thin glue: boot Pyodide once (reported as
 // `loading_runtime`), then run the untraced RUN_PROGRAM for a `run` request or
 // the traced TRACE_PROGRAM for a `trace` request, and post back the result. All
-// validation happens on the main thread against the contract.
-export function buildWorkerSource(): string {
+// validation happens on the main thread against the contract. `pyodideIndexUrl`
+// is absolute (see pyodideIndexUrl in trace-program.ts).
+export function buildWorkerSource(pyodideIndexUrl: string): string {
 	const limits = JSON.stringify(VALUE_LIMITS)
 	return `"use strict";
 const TRACE_PROGRAM = ${JSON.stringify(TRACE_PROGRAM)};
 const RUN_PROGRAM = ${JSON.stringify(RUN_PROGRAM)};
-const PYODIDE_SCRIPT_URL = ${JSON.stringify(PYODIDE_SCRIPT_URL)};
-const PYODIDE_INDEX_URL = ${JSON.stringify(PYODIDE_INDEX_URL)};
+const PYODIDE_INDEX_URL = ${JSON.stringify(pyodideIndexUrl)};
+const PYODIDE_SCRIPT_URL = PYODIDE_INDEX_URL + 'pyodide.js';
 const VALUE_LIMITS = ${limits};
 let pyodidePromise = null;
 async function boot() {

@@ -1,9 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import {
-	TRACE_PROGRAM,
-	PYODIDE_INDEX_URL,
-	PYODIDE_SCRIPT_URL
-} from '../src/lib/trace/trace-program'
+import { TRACE_PROGRAM, pyodideIndexUrl } from '../src/lib/trace/trace-program'
 import { buildWorkerSource } from '../src/lib/trace/worker-source'
 import {
 	runResultSchema,
@@ -18,9 +14,8 @@ import {
 // place the actual sys.settrace tracer runs; run-code.test.mts covers the
 // main-thread lifecycle with a fake worker instead.
 //
-// They do NOT need the Next app: each uses about:blank and loads Pyodide itself.
-// Run them with the app webServer skipped, e.g.
-//   E2E_BASE_URL=http://127.0.0.1:1 pnpm exec playwright test e2e/trace-engine.spec.ts
+// They need the app only as a static host: Pyodide is self-hosted (ADR-0002),
+// so each test opens the app's origin and loads Pyodide from /pyodide/.
 
 // The self-pairing bug from specs/02-trace-contract.md: the inner loop starts at
 // 0, so an element pairs with itself.
@@ -99,8 +94,8 @@ test('the tracer runs the buggy Two Sum under real Pyodide (page) and reproduces
 	page
 }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
-	await page.addScriptTag({ url: PYODIDE_SCRIPT_URL })
+	await page.goto('/')
+	await page.addScriptTag({ url: `${pyodideIndexUrl(page.url())}pyodide.js` })
 
 	const raw = await page.evaluate<string, { program: string; indexURL: string; request: string }>(
 		async ({ program, indexURL, request }) => {
@@ -114,7 +109,7 @@ test('the tracer runs the buggy Two Sum under real Pyodide (page) and reproduces
 			py.globals.set('REQUEST_JSON', request)
 			return py.runPython(program)
 		},
-		{ program: TRACE_PROGRAM, indexURL: PYODIDE_INDEX_URL, request: requestJson() }
+		{ program: TRACE_PROGRAM, indexURL: pyodideIndexUrl(page.url()), request: requestJson() }
 	)
 
 	const result = traceResultSchema.parse(JSON.parse(raw))
@@ -123,7 +118,7 @@ test('the tracer runs the buggy Two Sum under real Pyodide (page) and reproduces
 
 test('the real Blob worker boots Pyodide and returns a contract-valid trace', async ({ page }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 
 	const raw = await page.evaluate<unknown, { workerSource: string; request: unknown }>(
 		({ workerSource, request }) =>
@@ -151,7 +146,7 @@ test('the real Blob worker boots Pyodide and returns a contract-valid trace', as
 				worker.postMessage({ type: 'trace', request })
 			}),
 		{
-			workerSource: buildWorkerSource(),
+			workerSource: buildWorkerSource(pyodideIndexUrl(page.url())),
 			request: {
 				code: BUGGY_TWO_SUM,
 				entry: 'two_sum',
@@ -210,7 +205,7 @@ function postToWorker(page: Page, message: unknown): Promise<unknown> {
 				}
 				worker.postMessage(msg)
 			}),
-		{ workerSource: buildWorkerSource(), msg: message }
+		{ workerSource: buildWorkerSource(pyodideIndexUrl(page.url())), msg: message }
 	)
 }
 
@@ -223,7 +218,7 @@ function runMessage(code: string) {
 
 test('run: a correct solution passes every official test', async ({ page }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 	const result = runResultSchema.parse(await postToWorker(page, runMessage(CORRECT_TWO_SUM)))
 	expect(result.status).toBe('completed')
 	expect(result.tests.map((t) => t.passed)).toEqual([true, true, true])
@@ -238,7 +233,7 @@ test('run: a correct solution passes every official test', async ({ page }) => {
 
 test('run: the buggy solution passes t1 and fails t2/t3 with [0, 0]', async ({ page }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 	const result = runResultSchema.parse(await postToWorker(page, runMessage(BUGGY_TWO_SUM)))
 	expect(result.status).toBe('completed')
 	const byId = Object.fromEntries(result.tests.map((t) => [t.testId, t] as const))
@@ -250,7 +245,7 @@ test('run: the buggy solution passes t1 and fails t2/t3 with [0, 0]', async ({ p
 
 test('run: a syntax error reports status syntax_error and runs no tests', async ({ page }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 	const result = runResultSchema.parse(
 		await postToWorker(page, runMessage('def two_sum(nums, target)\n    return []'))
 	)
@@ -261,7 +256,7 @@ test('run: a syntax error reports status syntax_error and runs no tests', async 
 
 test('run: a missing entry function reports entry_not_found', async ({ page }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 	const result = runResultSchema.parse(
 		await postToWorker(page, runMessage('def solve(nums, target):\n    return []'))
 	)
@@ -273,7 +268,7 @@ test('run: a runtime exception fails that test with an error, status still compl
 	page
 }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 	const result = runResultSchema.parse(
 		await postToWorker(page, runMessage('def two_sum(nums, target):\n    return nums[target]'))
 	)
@@ -284,7 +279,7 @@ test('run: a runtime exception fails that test with an error, status still compl
 
 test('run then replay: the same source and args reproduce the failing trace', async ({ page }) => {
 	test.setTimeout(180_000)
-	await page.goto('about:blank')
+	await page.goto('/')
 
 	const run = runResultSchema.parse(await postToWorker(page, runMessage(BUGGY_TWO_SUM)))
 	const failing = run.tests.find((t) => !t.passed)

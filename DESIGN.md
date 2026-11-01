@@ -32,22 +32,25 @@ custom properties. Two categories:
 ## 2. Name tokens by role, not by value
 
 `--accent`, not `--blue-500`. A rename should never cascade through every
-component that uses it. This template ships a neutral starter set:
+component that uses it. TraceCode's palette (sage background, deep green
+accent, set in `globals.css`):
 
-| Token                                      | Starter value (light)    | Role                                                            |
+| Token                                      | Value (light)            | Role                                                            |
 | ------------------------------------------ | ------------------------ | --------------------------------------------------------------- |
-| `--bg`                                     | near-white               | page background                                                 |
+| `--bg`                                     | sage `#f4f5f2`           | page background                                                 |
 | `--surface`                                | white                    | card/panel background, one step off `--bg`                      |
+| `--surface-subtle`                         | `#fafbf9`                | table headers and captions inside a surface                     |
 | `--surface-hover`                          | light gray               | hover state for interactive surfaces                            |
 | `--border`                                 | light gray, low contrast | default hairline border                                         |
 | `--border-strong`                          | medium gray              | hover/focus-adjacent border                                     |
 | `--text`                                   | near-black               | primary text                                                    |
 | `--text-muted`                             | mid gray                 | secondary text                                                  |
 | `--text-faint`                             | light-mid gray           | placeholder/tertiary text                                       |
-| `--accent`                                 | blue                     | primary interactive color — links, primary buttons, focus rings |
-| `--accent-hover`                           | darker blue              | accent hover state                                              |
+| `--accent`                                 | green `#087a56`          | primary interactive color — links, primary buttons, focus rings |
+| `--accent-hover`                           | darker green             | accent hover state                                              |
 | `--accent-ink`                             | white                    | text/icon color placed on top of an `--accent` surface          |
 | `--success` / `--warning` / `--danger`     | green / amber / red      | status-only, never used decoratively                            |
+| `--danger-soft`                            | pale red `#fbefec`       | background behind a failing/highlighted row, with `--danger`    |
 | `--radius-sm` / `--radius` / `--radius-lg` | 6px / 10px / 16px        | never hardcode a `border-radius` outside these                  |
 
 Every token above has a dark-mode pair, swapped automatically via
