@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
 	async headers() {
 		return [
 			{ source: '/:path*', headers: SECURITY_HEADERS },
+			// The self-hosted Pyodide runtime (ADR-0002) lives under a versioned
+			// path, so it never changes in place: cache it for a year.
+			{
+				source: '/pyodide/:path*',
+				headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+			},
 			// The production deployment also answers on its *.vercel.app alias, a
 			// duplicate of the real domain that reports VERCEL_ENV production too.
 			{

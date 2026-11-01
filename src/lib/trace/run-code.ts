@@ -9,6 +9,7 @@ import {
 	type WorkerResponse
 } from './contract'
 import { buildWorkerSource } from './worker-source'
+import { pyodideIndexUrl } from './trace-program'
 
 // Main-thread engine wrapper: owns the worker's lifecycle and the two separate
 // timeouts. Pyodide init (the ~10 MB first download) is bounded by initTimeoutMs
@@ -39,7 +40,9 @@ export interface EngineCallOptions {
 
 function defaultCreateWorker(): WorkerLike {
 	const url = URL.createObjectURL(
-		new Blob([buildWorkerSource()], { type: 'application/javascript' })
+		new Blob([buildWorkerSource(pyodideIndexUrl(window.location.origin))], {
+			type: 'application/javascript'
+		})
 	)
 	const worker = new Worker(url)
 	// The worker has its source by the time construction returns; free the URL.
@@ -102,6 +105,24 @@ export class TraceEngine {
 				onStatus: options?.onStatus
 			})
 		)
+	}
+
+	// Boot Pyodide ahead of the first Run, so the ~14 MB download overlaps with
+	// the learner reading the problem. An empty run goes through the normal
+	// `run` path (no protocol change); a real call made meanwhile queues behind
+	// it and reuses the booted worker.
+	warmUp(): Promise<void> {
+		if (this.#booted) return Promise.resolve()
+		return this.runCode({
+			code: 'def warm_up():\n    return None\n',
+			entry: 'warm_up',
+			tests: [],
+			limits: { timeoutMs: DEFAULT_LIMITS.timeoutMs }
+		}).then(() => undefined)
+	}
+
+	get booted(): boolean {
+		return this.#booted
 	}
 
 	dispose(): void {
@@ -206,6 +227,16 @@ let singleton: TraceEngine | null = null
 function sharedEngine(): TraceEngine {
 	if (singleton == null) singleton = new TraceEngine()
 	return singleton
+}
+
+// Start loading Pyodide on the shared engine (e.g. when a practice page opens).
+export function warmUpEngine(): Promise<void> {
+	return sharedEngine().warmUp()
+}
+
+// Whether the shared engine has Pyodide loaded, so a UI can say "loading" up front.
+export function isEngineBooted(): boolean {
+	return sharedEngine().booted
 }
 
 // Run all official tests on the shared engine (lazy worker, reused while healthy).
