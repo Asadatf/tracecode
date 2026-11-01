@@ -67,16 +67,6 @@ function allPassed(result: RunResult): boolean {
 	)
 }
 
-// Module-scope so its try/catch stays outside any component (the React Compiler
-// cannot lower try statements inside a component).
-function tryParseJson(raw: string): { ok: true; value: Json } | { ok: false } {
-	try {
-		return { ok: true, value: JSON.parse(raw) as Json }
-	} catch {
-		return { ok: false }
-	}
-}
-
 export function PracticeWorkspace({
 	problem,
 	isAuthenticated = false
@@ -100,9 +90,6 @@ export function PracticeWorkspace({
 	useEffect(() => {
 		void warmUpEngine()
 	}, [])
-	const [customValues, setCustomValues] = useState<string[]>(() =>
-		problem.params.map((_, i) => JSON.stringify(problem.examples[0]?.args[i] ?? null))
-	)
 	const editorPanelRef = useRef<HTMLElement>(null)
 	const busyRef = useRef(false)
 	const tokenRef = useRef(0)
@@ -292,65 +279,6 @@ export function PracticeWorkspace({
 		void persistReplay(attempt, test.id, tr?.passed === true)
 	}
 
-	function parseCustomArgs(): { args: Json[] } | { error: string } {
-		const args: Json[] = []
-		for (let i = 0; i < problem.params.length; i++) {
-			const parsedResult = tryParseJson(customValues[i] ?? '')
-			if (!parsedResult.ok) return { error: `${problem.params[i]?.name}: not valid JSON.` }
-			const parsed = parsedResult.value
-			const exampleArg = problem.examples[0]?.args[i]
-			if (Array.isArray(exampleArg)) {
-				if (!Array.isArray(parsed))
-					return { error: `${problem.params[i]?.name} must be a JSON array.` }
-				if (parsed.length > 50)
-					return { error: `${problem.params[i]?.name} must have at most 50 elements.` }
-			}
-			args.push(parsed)
-		}
-		return { args }
-	}
-
-	async function runCustom() {
-		const parsed = parseCustomArgs()
-		if ('error' in parsed) {
-			setNotice(parsed.error)
-			return
-		}
-		const source = code
-		const result = await withEngine('Running custom input…', (onStatus) =>
-			traceCode(
-				{
-					code: source,
-					entry: problem.entry,
-					input: { args: parsed.args },
-					limits: { maxSteps: DEFAULT_LIMITS.maxSteps, timeoutMs: RUN_TIMEOUT_MS }
-				},
-				{ onStatus }
-			)
-		)
-		if (result == null) return
-		if (result.status !== 'completed' || result.trace == null) {
-			setNotice(`Custom run did not complete (${result.status}).`)
-			return
-		}
-		setReplay({
-			kind: 'custom',
-			label: `${labelFor(parsed.args)} · exploration (not scored)`,
-			source,
-			trace: result.trace,
-			outcome: null
-		})
-	}
-
-	function fillPreset(size: number) {
-		const arrayIndex = problem.params.findIndex((_, i) =>
-			Array.isArray(problem.examples[0]?.args[i])
-		)
-		if (arrayIndex < 0) return
-		const values = Array.from({ length: size }, (_, i) => ((i * 7 + 3) % 97) - 20)
-		setCustomValues((prev) => prev.map((v, i) => (i === arrayIndex ? JSON.stringify(values) : v)))
-	}
-
 	// Teaching, tied to observed evidence + the learning-flow gates.
 	const attemptsForFlow = attempts.map((a) => ({ passed: allPassed(a.result), source: a.source }))
 	let teaching: TeachingPrompt = null
@@ -504,64 +432,6 @@ export function PracticeWorkspace({
 									>
 										▶ Run code
 									</button>
-								</div>
-							</div>
-						</section>
-
-						<section className={styles.panel}>
-							<div className={styles.panelHead}>
-								<strong>⌘&nbsp; Custom input playground</strong>
-								<span className={styles.pill}>Exploration · not scored</span>
-							</div>
-							<div className={styles.customContent}>
-								<p className={styles.customHeadNote}>
-									Keep your Python function in the editor. Change the arguments below to explore
-									different execution paths, then replay the actual result.
-								</p>
-								<div className={styles.customFields}>
-									{problem.params.map((p, i) => (
-										<label key={p.name} className={styles.customField}>
-											<span>{p.name}</span>
-											<input
-												value={customValues[i] ?? ''}
-												onChange={(e) =>
-													setCustomValues((prev) =>
-														prev.map((v, idx) => (idx === i ? e.target.value : v))
-													)
-												}
-												aria-label={`Custom ${p.name}`}
-											/>
-										</label>
-									))}
-								</div>
-								<div className={styles.customControls}>
-									<button
-										type="button"
-										className={cn(styles.btn, styles.btnDark)}
-										onClick={runCustom}
-										disabled={busy}
-									>
-										▶ Run custom input
-									</button>
-									<button
-										type="button"
-										className={styles.btn}
-										onClick={() => fillPreset(10)}
-										disabled={busy}
-									>
-										10 elements
-									</button>
-									<button
-										type="button"
-										className={styles.btn}
-										onClick={() => fillPreset(20)}
-										disabled={busy}
-									>
-										20 elements
-									</button>
-									<span className={styles.customFeedback}>
-										Runs separately from the official tests.
-									</span>
 								</div>
 							</div>
 						</section>
