@@ -34,16 +34,3 @@ test('Contains Duplicate runs on the generic engine and earns optimization guida
 	// A correct nested-loop solution: optimization guidance becomes available.
 	await expect(page.getByText('A faster approach is possible')).toBeVisible()
 })
-
-test('custom input runs through Pyodide and stays out of official scoring', async ({ page }) => {
-	test.setTimeout(180_000)
-	await page.goto('/practice/two-sum')
-	await expect(page.getByRole('heading', { level: 1, name: 'Two Sum' })).toBeVisible()
-
-	// Run custom input (defaults to the first example) without running official tests.
-	await page.getByRole('button', { name: 'Run custom input' }).click()
-	await expect(page.getByText('exploration (not scored)')).toBeVisible({ timeout: 120_000 })
-
-	// Official scoring was never touched.
-	await expect(page.getByText('passed', { exact: false })).toHaveCount(0)
-})

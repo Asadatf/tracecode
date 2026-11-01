@@ -3,7 +3,8 @@
 import { z } from 'zod'
 import { validatedAction } from './validated-action'
 import { db, Prisma } from '@/server/db/client'
-import { getLearnerId } from '@/server/learning/current-user'
+import { currentLearnerId } from '@/server/auth/session'
+import { assertOwnedBy } from '@/lib/auth/ownership'
 import { jsonSchema } from '@/lib/trace/contract'
 
 // Persistence for authenticated learners. Browser-reported pass/fail is stored
@@ -35,7 +36,7 @@ export const saveAttempt = validatedAction({
 		tests: z.array(testResultInput)
 	}),
 	handler: async (input) => {
-		const userId = await getLearnerId()
+		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
 
 		const attempt = await db.attempt.create({
@@ -98,8 +99,14 @@ export const recordReplaySession = validatedAction({
 		testPassed: z.boolean()
 	}),
 	handler: async (input) => {
-		const userId = await getLearnerId()
+		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
+		// attemptId is browser-supplied: it must name one of THIS learner's attempts.
+		const attempt = await db.attempt.findUnique({
+			where: { id: input.attemptId },
+			select: { userId: true }
+		})
+		assertOwnedBy(attempt?.userId, userId)
 		await db.replaySession.create({
 			data: {
 				userId,
@@ -127,7 +134,7 @@ export const recordLearningEvent = validatedAction({
 		detail: z.string().optional()
 	}),
 	handler: async (input) => {
-		const userId = await getLearnerId()
+		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
 		await db.learningEvent.create({
 			data: {
