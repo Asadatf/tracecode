@@ -1,6 +1,6 @@
 import 'server-only'
 import { db } from '@/server/db/client'
-import { getLearnerId } from './current-user'
+import { currentUserIdSafe } from '@/server/auth/session'
 
 // Read a learner's persisted progress. A plain server-only helper (NOT a
 // component), so its try/catch is free of the React Compiler's constraints.
@@ -14,6 +14,7 @@ export interface ProgressRow {
 	bestTestsPassed: number
 	testsTotal: number
 	firstSolvedAt: string | null
+	latestSolvedAt: string | null
 }
 
 export interface AttemptRow {
@@ -29,28 +30,45 @@ export interface LearningProgressView {
 	available: boolean
 	progress: ProgressRow[]
 	recentAttempts: AttemptRow[]
+	replaysInspected: number
+	hintsRevealed: number
+}
+
+function empty(authenticated: boolean): LearningProgressView {
+	return {
+		authenticated,
+		available: false,
+		progress: [],
+		recentAttempts: [],
+		replaysInspected: 0,
+		hintsRevealed: 0
+	}
 }
 
 export async function getLearningProgress(): Promise<LearningProgressView> {
-	const userId = await getLearnerId()
-	if (userId == null)
-		return { authenticated: false, available: false, progress: [], recentAttempts: [] }
+	const userId = await currentUserIdSafe()
+	if (userId == null) return empty(false)
 
 	try {
-		const [progress, attempts] = await Promise.all([
+		const [progress, attempts, replaysInspected, hintsRevealed] = await Promise.all([
 			db.problemProgress.findMany({ where: { userId }, orderBy: { updatedAt: 'desc' } }),
-			db.attempt.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 })
+			db.attempt.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
+			db.learningEvent.count({ where: { userId, type: 'replay_inspected' } }),
+			db.learningEvent.count({ where: { userId, type: 'hint_revealed' } })
 		])
 		return {
 			authenticated: true,
 			available: true,
+			replaysInspected,
+			hintsRevealed,
 			progress: progress.map((p) => ({
 				problemSlug: p.problemSlug,
 				status: p.status,
 				attempts: p.attempts,
 				bestTestsPassed: p.bestTestsPassed,
 				testsTotal: p.testsTotal,
-				firstSolvedAt: p.firstSolvedAt?.toISOString() ?? null
+				firstSolvedAt: p.firstSolvedAt?.toISOString() ?? null,
+				latestSolvedAt: p.latestSolvedAt?.toISOString() ?? null
 			})),
 			recentAttempts: attempts.map((a) => ({
 				problemSlug: a.problemSlug,
@@ -62,6 +80,6 @@ export async function getLearningProgress(): Promise<LearningProgressView> {
 		}
 	} catch {
 		// Tables not migrated yet, or the database is unreachable.
-		return { authenticated: true, available: false, progress: [], recentAttempts: [] }
+		return empty(true)
 	}
 }
