@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
@@ -10,6 +11,10 @@ import { SiteFooter } from '@/components/site-footer'
 import { JsonLd, organizationJsonLd, webSiteJsonLd } from '@/lib/seo/json-ld'
 import { SITE, siteUrl } from '@/lib/seo/site'
 import '../globals.css'
+
+// Self-hosted by next/font; globals.css maps these onto --font-sans/--font-mono.
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans' })
+const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono' })
 
 // The defaults every page inherits. Each page's own title, description,
 // canonical, share card and robots come from pageMetadata(), or a noindex of
@@ -38,7 +43,7 @@ export default async function LocaleLayout({
 	}
 
 	return (
-		<html lang={locale}>
+		<html lang={locale} className={`${dmSans.variable} ${jetBrainsMono.variable}`}>
 			<body>
 				<AnalyticsProvider />
 				<NextIntlClientProvider>

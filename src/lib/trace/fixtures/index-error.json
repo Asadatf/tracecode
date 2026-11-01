@@ -1,0 +1,141 @@
+{
+	"status": "completed",
+	"error": {
+		"type": "IndexError",
+		"message": "list index out of range",
+		"line": 2
+	},
+	"trace": {
+		"source": ["def two_sum(nums, target):", "    return nums[target]"],
+		"steps": [
+			{
+				"index": 0,
+				"event": "call",
+				"line": 1,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					}
+				}
+			},
+			{
+				"index": 1,
+				"event": "line",
+				"line": 2,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					}
+				}
+			},
+			{
+				"index": 2,
+				"event": "exception",
+				"line": 2,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					}
+				},
+				"exception": {
+					"type": "IndexError",
+					"message": "list index out of range"
+				}
+			},
+			{
+				"index": 3,
+				"event": "return",
+				"line": 2,
+				"func": "two_sum",
+				"depth": 0,
+				"locals": {
+					"nums": {
+						"kind": "list",
+						"items": [
+							{
+								"kind": "int",
+								"value": 3
+							},
+							{
+								"kind": "int",
+								"value": 2
+							},
+							{
+								"kind": "int",
+								"value": 4
+							}
+						]
+					},
+					"target": {
+						"kind": "int",
+						"value": 6
+					}
+				},
+				"returnValue": {
+					"kind": "none"
+				}
+			}
+		],
+		"truncated": false
+	}
+}
