@@ -79,6 +79,7 @@ model Attempt {
   testsPassed Int
   testsTotal  Int
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  codeFeatures Json?     // M7.1: bounded structural fingerprint of the source (see below)
 }
 
 model ProblemProgress {   // one row per user × problem
@@ -96,6 +97,30 @@ enum ProgressStatus { ATTEMPTED SOLVED MASTERED }
 ```
 
 All tables get RLS enabled with no policies (`docs/rules/auth.md`).
+
+### M7.1 — code features on attempts
+
+`Attempt.codeFeatures` (`Json?`, nullable, no default) holds a versioned,
+bounded `CodeFeatures` value (`specs/features/learning-recommendations.md`,
+`src/lib/trace/code-features.ts`): loop/branch/return/def counts, comprehension
+and recursion indicators, dict/set/sorted use, an allow-listed set of builtin
+call names, and node/line counts — no identifiers or source text. It is computed
+in the browser by the Pyodide worker's `ast` message (`ast.parse` only; the
+server never runs learner code) and is null for attempts made before M7 until a
+bounded browser backfill (≤ 10 per session, practice page only) reaches them.
+The column is validated by a strict Zod schema on every write, and readers use
+`parseStoredCodeFeatures`, which treats null/corrupt/other-version as "no
+features". For a source that can never be analysed (it does not parse, or exceeds
+the limits) the column holds a small marker (`{ v: 1, unanalyzable: … }`) instead,
+so the backfill never re-processes it; readers see that as "no features" too.
+`saveAttempt` drops an invalid `codeFeatures` value rather than rejecting the
+attempt.
+
+Server actions (`src/server/actions/learning.ts`, user id from the session only):
+`saveAttempt` takes an optional `codeFeatures`; `listBackfillCandidates({ limit ≤ 10 })`
+returns the signed-in learner's own newest attempts still missing features;
+`saveCodeFeatures({ attemptId, codeFeatures })` sets them only while missing, in a
+single conditional `UPDATE`. No new table, so no new RLS statement.
 
 ## API contracts (draft)
 

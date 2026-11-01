@@ -350,3 +350,97 @@ what gets traced.)
   supply an expected trace, or is that a hint-level feature?
 - Should `locals` be diffs instead of snapshots if traces get large?
   (Snapshots chosen for simplicity; `maxSteps` keeps them bounded.)
+
+## Amendment: `ast` worker message (M7.1)
+
+> **Status: IMPLEMENTED in code (M7.1, 2026-11-02) — Track A + Track B sign-off
+> was NOT separately obtained.** Umair decided to implement it; Asad (the other
+> track owner) has not reviewed or approved it. It is listed here because the
+> worker protocol is part of this governed contract and a change to it normally
+> needs both owners (`specs/README.md` § "The trace contract is special"). The
+> amendment is purely additive and leaves `RunResult`/`TraceResult` untouched,
+> but until the other owner signs off it should be treated as open to change:
+> any change is made in one PR with this section, the Zod schemas and the tests
+> together. Proposed by M7 (`specs/features/learning-recommendations.md`).
+
+**What changes:** one new request type and one new response type on the worker
+protocol. **Nothing else.** `RunRequest`, `RunResult`, `TraceRequest`,
+`TraceResult`, `Step`, `Value` and every rule above are untouched — this
+amendment only _adds_ variants alongside the existing `run`/`run_result` and
+`trace`/`trace_result` pairs in `src/lib/trace/contract.ts`.
+
+**Why:** M7 needs a bounded structural read of the learner's source (loop/branch
+counts, dict/set use, nesting depth) to recommend what to practise next. Per
+ADR-0001 and ADR-0003 that analysis stays in the browser, and the Pyodide worker
+is already booted — so it does an `ast.parse` (parse only, **no execution**) and
+returns a small summary.
+
+```ts
+// main → worker
+{
+	type: 'ast'
+	request: {
+		code: string
+	}
+}
+// worker → main  (status messages are reused as-is)
+{
+	type: 'ast_result'
+	result: AstResult
+}
+
+// A source that does not parse, or cannot be analysed, is a validated outcome —
+// never a thrown error — so the caller simply persists no features for it.
+type AstResult =
+	| { status: 'ok'; features: CodeFeatures }
+	| { status: 'syntax_error'; syntaxError: { message: string; line: number; column: number } }
+	| { status: 'analysis_error'; message: string; permanent: boolean }
+// permanent: too large (> 20 000 chars) or a parser limit: the same source always fails.
+// not permanent: timeout or worker failure: worth retrying.
+```
+
+```ts
+// Additive, versioned, bounded. Full field list in the M7 spec.
+interface CodeFeatures {
+	v: 1
+	loops: { for: number; while: number; maxDepth: number }
+	comprehensions: number
+	branches: number
+	returns: number
+	defs: number
+	recursion: boolean
+	usesDict: boolean
+	usesSet: boolean
+	usesSorted: boolean
+	builtinCalls: string[] // fixed allowlist, sorted, ≤16 — no raw identifiers
+	nodeCount: number
+	lineCount: number
+}
+```
+
+**Guarantees for both tracks:**
+
+- **Parse, never execute.** The worker calls `ast.parse` and walks the tree; it
+  never runs the learner's code for this message. No `sys.settrace`, no `RunResult`
+  path involved.
+- **No trace, no source leaves the browser** via this message — it returns only
+  the bounded `CodeFeatures` (counts/booleans and allow-listed builtin names).
+  Where that summary is later persisted is M7's concern, outside this contract.
+- **Reuses the booted worker** and the existing `status` phases; it is single-
+  flight with `run`/`trace` like today. Capped (source ≤ 20 000 characters, every
+  count ≤ 100 000, a 2 s main-thread timeout that recycles the worker like any
+  other) and deterministic (sorted arrays, same source → same bytes).
+- **Track B impact: none required.** The visualiser's `run`/`trace` consumption is
+  unchanged; it may ignore `ast` entirely. Only M7's non-visualiser client code
+  sends it.
+
+**Where it lives:** the two variants are in the worker request/response unions
+in `src/lib/trace/contract.ts`. `codeFeaturesSchema` (`.strict()`, so an unknown
+key is rejected rather than stored), `astResultSchema`, the limits and the
+builtin allow-list are in `src/lib/trace/code-features.ts`, which `contract.ts`
+imports (so the governed file stays small and the new one has no reverse
+dependency). The Python is `AST_PROGRAM` in `src/lib/trace/ast-program.ts`: it
+calls `ast.parse` and walks the tree with an `ast.NodeVisitor`, and a test fails
+if it ever gains an `exec`/`eval`/`compile` call. Verified against real Pyodide in
+`e2e/trace-engine.spec.ts`, including a `run → ast → trace → run` sequence on one
+worker that leaves the run and trace results unchanged.
