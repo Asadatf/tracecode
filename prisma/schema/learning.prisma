@@ -22,6 +22,12 @@ model Attempt {
 	testsTotal  Int
 	allPassed   Boolean
 
+	// M7.1: versioned structural fingerprint of `source` (CodeFeatures, parsed in
+	// the browser — never executed on the server). Null for attempts made before
+	// M7 and until the bounded browser backfill reaches them; readers must treat
+	// null as "no features". Validated on write (codeFeaturesSchema).
+	codeFeatures Json?
+
 	user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 	testResults AttemptTestResult[]
 	replays     ReplaySession[]

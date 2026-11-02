@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { astRequestSchema, astResultSchema } from './code-features'
 
 // The execution-trace contract: the ONLY interface between the Python engine
 // (Track A — the Pyodide worker + sys.settrace tracer) and the visualiser
@@ -182,14 +183,18 @@ export type TraceResult = z.infer<typeof traceResultSchema>
 // only from `running`.
 export const workerRequestSchema = z.discriminatedUnion('type', [
 	z.object({ type: z.literal('run'), request: runRequestSchema }),
-	z.object({ type: z.literal('trace'), request: traceRequestSchema })
+	z.object({ type: z.literal('trace'), request: traceRequestSchema }),
+	// M7.1, additive (specs/02-trace-contract.md § `ast` worker message): parse the
+	// source and return its structural features. Parses only; never executes.
+	z.object({ type: z.literal('ast'), request: astRequestSchema })
 ])
 export type WorkerRequest = z.infer<typeof workerRequestSchema>
 
 export const workerResponseSchema = z.discriminatedUnion('type', [
 	z.object({ type: z.literal('status'), phase: z.enum(['loading_runtime', 'running']) }),
 	z.object({ type: z.literal('run_result'), result: runResultSchema }),
-	z.object({ type: z.literal('trace_result'), result: traceResultSchema })
+	z.object({ type: z.literal('trace_result'), result: traceResultSchema }),
+	z.object({ type: z.literal('ast_result'), result: astResultSchema })
 ])
 export type WorkerResponse = z.infer<typeof workerResponseSchema>
 

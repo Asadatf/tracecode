@@ -4,7 +4,9 @@ import { PROBLEMS } from '../trace/problems'
 import { buildProgressView } from './progress-view'
 
 // specs/features/progress-page.md — the signed-in views, from the design's example.
-const problems = Object.values(PROBLEMS)
+// The original two-problem catalog, pinned: these assertions are exact. The full
+// catalog is covered in lib/learning/catalog-integration.test.mts.
+const problems = [PROBLEMS['two-sum']!, PROBLEMS['contains-duplicate']!]
 const view = buildProgressView(problems, {
 	authenticated: true,
 	available: true,

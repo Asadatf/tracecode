@@ -1,0 +1,67 @@
+'use client'
+
+import { Link } from '@/i18n/routing'
+import { ChartIcon, CodeIcon, DashboardIcon, SettingsIcon } from '@/components/ui/icons'
+import styles from './app-shell.module.css'
+
+export type NavKey = 'overview' | 'problems' | 'progress' | 'settings'
+
+export interface NavItem {
+	key: NavKey
+	href: string
+	label: string
+}
+
+export interface NavGroup {
+	heading: string
+	items: NavItem[]
+}
+
+const ICONS = {
+	overview: DashboardIcon,
+	problems: CodeIcon,
+	progress: ChartIcon,
+	settings: SettingsIcon
+} as const
+
+// One nav list for both the desktop rail and the mobile drawer. When the rail
+// is collapsed the label stays in the DOM (it is the link's accessible name)
+// and a CSS tooltip repeats it on hover and focus.
+export function SidebarNav({
+	groups,
+	current,
+	onNavigate
+}: {
+	groups: NavGroup[]
+	current: NavKey
+	onNavigate?: () => void
+}) {
+	return (
+		<>
+			{groups.map((group) => (
+				<div key={group.heading} className={styles.group}>
+					<p className={styles.groupHeading}>{group.heading}</p>
+					<ul className={styles.navList}>
+						{group.items.map((item) => {
+							const Icon = ICONS[item.key]
+							return (
+								<li key={item.key}>
+									<Link
+										href={item.href}
+										className={styles.navLink}
+										data-tip={item.label}
+										aria-current={item.key === current ? 'page' : undefined}
+										onClick={onNavigate}
+									>
+										<Icon size={20} />
+										<span className={styles.navLabel}>{item.label}</span>
+									</Link>
+								</li>
+							)
+						})}
+					</ul>
+				</div>
+			))}
+		</>
+	)
+}

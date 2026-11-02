@@ -12,6 +12,7 @@ const NO_VALUE = '·'
 
 export interface DemoRow {
 	step: number
+	line: number
 	code: string
 	i: string
 	j: string
@@ -23,6 +24,8 @@ export interface TwoSumDemo {
 	call: string
 	expected: string
 	actual: string
+	source: string[]
+	input: string[]
 	rows: DemoRow[]
 }
 
@@ -30,6 +33,10 @@ export interface TwoSumDemo {
 function formatJson(value: Json): string {
 	if (Array.isArray(value)) return `[${value.map(formatJson).join(', ')}]`
 	return JSON.stringify(value)
+}
+
+function inputItems(value: Json | undefined): string[] {
+	return Array.isArray(value) ? value.map(formatJson) : []
 }
 
 function intOf(value: Value | undefined): number | null {
@@ -59,6 +66,7 @@ export function buildTwoSumDemo(
 			const number = position + 1
 			return {
 				step: number,
+				line: step.line,
 				code: (trace.source[step.line - 1] ?? '').trim(),
 				i: i == null ? NO_VALUE : String(i),
 				j: j == null ? NO_VALUE : String(j),
@@ -71,6 +79,8 @@ export function buildTwoSumDemo(
 		call: `${entry}(${test.args.map(formatJson).join(', ')})`,
 		expected: formatJson(test.expected),
 		actual: formatValue(actual),
+		source: trace.source,
+		input: inputItems(test.args[0]),
 		rows
 	}
 }

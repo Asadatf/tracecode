@@ -264,3 +264,31 @@ test('a provider error is recorded and then rethrown untouched', async () => {
 	assert.equal(rows.length, 1)
 	assert.equal(rows[0]?.status, 'error')
 })
+
+// --- OpenRouter attribution (M7.5A) -----------------------------------------
+
+test('openrouter is its own provider but reads the OpenAI-compatible response', () => {
+	const extracted = extractUsage('openrouter', {
+		id: 'gen-1',
+		model: 'nvidia/nemotron-3.5-super-vl:free',
+		choices: [{ finish_reason: 'stop' }],
+		usage: { prompt_tokens: 900, completion_tokens: 120 }
+	})
+	assert.equal(extracted?.model, 'nvidia/nemotron-3.5-super-vl:free')
+	assert.equal(extracted?.tokens.inputTokens, 900)
+	assert.equal(extracted?.tokens.outputTokens, 120)
+	const row = buildRow(
+		{
+			provider: 'openrouter',
+			model: 'nvidia/nemotron-3.5-super-vl:free',
+			feature: 'learning_recommendation'
+		},
+		{
+			model: 'nvidia/nemotron-3.5-super-vl:free',
+			usage: { prompt_tokens: 900, completion_tokens: 120 }
+		},
+		{ status: 'ok', latencyMs: 5 }
+	)
+	assert.equal(row.provider, 'openrouter')
+	assert.equal(openRouterSlug(row.model), 'nvidia/nemotron-3.5-super-vl:free')
+})

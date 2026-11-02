@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/cn'
+import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 
 // The thin top bar (specs/features/home-page.md AC1/AC3, progress-page.md AC1).
 // No "Sign in" until there is a sign-in page (home-page.md, Decisions).
@@ -44,6 +46,11 @@ export async function SiteHeader({ current }: { current?: 'progress' } = {}) {
 						{t('progress')}
 					</Link>
 				</nav>
+				{/* M7.5B: the notification bell, signed-in learners only. Suspense so the
+				    unread-count query never holds up the rest of the header. */}
+				<Suspense fallback={null}>
+					<NotificationBellSlot />
+				</Suspense>
 			</div>
 		</header>
 	)

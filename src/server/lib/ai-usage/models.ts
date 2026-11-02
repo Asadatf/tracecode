@@ -12,7 +12,11 @@
 // row is one `where cost_micro_usd is null` away from being counted on the
 // dashboard.
 
-export const AI_PROVIDERS = ['anthropic', 'openai', 'google'] as const
+// `openrouter` is a real provider for attribution (ai_usage.provider), distinct
+// from calling OpenAI directly — even though OpenRouter speaks the OpenAI wire
+// protocol, so its usage is extracted with the same shape (see usage.ts). Pricing
+// is unaffected: it always goes through the OpenRouter slug regardless of provider.
+export const AI_PROVIDERS = ['anthropic', 'openai', 'google', 'openrouter'] as const
 export type AiProvider = (typeof AI_PROVIDERS)[number]
 
 export const SERVICE_TIERS = ['standard', 'fast', 'batch'] as const
@@ -41,7 +45,13 @@ export const OPENROUTER_SLUGS = {
 	'claude-haiku-4-5-20251001': 'anthropic/claude-haiku-4.5',
 	'gpt-5.4': 'openai/gpt-5.4',
 	'gpt-5.4-mini': 'openai/gpt-5.4-mini',
-	'gemini-3.8-flash': 'google/gemini-3.8-flash'
+	'gemini-3.8-flash': 'google/gemini-3.8-flash',
+	// Free model for M7 learning recommendations (docs/rules/ai-usage.md). Key and
+	// slug are identical because an OpenRouter call reports back the OpenRouter id
+	// it was asked for. `:free` prices at $0 in the rate card — a real, recorded
+	// zero, not the NULL an unmapped model gets. `qwen/qwen3.6-plus:free` (the
+	// first candidate) does not exist upstream; this is the verified substitute.
+	'nvidia/nemotron-3.5-super-vl:free': 'nvidia/nemotron-3.5-super-vl:free'
 } satisfies Record<string, string>
 
 // The model ids a call site is allowed to ask for. `satisfies` above keeps

@@ -20,6 +20,16 @@
 					}
 				]
 			}
+		],
+		"SubagentStop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "CLAUDE_CWD=\"$CLAUDE_PROJECT_DIR\" python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/extract-log.py"
+					}
+				]
+			}
 		]
 	}
 }

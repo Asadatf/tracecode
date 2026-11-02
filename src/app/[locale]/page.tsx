@@ -7,9 +7,13 @@ import buggyTwoSum from '@/lib/trace/fixtures/buggy-two-sum.json'
 import { buildTwoSumDemo } from '@/lib/home/two-sum-demo'
 import { buildProblemTable } from '@/lib/home/problem-rows'
 import { getLearningProgress } from '@/server/learning/progress'
-import { SiteHeader } from '@/components/site-header'
-import { TraceDemo } from '@/components/home/trace-demo'
 import { ProblemTable } from '@/components/home/problem-table'
+import { LandingHeader } from '@/components/home/landing-header'
+import { LandingCursor } from '@/components/home/landing-cursor'
+import { ScrollReveal } from '@/components/home/scroll-reveal'
+import { ExecutionTour } from '@/components/home/execution-tour'
+import { ClosingCta, LearningLoop, TraceNarrative } from '@/components/home/landing-sections'
+import styles from '@/components/home/landing.module.css'
 
 // specs/features/home-page.md. The failing Two Sum test the step table shows.
 const DEMO_TEST_ID = 't2'
@@ -27,31 +31,40 @@ export default async function HomePage() {
 	const table = buildProblemTable(Object.values(PROBLEMS), progress)
 
 	return (
-		<>
-			<SiteHeader />
-			<main className="mx-auto flex max-w-5xl flex-col gap-12 px-6 pt-14 pb-16">
-				<section className="flex flex-wrap items-center gap-10">
-					<div className="flex min-w-0 flex-[1_1_380px] flex-col gap-3.5">
-						<h1 className="text-text m-0 text-4xl leading-tight font-bold tracking-tight">
-							{t('title')}
-						</h1>
-						<p className="text-text-muted m-0 text-lg leading-relaxed">{t('description')}</p>
-						<div className="flex flex-wrap items-center gap-5 pt-1.5">
-							<Link
-								href={`/practice/${twoSum.slug}`}
-								className="bg-accent text-accent-ink hover:bg-accent-hover rounded-sm px-4.5 py-3 font-semibold"
-							>
-								{t('cta')}
-							</Link>
-							<Link href="/#problems" className="text-accent hover:text-accent-hover font-semibold">
-								{t('seeAll')}
-							</Link>
+		<div className={styles.page}>
+			<ScrollReveal />
+			<LandingCursor />
+			<LandingHeader />
+			<main>
+				<div className={styles.heroShell} data-cursor-dark>
+					<section className={styles.hero} aria-labelledby="landing-title">
+						<div className={styles.heroCopy}>
+							<p className={styles.heroEyebrow}>{t('eyebrow')}</p>
+							<h1 id="landing-title" className={styles.heroTitle}>
+								{t('title')}
+							</h1>
+							<p className={styles.heroDescription}>{t('description')}</p>
+							<div className={styles.heroActions}>
+								<Link href={`/practice/${twoSum.slug}`} className={styles.primaryCta}>
+									{t('cta')}
+								</Link>
+								<a href="#narrative-title" className={styles.secondaryCta}>
+									{t('exploreDemo')}
+								</a>
+								<a href="#problems" className={styles.textCta}>
+									{t('seeAll')} <span aria-hidden="true">↓</span>
+								</a>
+							</div>
+							<p className={styles.trustLine}>{t('trust')}</p>
 						</div>
-					</div>
-					<TraceDemo demo={demo} />
-				</section>
-				<ProblemTable table={table} />
+						<ExecutionTour demo={demo} />
+					</section>
+				</div>
+				<TraceNarrative demo={demo} />
+				<LearningLoop />
+				<ProblemTable table={table} authenticated={progress.authenticated} />
+				<ClosingCta />
 			</main>
-		</>
+		</div>
 	)
 }

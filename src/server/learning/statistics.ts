@@ -73,20 +73,24 @@ async function loadLearningRecords(userId: string): Promise<LearningRecords> {
 	}
 }
 
+// Analytics for a known user id. The caller is responsible for where the id came
+// from: the session (getLearningAnalytics below) or, for the M7.5B reminder cron,
+// the server's own iteration over learners — never a request body. Throws on a
+// database error; the wrappers decide how to degrade.
+export async function loadLearningAnalytics(userId: string): Promise<LearningAnalytics> {
+	const records = await loadLearningRecords(userId)
+	const statistics = computeLearningStatistics(records)
+	const behavior = analyzeLearningBehavior(statistics, records)
+	const insights = generateLearningInsights(statistics, behavior)
+	return { statistics, behavior, insights }
+}
+
 export async function getLearningAnalytics(): Promise<LearningAnalyticsView> {
 	const userId = await currentUserIdSafe()
 	if (userId == null) return { authenticated: false, available: false, analytics: null }
 
 	try {
-		const records = await loadLearningRecords(userId)
-		const statistics = computeLearningStatistics(records)
-		const behavior = analyzeLearningBehavior(statistics, records)
-		const insights = generateLearningInsights(statistics, behavior)
-		return {
-			authenticated: true,
-			available: true,
-			analytics: { statistics, behavior, insights }
-		}
+		return { authenticated: true, available: true, analytics: await loadLearningAnalytics(userId) }
 	} catch (error) {
 		captureError(error, { area: 'learning-analytics' })
 		return { authenticated: true, available: false, analytics: null }

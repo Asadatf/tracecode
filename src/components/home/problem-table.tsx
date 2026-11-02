@@ -1,27 +1,43 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { authHref } from '@/lib/auth/return-to'
+import { isGuestPracticeSlug } from '@/lib/auth/access'
+import { LockIcon } from '@/components/ui/icons'
 import type { ProblemTable as ProblemTableData } from '@/lib/home/problem-rows'
+import styles from './landing.module.css'
+import motion from './landing-motion.module.css'
 
 // The home page's problem list (specs/features/home-page.md, AC6–AC8).
-export async function ProblemTable({ table }: { table: ProblemTableData }) {
+export async function ProblemTable({
+	table,
+	authenticated
+}: {
+	table: ProblemTableData
+	authenticated: boolean
+}) {
 	const t = await getTranslations('ProblemTable')
 	const columns = ['number', 'title', 'topics', 'difficulty', 'status'] as const
 
 	return (
 		<section
 			id="problems"
+			data-reveal
 			aria-labelledby="problems-heading"
-			className="flex scroll-mt-6 flex-col gap-3"
+			className={`${styles.catalogSection} ${motion.catalogSection}`}
 		>
-			<h2 id="problems-heading" className="text-text m-0 text-lg font-bold">
-				{t('heading')}
-			</h2>
-			<div className="border-border bg-surface overflow-x-auto rounded-sm border">
-				<table className="w-full min-w-[35rem] border-collapse text-sm">
+			<div className={`${styles.catalogIntro} ${motion.catalogHeading}`}>
+				<p className={styles.catalogKicker}>{t('kicker')}</p>
+				<h2 id="problems-heading" className={styles.catalogTitle}>
+					{t('heading')}
+				</h2>
+				<p className={styles.catalogDescription}>{t('description')}</p>
+			</div>
+			<div className={`${styles.tableFrame} ${motion.catalogFrame}`}>
+				<table className={styles.table}>
 					<thead>
-						<tr className="bg-surface-subtle text-text-muted text-left">
+						<tr className={styles.tableHead}>
 							{columns.map((column) => (
-								<th key={column} scope="col" className="px-4 py-2.5 font-semibold">
+								<th key={column} scope="col">
 									{t(`columns.${column}`)}
 								</th>
 							))}
@@ -29,35 +45,53 @@ export async function ProblemTable({ table }: { table: ProblemTableData }) {
 					</thead>
 					<tbody>
 						{table.rows.length === 0 ? (
-							<tr className="border-border border-t">
-								<td colSpan={columns.length} className="text-text-muted px-4 py-3">
-									{t('empty')}
-								</td>
+							<tr className={styles.tableRow}>
+								<td colSpan={columns.length}>{t('empty')}</td>
 							</tr>
 						) : (
-							table.rows.map((row) => (
-								<tr key={row.slug} className="border-border border-t">
-									<td className="text-text-muted w-12 px-4 py-3 font-mono">{row.number}</td>
-									<td className="px-4 py-3">
-										<Link
-											href={`/practice/${row.slug}`}
-											className="text-text hover:text-accent font-semibold"
-										>
-											{row.title}
-										</Link>
-									</td>
-									<td className="text-text-muted px-4 py-3">{row.topics}</td>
-									<td className="text-success w-28 px-4 py-3 font-semibold">
-										{t(`difficulty.${row.difficulty}`)}
-									</td>
-									<td className="text-text-muted w-28 px-4 py-3">{t(`status.${row.status}`)}</td>
-								</tr>
-							))
+							table.rows.map((row) => {
+								// Signed-out visitors can open Two Sum only; the rest route through
+								// Sign In and come back here (specs/features/auth-access.md AC5).
+								const locked = !authenticated && !isGuestPracticeSlug(row.slug)
+								return (
+									<tr key={row.slug} className={`${styles.tableRow} ${motion.catalogRow}`}>
+										<td className={styles.problemNumber}>{row.number}</td>
+										<td>
+											{locked ? (
+												<Link
+													href={authHref('login', `/practice/${row.slug}`)}
+													className={`${styles.problemTitle} ${styles.lockedTitle}`}
+												>
+													<LockIcon size={14} />
+													{row.title}
+												</Link>
+											) : (
+												<Link href={`/practice/${row.slug}`} className={styles.problemTitle}>
+													{row.title}
+												</Link>
+											)}
+										</td>
+										<td className={styles.problemTopics}>{row.topics}</td>
+										<td className={styles.problemDifficulty}>
+											{t(`difficulty.${row.difficulty}`)}
+										</td>
+										<td className={styles.problemStatus}>
+											{locked ? (
+												<span className={styles.lockedNote}>{t('locked')}</span>
+											) : !authenticated ? (
+												<span className={styles.lockedNote}>{t('free')}</span>
+											) : (
+												t(`status.${row.status}`)
+											)}
+										</td>
+									</tr>
+								)
+							})
 						)}
 					</tbody>
 				</table>
 			</div>
-			{table.tracked ? null : <p className="text-text-muted m-0 text-sm">{t('signIn')}</p>}
+			{table.tracked ? null : <p className={styles.signIn}>{t('signIn')}</p>}
 		</section>
 	)
 }

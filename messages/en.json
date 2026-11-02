@@ -6,8 +6,112 @@
 		},
 		"title": "Practice Python. When it fails, watch it run.",
 		"description": "Solve short problems in the browser. If a test fails, step through your code line by line and see the values change, so you know why.",
+		"eyebrow": "Python, made visible",
 		"cta": "Solve Two Sum",
-		"seeAll": "See all problems"
+		"seeAll": "See all problems",
+		"exploreDemo": "Explore the guided preview",
+		"trust": "Real execution in Practice. Fixture-backed preview here."
+	},
+	"LandingHeader": {
+		"home": "TraceCode home",
+		"nav": "Main",
+		"how": "How it works",
+		"problems": "Problems",
+		"progress": "Progress",
+		"cta": "Start practicing",
+		"signIn": "Sign in",
+		"register": "Register",
+		"account": "Account menu",
+		"signedInAs": "Signed in as",
+		"signOut": "Sign out"
+	},
+	"ExecutionTour": {
+		"label": "Guided product preview",
+		"title": "See the state change",
+		"illustrative": "Illustrative · not live Python",
+		"stageNav": "Preview stages",
+		"sourceLabel": "Python source from the committed Two Sum trace",
+		"stepCount": "Step {current} of {total}",
+		"stages": {
+			"write": "Write",
+			"run": "Run",
+			"explore": "Explore",
+			"improve": "Improve"
+		},
+		"controls": {
+			"run": "Run",
+			"previous": "Previous",
+			"next": "Next",
+			"reset": "Reset"
+		},
+		"status": {
+			"write": "Write stage. The recorded Two Sum example is ready to run.",
+			"run": "Run stage. Expected {expected}; received {actual}.",
+			"explore": "Explore stage. Step {current} of {total}.",
+			"improve": "Improve stage. The self-pairing bug is explained."
+		},
+		"write": {
+			"heading": "Start with a real attempt",
+			"body": "This short function comes from the committed Two Sum demonstration. Run the recorded test to see where its state goes wrong."
+		},
+		"run": {
+			"heading": "The result tells us what failed",
+			"body": "The function found two indices, but it reused the same array position.",
+			"expected": "Expected",
+			"actual": "Received"
+		},
+		"explore": {
+			"input": "Current input",
+			"step": "Python is about to execute line {line}. Follow the values as the recorded trace advances.",
+			"bug": "Both pointers are on index 0. The function adds the first value to itself and accepts an invalid pair."
+		},
+		"improve": {
+			"heading": "Now the bug has a shape",
+			"body": "The failed result was only the symptom. The replay reveals the state that caused it, so the next edit can be deliberate.",
+			"insightLabel": "What to change",
+			"insight": "Prevent the two pointers from selecting the same index before accepting a match.",
+			"cta": "Fix it in Practice"
+		}
+	},
+	"LandingSections": {
+		"narrative": {
+			"kicker": "The moment it diverges",
+			"title": "A result shows the failure. A trace reveals the cause.",
+			"body": "TraceCode connects the active line, the values in memory and the learner’s own reasoning. The error stops being mysterious and becomes a state you can inspect.",
+			"visualLabel": "The recorded Two Sum state where both pointers target index zero",
+			"activeLine": "Active source line",
+			"explanation": "i and j are both 0, so the value 3 is added to itself."
+		},
+		"loop": {
+			"kicker": "A learning loop with evidence",
+			"title": "From first attempt to a better mental model.",
+			"body": "Each stage keeps the learner in control while exposing only the information needed for the next decision.",
+			"stages": {
+				"write": {
+					"title": "Write",
+					"body": "Work through a focused Python problem with visible examples and a real editor."
+				},
+				"run": {
+					"title": "Run",
+					"body": "Execute against concrete tests and see the exact expected and actual results."
+				},
+				"explore": {
+					"title": "Explore",
+					"body": "Move through the trace line by line as variables, loops and pointers change."
+				},
+				"improve": {
+					"title": "Improve",
+					"body": "Use evidence-based guidance, revise intentionally and test the new mental model."
+				}
+			}
+		},
+		"closing": {
+			"kicker": "Make the invisible inspectable",
+			"title": "Your code is already telling a story. Learn to read it.",
+			"body": "Start with one small problem and see every state change that leads to the result.",
+			"primary": "Start with Two Sum",
+			"secondary": "View all problems"
+		}
 	},
 	"SiteHeader": {
 		"home": "TraceCode home",
@@ -29,6 +133,8 @@
 	},
 	"ProblemTable": {
 		"heading": "Problems",
+		"kicker": "Choose your next trace",
+		"description": "Six focused Python problems, each ready to run, replay and understand.",
 		"columns": {
 			"number": "#",
 			"title": "Title",
@@ -48,7 +154,10 @@
 			"unknown": "—"
 		},
 		"empty": "No problems yet.",
-		"signIn": "Sign in to track your progress."
+		"signIn": "Sign in to track your progress and unlock all six problems.",
+		"locked": "Sign in to unlock",
+		"lockedLabel": "{title} — sign in to unlock",
+		"free": "Free to try"
 	},
 	"ProgressPage": {
 		"metaTitle": "Your progress — TraceCode",
@@ -112,11 +221,208 @@
 				"recent": "your last 10 runs, passed or failed",
 				"topics": "how many problems you've solved in each topic"
 			}
-		}
+		},
+		"recommendations": {
+			"heading": "What to practise next",
+			"subheading": "A suggestion based on your saved runs — your choice, not a rule.",
+			"empty": "No recommendation yet. Solve or attempt a problem and it will appear here.",
+			"focusConcepts": "Focus concepts",
+			"difficulty": {
+				"easy": "Easy",
+				"medium": "Medium",
+				"hard": "Hard"
+			},
+			"action": {
+				"start": "Start",
+				"continue": "Continue",
+				"open": "Open"
+			},
+			"insight": {
+				"aiHeading": "AI insight",
+				"fallbackHeading": "From your activity",
+				"nextStep": "Next step:",
+				"aiDisclaimer": "Generated from your activity patterns and the structure of your code — the model never sees your source code.",
+				"fallbackDisclaimer": "Based only on your recorded runs and results.",
+				"refresh": "Refresh AI insight",
+				"refreshing": "Refreshing…",
+				"upToDate": "Already up to date.",
+				"cooldown": "You refreshed recently — try again in a few minutes.",
+				"running": "A refresh is already in progress.",
+				"failed": "Couldn’t refresh the AI insight right now — showing your latest."
+			}
+		},
+		"reminders": {
+			"heading": "Reminders",
+			"description": "Daily nudges built from your current recommendation. Each one is independent.",
+			"inApp": "In-app notifications",
+			"inAppHelp": "A daily reminder in the bell at the top of the page.",
+			"email": "Daily reminder email",
+			"emailHelp": "One email a day with your recommended problem. Off unless you turn it on; every email has an unsubscribe link.",
+			"emailUnavailable": "Email reminders aren’t set up on this site yet, so none will be sent for now.",
+			"saved": "Saved.",
+			"failed": "Couldn’t save that — please try again."
+		},
+		"loading": "Loading your progress"
 	},
 	"SiteFooter": {
 		"privacy": "Privacy",
 		"terms": "Terms",
 		"contact": "Contact"
+	},
+	"Notifications": {
+		"open": "Notifications",
+		"unread": "unread",
+		"heading": "Notifications",
+		"markAll": "Mark all as read",
+		"markRead": "Mark as read",
+		"empty": "No notifications yet. Your daily reminder will appear here.",
+		"error": "Notifications are unavailable right now.",
+		"loading": "Loading…",
+		"subheading": "Your learning updates, all in one place.",
+		"newCount": "{count} new",
+		"all": "All",
+		"unreadTab": "Unread ({count})",
+		"emptyUnread": "You're all caught up.",
+		"settings": "Notification settings"
+	},
+	"UnsubscribePage": {
+		"metaTitle": "Unsubscribe — TraceCode",
+		"heading": "Unsubscribe from reminder emails",
+		"body": "Confirm below to stop daily reminder emails. In-app notifications aren’t affected, and you can turn email back on from your progress page.",
+		"confirm": "Unsubscribe",
+		"working": "Unsubscribing…",
+		"done": "Done — you won’t get reminder emails any more.",
+		"failed": "Something went wrong. Please try again.",
+		"invalid": "This unsubscribe link isn’t valid. You can manage reminder emails from your progress page."
+	},
+	"Auth": {
+		"email": "Email",
+		"password": "Password",
+		"confirm": "Confirm password",
+		"show": "Show password",
+		"hide": "Hide password",
+		"signIn": "Sign in",
+		"signingIn": "Signing in…",
+		"create": "Create account",
+		"creating": "Creating account…",
+		"rules": "Use {min}–{max} characters.",
+		"errors": {
+			"passwordLength": "Your password must be {min}–{max} characters.",
+			"mismatch": "The two passwords don’t match."
+		},
+		"home": "TraceCode home",
+		"signInPage": {
+			"title": "Welcome back",
+			"description": "Sign in to save your attempts and pick up where you left off.",
+			"switchPrompt": "New to TraceCode?",
+			"switchLink": "Create an account"
+		},
+		"registerPage": {
+			"title": "Create your account",
+			"description": "Save attempts and progress across devices, and unlock all six problems.",
+			"switchPrompt": "Already have an account?",
+			"switchLink": "Sign in"
+		},
+		"visual": {
+			"label": "Illustrative Python trace",
+			"caption": "Illustrative · not live Python",
+			"signInHeading": "Pick up where your trace left off.",
+			"registerHeading": "See what your code is doing, line by line.",
+			"line": "Line",
+			"variables": "Variables",
+			"step": "Step"
+		}
+	},
+	"AppShell": {
+		"home": "TraceCode home",
+		"navLabel": "Main",
+		"collapse": "Collapse sidebar",
+		"expand": "Expand sidebar",
+		"openMenu": "Open menu",
+		"closeMenu": "Close menu",
+		"groups": {
+			"learn": "Learn",
+			"account": "Account"
+		},
+		"nav": {
+			"overview": "Overview",
+			"problems": "Problems",
+			"progress": "Progress",
+			"settings": "Settings"
+		},
+		"search": {
+			"label": "Search problems",
+			"placeholder": "Search problems…",
+			"empty": "No problems match"
+		},
+		"account": {
+			"menu": "Account menu",
+			"signedInAs": "Signed in as",
+			"settings": "Settings",
+			"signOut": "Sign out"
+		}
+	},
+	"Dashboard": {
+		"metaTitle": "Dashboard — TraceCode",
+		"eyebrow": "Learning workspace",
+		"heading": "Overview",
+		"unavailable": "Saved progress is unavailable right now.",
+		"summary": {
+			"solved": "Solved",
+			"of": "of {total}",
+			"attempted": "Attempted",
+			"runs": "Runs"
+		},
+		"recent": {
+			"heading": "Recent runs",
+			"columns": {
+				"problem": "Problem",
+				"result": "Result",
+				"when": "When"
+			},
+			"result": "{passed}/{total} passed",
+			"empty": "No runs yet. Solve a problem and your runs will show up here.",
+			"cta": "Solve Two Sum",
+			"note": "Your last 10 runs."
+		},
+		"topics": {
+			"heading": "Coverage by topic"
+		}
+	},
+	"ApplicationNav": {
+		"home": "TraceCode home",
+		"nav": "Main",
+		"how": "How it works",
+		"problems": "Problems",
+		"progress": "Progress",
+		"settings": "Settings",
+		"signOut": "Sign out",
+		"account": "Account menu",
+		"signedInAs": "Signed in as"
+	},
+	"SettingsPage": {
+		"metaTitle": "Settings — TraceCode",
+		"heading": "Settings",
+		"unavailable": "Settings are unavailable right now.",
+		"profile": "Profile",
+		"profileDescription": "The account you're signed in with.",
+		"email": "Email",
+		"emailMissing": "No email on this account",
+		"emailHelp": "Your email comes from your sign-in and can't be changed here.",
+		"profileDeferred": "Display names aren't editable yet.",
+		"saving": "Saving…",
+		"cadence": "Frequency",
+		"daily": "Daily",
+		"reminders": {
+			"heading": "Learning reminders",
+			"description": "Choose how TraceCode nudges you to keep practising.",
+			"inApp": "In-app reminders",
+			"inAppHelp": "Show your daily suggestion in your notifications.",
+			"email": "Email reminders",
+			"emailHelp": "Also send the suggestion by email. Off unless you turn it on.",
+			"emailUnavailable": "Email delivery isn't set up on this server yet.",
+			"saved": "Saved.",
+			"failed": "Couldn't save. Try again."
+		}
 	}
 }

@@ -1,0 +1,322 @@
+/* Scroll choreography for the landing sections. Every rule lives inside
+   no-preference: with reduced motion (or before ScrollReveal arms a section
+   with data-state="pending") nothing here applies and content is simply
+   visible. Only opacity/transform/clip-path animate. */
+
+@media (prefers-reduced-motion: no-preference) {
+	/* ── Graphite narrative: the panel opens, then the bug is explained ── */
+	.narrative {
+		transition: clip-path 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.narrative[data-state='pending'] {
+		clip-path: inset(7% 3% round 36px);
+	}
+
+	.narrative[data-state='in'] {
+		clip-path: inset(0 round 0);
+	}
+
+	.narrativeCopy > * {
+		transition:
+			opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.narrative[data-state='pending'] .narrativeCopy > * {
+		opacity: 0;
+		transform: translateX(-24px);
+	}
+
+	.narrativeCopy > :nth-child(2) {
+		transition-delay: 120ms;
+	}
+
+	.narrativeCopy > :nth-child(3) {
+		transition-delay: 240ms;
+	}
+
+	.narrativeVisual {
+		transition:
+			opacity 800ms 200ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 800ms 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.narrative[data-state='pending'] .narrativeVisual {
+		opacity: 0;
+		transform: translateY(32px) scale(0.97);
+	}
+
+	/* 1. The active code line wipes in left to right. */
+	.narrativeCode code {
+		transition: clip-path 800ms 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.narrative[data-state='pending'] .narrativeCode code {
+		clip-path: inset(0 100% 0 0);
+	}
+
+	.narrative[data-state='in'] .narrativeCode code {
+		clip-path: inset(0 0 0 0);
+	}
+
+	/* 2. The array cells rise in one by one. */
+	.narrativeCell {
+		transition:
+			opacity 500ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 500ms cubic-bezier(0.2, 0.7, 0.2, 1);
+		transition-delay: calc(1300ms + var(--n, 0) * 90ms);
+	}
+
+	.narrative[data-state='pending'] .narrativeCell {
+		opacity: 0;
+		transform: translateY(18px);
+	}
+
+	.narrativeCell:nth-child(2) {
+		--n: 1;
+	}
+
+	.narrativeCell:nth-child(3) {
+		--n: 2;
+	}
+
+	.narrativeCell:nth-child(4) {
+		--n: 3;
+	}
+
+	.narrativeCell:nth-child(n + 5) {
+		--n: 4;
+	}
+
+	/* 3. The i then j pointers drop onto cell 0. */
+	.narrativePointer {
+		transition:
+			opacity 380ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1);
+		transition-delay: calc(1850ms + var(--p, 0) * 220ms);
+	}
+
+	.narrative[data-state='pending'] .narrativePointer {
+		opacity: 0;
+		transform: translateY(-14px);
+	}
+
+	.narrativePointer:nth-child(2) {
+		--p: 1;
+	}
+
+	/* 4. Last, the result and the explanation of the bug. */
+	.narrativeResult {
+		transition:
+			opacity 700ms 2500ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 700ms 2500ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.narrative[data-state='pending'] .narrativeResult {
+		opacity: 0;
+		transform: translateY(14px);
+	}
+
+	/* ── How it works: heading, a connecting rule, then Write→Run→Explore→Improve ── */
+	.loopHeading > * {
+		transition:
+			opacity 650ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.loopSection[data-state='pending'] .loopHeading > * {
+		opacity: 0;
+		transform: translateY(22px);
+	}
+
+	.loopHeading > :nth-child(2) {
+		transition-delay: 100ms;
+	}
+
+	.loopHeading > :nth-child(3) {
+		transition-delay: 200ms;
+	}
+
+	.loopGrid {
+		position: relative;
+	}
+
+	.loopGrid::before {
+		position: absolute;
+		top: -22px;
+		right: 0;
+		left: 0;
+		height: 2px;
+		border-radius: 2px;
+		background: linear-gradient(
+			90deg,
+			var(--accent),
+			color-mix(in srgb, var(--accent) 10%, transparent)
+		);
+		content: '';
+		transform-origin: left center;
+		transition: transform 1400ms 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.loopSection[data-state='pending'] .loopGrid::before {
+		transform: scaleX(0);
+	}
+
+	.loopCard {
+		transition-property: opacity, transform, border-color, box-shadow;
+		transition-duration: 700ms, 700ms, 220ms, 220ms;
+		transition-timing-function:
+			cubic-bezier(0.2, 0.7, 0.2, 1), cubic-bezier(0.2, 0.7, 0.2, 1), ease, ease;
+		transition-delay: calc(350ms + var(--n, 0) * 160ms), calc(350ms + var(--n, 0) * 160ms), 0s, 0s;
+	}
+
+	.loopSection[data-state='pending'] .loopCard {
+		opacity: 0;
+		transform: translateY(40px);
+	}
+
+	.loopCard:nth-child(2) {
+		--n: 1;
+	}
+
+	.loopCard:nth-child(3) {
+		--n: 2;
+	}
+
+	.loopCard:nth-child(4) {
+		--n: 3;
+	}
+
+	/* ── Problem catalog: heading, then the table frame and its rows ── */
+	.catalogHeading > * {
+		transition:
+			opacity 650ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.catalogSection[data-state='pending'] .catalogHeading > * {
+		opacity: 0;
+		transform: translateY(22px);
+	}
+
+	.catalogHeading > :nth-child(2) {
+		transition-delay: 100ms;
+	}
+
+	.catalogHeading > :nth-child(3) {
+		transition-delay: 200ms;
+	}
+
+	.catalogFrame {
+		transition: clip-path 900ms 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.catalogSection[data-state='pending'] .catalogFrame {
+		clip-path: inset(0 0 100% 0 round 16px);
+	}
+
+	.catalogSection[data-state='in'] .catalogFrame {
+		clip-path: inset(0 0 0 0 round 16px);
+	}
+
+	.catalogRow {
+		transition:
+			opacity 520ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			background 180ms ease;
+		transition-delay: calc(450ms + var(--n, 0) * 70ms), calc(450ms + var(--n, 0) * 70ms), 0s;
+	}
+
+	.catalogSection[data-state='pending'] .catalogRow {
+		opacity: 0;
+	}
+
+	.catalogRow:nth-child(2) {
+		--n: 1;
+	}
+
+	.catalogRow:nth-child(3) {
+		--n: 2;
+	}
+
+	.catalogRow:nth-child(4) {
+		--n: 3;
+	}
+
+	.catalogRow:nth-child(5) {
+		--n: 4;
+	}
+
+	.catalogRow:nth-child(n + 6) {
+		--n: 5;
+	}
+
+	/* ── Closing CTA: the glow rises, the headline resolves, one ring pulse ── */
+	.closing::before {
+		transform-origin: 50% 0;
+		transition:
+			opacity 1200ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 1200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.closing[data-state='pending']::before {
+		opacity: 0;
+		transform: scaleY(0.4);
+	}
+
+	.closingPart {
+		transition:
+			opacity 750ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 750ms cubic-bezier(0.2, 0.7, 0.2, 1),
+			filter 750ms cubic-bezier(0.2, 0.7, 0.2, 1);
+		transition-delay: calc(var(--n, 0) * 130ms);
+	}
+
+	.closing[data-state='pending'] .closingPart {
+		opacity: 0;
+		transform: translateY(26px);
+	}
+
+	.closing[data-state='pending'] h2.closingPart {
+		filter: blur(10px);
+		transform: translateY(26px) scale(0.96);
+	}
+
+	.closingPart:nth-child(2) {
+		--n: 1;
+	}
+
+	.closingPart:nth-child(3) {
+		--n: 2;
+	}
+
+	.closingPart:nth-child(4) {
+		--n: 3;
+	}
+
+	.closing[data-state='in'] .closingPrimary {
+		animation: cta-ring 1500ms 900ms ease-out 2;
+	}
+
+	@keyframes cta-ring {
+		0% {
+			box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent);
+		}
+
+		100% {
+			box-shadow: 0 0 0 18px transparent;
+		}
+	}
+}
+
+/* Arming a reveal must set its start pose immediately. Delays belong only
+   to the entrance; delaying the pending pose can skip the intended sequence. */
+@media (prefers-reduced-motion: no-preference) {
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending'],
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending'] *,
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending']::before,
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending'] *::before {
+		transition: none !important;
+	}
+}

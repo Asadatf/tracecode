@@ -1,18 +1,28 @@
 import { RUN_PROGRAM, TRACE_PROGRAM } from './trace-program'
+import { AST_PROGRAM } from './ast-program'
+import { BUILTIN_CALL_ALLOWLIST, FEATURE_LIMITS } from './code-features'
 import { VALUE_LIMITS } from './contract'
 
 // The Web Worker body, built as a source string so it runs from a Blob URL —
 // bundler-agnostic (no Turbopack worker wiring) and identical in the app and in
 // the browser integration test. It is thin glue: boot Pyodide once (reported as
 // `loading_runtime`), then run the untraced RUN_PROGRAM for a `run` request or
-// the traced TRACE_PROGRAM for a `trace` request, and post back the result. All
+// the traced TRACE_PROGRAM for a `trace` request, and post back the result. An
+// `ast` request (M7.1) runs AST_PROGRAM, which only parses the source. All
 // validation happens on the main thread against the contract. `pyodideIndexUrl`
 // is absolute (see pyodideIndexUrl in trace-program.ts).
 export function buildWorkerSource(pyodideIndexUrl: string): string {
 	const limits = JSON.stringify(VALUE_LIMITS)
+	const astLimits = JSON.stringify({
+		maxSourceChars: FEATURE_LIMITS.maxSourceChars,
+		maxCount: FEATURE_LIMITS.maxCount,
+		builtinAllowlist: BUILTIN_CALL_ALLOWLIST
+	})
 	return `"use strict";
 const TRACE_PROGRAM = ${JSON.stringify(TRACE_PROGRAM)};
 const RUN_PROGRAM = ${JSON.stringify(RUN_PROGRAM)};
+const AST_PROGRAM = ${JSON.stringify(AST_PROGRAM)};
+const AST_LIMITS = ${astLimits};
 const PYODIDE_INDEX_URL = ${JSON.stringify(pyodideIndexUrl)};
 const PYODIDE_SCRIPT_URL = PYODIDE_INDEX_URL + 'pyodide.js';
 const VALUE_LIMITS = ${limits};
@@ -23,7 +33,7 @@ async function boot() {
 }
 self.onmessage = async (event) => {
 	const message = event.data;
-	if (!message || (message.type !== 'trace' && message.type !== 'run')) return;
+	if (!message || (message.type !== 'trace' && message.type !== 'run' && message.type !== 'ast')) return;
 	try {
 		if (!pyodidePromise) {
 			self.postMessage({ type: 'status', phase: 'loading_runtime' });
@@ -32,7 +42,16 @@ self.onmessage = async (event) => {
 		const py = await pyodidePromise;
 		self.postMessage({ type: 'status', phase: 'running' });
 		const request = message.request;
-		if (message.type === 'trace') {
+		if (message.type === 'ast') {
+			py.globals.set('REQUEST_JSON', JSON.stringify({
+				source: request.code,
+				maxSourceChars: AST_LIMITS.maxSourceChars,
+				maxCount: AST_LIMITS.maxCount,
+				builtinAllowlist: AST_LIMITS.builtinAllowlist
+			}));
+			const output = py.runPython(AST_PROGRAM);
+			self.postMessage({ type: 'ast_result', result: JSON.parse(output) });
+		} else if (message.type === 'trace') {
 			py.globals.set('REQUEST_JSON', JSON.stringify({
 				source: request.code,
 				entry: request.entry,
@@ -60,7 +79,9 @@ self.onmessage = async (event) => {
 		}
 	} catch (error) {
 		const detail = String((error && error.message) || error);
-		if (message.type === 'run') {
+		if (message.type === 'ast') {
+			self.postMessage({ type: 'ast_result', result: { status: 'analysis_error', permanent: false, message: detail.slice(0, 200) } });
+		} else if (message.type === 'run') {
 			self.postMessage({ type: 'run_result', result: { status: 'engine_error', error: { type: 'engine', message: detail }, tests: [] } });
 		} else {
 			self.postMessage({ type: 'trace_result', result: { status: 'engine_error', error: { type: 'engine', message: detail, line: 1 } } });

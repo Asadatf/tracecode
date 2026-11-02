@@ -9,6 +9,8 @@
 	   which sets --font-dm-sans / --font-jetbrains-mono on <html>. */
 	--font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 	--font-mono: var(--font-jetbrains-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+	--landing-bg: #0f1412;
+	--landing-accent: #39a67e;
 	--radius-sm: 6px;
 	--radius: 10px;
 	--radius-lg: 16px;
@@ -82,4 +84,10 @@ body {
 	background-color: var(--bg);
 	color: var(--text);
 	font-family: var(--font-sans);
+}
+
+/* Dev only: the Next.js error pill still renders when the page logs errors.
+   The portal element doesn't exist in production, so this is a no-op there. */
+nextjs-portal {
+	display: none;
 }

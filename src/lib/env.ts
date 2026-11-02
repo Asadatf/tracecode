@@ -49,6 +49,23 @@ const envSchema = z.object({
 	// Required by cron routes only; an unset secret must not break unrelated pages.
 	CRON_SECRET: z.string().optional(),
 
+	// OpenRouter, for M7 learning-recommendation AI diagnoses (docs/rules/ai-usage.md).
+	// Unset -> AI enrichment is disabled and the deterministic recommendation stands;
+	// nothing else breaks. Server-only, never exposed to the client.
+	OPENROUTER_API_KEY: z.string().optional(),
+	// Optional model override. Must be a slug mapped in OPENROUTER_SLUGS or it is
+	// ignored in favour of the verified free default (so a call can never ship
+	// unpriced). Empty string means "use the default".
+	OPENROUTER_MODEL: z.string().optional().or(z.literal('')),
+
+	// Resend, for M7.5B daily reminder emails. An email is sent only when ALL three
+	// are set and REMINDER_FROM_EMAIL's domain equals RESEND_VERIFIED_DOMAIN
+	// (src/lib/notifications/email-config.ts) — a key alone never sends. Unset →
+	// the email channel is skipped; in-app notifications are unaffected.
+	RESEND_API_KEY: z.string().optional(),
+	REMINDER_FROM_EMAIL: z.string().optional().or(z.literal('')),
+	RESEND_VERIFIED_DOMAIN: z.string().optional().or(z.literal('')),
+
 	NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
 	// Attached as the app_version property on every analytics event — optional,

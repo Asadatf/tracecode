@@ -1,0 +1,445 @@
+/* Sign In / Register (specs/features/auth-access.md). Same tokens and soft-precision
+   surfaces as the Landing Page; the brand panel is a fixed graphite so it reads the
+   same in light and dark. */
+
+.shell {
+	color-scheme: light;
+	--bg: #f4f5f2;
+	--surface: #ffffff;
+	--surface-subtle: #fafbf9;
+	--surface-hover: #eef2ec;
+	--border: #e1e6df;
+	--border-strong: #c6d3cb;
+	--text: #17231e;
+	--text-muted: #4d5852;
+	--text-faint: #5c675f;
+	--accent: #087a56;
+	--accent-hover: #065c41;
+	--accent-ink: #ffffff;
+	--success: #087a56;
+	--warning: #a5580a;
+	--danger: #b44837;
+	--danger-soft: #fbefec;
+	/* The form remains a neutral white surface even when the device prefers
+	   dark mode; the cinematic panel provides the intentional graphite contrast. */
+	color: var(--text);
+	display: grid;
+	min-height: 100svh;
+	grid-template-columns: minmax(0, 1fr);
+	background: var(--bg);
+}
+
+.formPanel {
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
+	padding: 20px 16px 48px;
+	background: radial-gradient(
+		circle at 12% 0%,
+		color-mix(in srgb, var(--accent) 10%, transparent),
+		transparent 22rem
+	);
+}
+
+.brand {
+	display: inline-flex;
+	width: fit-content;
+	min-height: 44px;
+	align-items: center;
+	gap: 9px;
+	color: var(--text);
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: -0.04em;
+	text-decoration: none;
+}
+
+.brandMark {
+	display: grid;
+	width: 32px;
+	height: 32px;
+	place-items: center;
+	border-radius: 9px;
+	background: var(--accent);
+	color: var(--accent-ink);
+	font-family: var(--font-mono);
+	font-size: 19px;
+	font-weight: 700;
+	letter-spacing: 0;
+}
+
+.formWrap {
+	display: flex;
+	width: min(100%, 420px);
+	flex-direction: column;
+	gap: 20px;
+	margin: 0 auto;
+	padding: 28px 22px;
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	background: var(--surface);
+	box-shadow: 0 24px 60px color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.title {
+	margin: 0;
+	color: var(--text);
+	font-size: 30px;
+	font-weight: 700;
+	letter-spacing: -0.035em;
+	line-height: 1.1;
+}
+
+.description {
+	margin: -8px 0 4px;
+	color: var(--text-muted);
+	font-size: 15px;
+	line-height: 1.55;
+}
+
+.rules {
+	margin: -8px 0 0;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
+.rules[data-ok] {
+	color: var(--success);
+}
+
+.submit {
+	display: inline-flex;
+	min-height: 48px;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border: 0;
+	border-radius: 10px;
+	background: var(--accent);
+	color: var(--accent-ink);
+	cursor: pointer;
+	font: 700 15px var(--font-sans);
+	transition:
+		background 180ms ease,
+		box-shadow 180ms ease;
+}
+
+.submit:hover:not(:disabled) {
+	background: var(--accent-hover);
+	box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.submit:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+}
+
+.submit:disabled {
+	cursor: progress;
+	opacity: 0.75;
+}
+
+.switch {
+	margin: 0;
+	padding-top: 16px;
+	border-top: 1px solid var(--border);
+	color: var(--text-muted);
+	font-size: 14px;
+}
+
+.switch a {
+	display: inline-block;
+	padding: 6px 2px;
+	color: var(--accent);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.switch a:hover {
+	text-decoration: underline;
+}
+
+/* Brand panel: desktop only. On a phone it is not rendered at all (display:none
+   also stops its animations), so the form is the whole screen. */
+.visual {
+	display: none;
+}
+
+@media (min-width: 1024px) {
+	.shell {
+		grid-template-columns: minmax(440px, 5fr) minmax(0, 6fr);
+	}
+
+	.formPanel {
+		padding: 28px 40px 56px;
+	}
+
+	.formWrap {
+		margin: auto;
+	}
+
+	.visual {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		padding: 56px 48px;
+		background:
+			radial-gradient(circle at 80% 8%, rgb(57 166 126 / 22%), transparent 26rem),
+			linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px) 0 0 / 100% 44px,
+			#111815;
+		color: #eef2ef;
+	}
+}
+
+.visualInner {
+	display: flex;
+	width: min(100%, 560px);
+	flex-direction: column;
+	gap: 22px;
+}
+
+.visualEyebrow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	color: #a9b5ae;
+	font: 600 12px var(--font-mono);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.pulse {
+	width: 8px;
+	height: 8px;
+	border-radius: 999px;
+	background: #39a67e;
+	box-shadow: 0 0 0 5px rgb(57 166 126 / 16%);
+}
+
+.visualHeading {
+	margin: 0;
+	font-size: clamp(30px, 3vw, 42px);
+	font-weight: 700;
+	letter-spacing: -0.04em;
+	line-height: 1.08;
+	text-wrap: balance;
+}
+
+.window {
+	overflow: hidden;
+	border: 1px solid rgb(255 255 255 / 10%);
+	border-radius: 16px;
+	background: #171d24;
+	box-shadow: 0 30px 80px rgb(0 0 0 / 35%);
+	font-family: var(--font-mono);
+}
+
+.windowBar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	border-bottom: 1px solid rgb(255 255 255 / 8%);
+	color: #8a968f;
+	font-size: 12px;
+}
+
+.stepLabel {
+	display: inline-flex;
+	gap: 6px;
+}
+
+.code {
+	position: relative;
+	padding: 12px 0;
+	font-size: 13px;
+}
+
+.codeLine {
+	display: flex;
+	height: var(--lh);
+	align-items: center;
+	gap: 16px;
+	padding: 0 16px;
+	color: #c3cdc7;
+	white-space: pre;
+}
+
+.lineNo {
+	width: 14px;
+	color: #5c675f;
+	text-align: right;
+}
+
+.bar {
+	position: absolute;
+	top: calc(12px + var(--line) * var(--lh));
+	right: 0;
+	left: 0;
+	height: var(--lh);
+	border-left: 2px solid #39a67e;
+	background: rgb(57 166 126 / 18%);
+}
+
+.state {
+	padding: 14px 16px 16px;
+	border-top: 1px solid rgb(255 255 255 / 8%);
+	background: #12181d;
+}
+
+.stateTitle {
+	margin: 0 0 10px;
+	color: #8a968f;
+	font-size: 11px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.stateGrid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin: 0;
+}
+
+.stateRow {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 8px 10px;
+	border: 1px solid rgb(255 255 255 / 8%);
+	border-radius: 8px;
+	font-size: 13px;
+}
+
+.stateRow dt {
+	color: #8a968f;
+}
+
+.stateRow dd {
+	margin: 0;
+}
+
+.valueStack {
+	display: inline-grid;
+}
+
+.value {
+	grid-area: 1 / 1;
+	color: #eef2ef;
+	text-align: right;
+}
+
+/* One frame of the loop: invisible until its turn, then visible for one step.
+   --k is the frame's index, so every frame shares this single animation. The
+   brief accent colour at the start of a turn marks a value that just changed. */
+.slot {
+	opacity: 0;
+	animation: slot var(--cycle) steps(1, end) infinite;
+	animation-delay: calc(var(--k) * var(--step));
+}
+
+@keyframes slot {
+	0% {
+		opacity: 1;
+		color: #6fe0b0;
+	}
+
+	4% {
+		opacity: 1;
+		color: #eef2ef;
+	}
+
+	11.1% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.slot {
+		animation: none;
+	}
+
+	.slot[data-final] {
+		opacity: 1;
+	}
+
+	.submit {
+		transition: none;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.formWrap {
+		animation: form-arrive 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.formWrap > * {
+		animation: content-arrive 600ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.formWrap > :nth-child(2) {
+		animation-delay: 200ms;
+	}
+
+	.formWrap > form {
+		animation-delay: 280ms;
+	}
+
+	.formWrap > .switch {
+		animation-delay: 380ms;
+	}
+
+	.visual {
+		animation: panel-arrive 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.visualEyebrow,
+	.visualHeading {
+		animation: content-arrive 700ms 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.visualHeading {
+		animation-delay: 280ms;
+	}
+
+	.window {
+		animation: instrument-arrive 850ms 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+}
+
+@keyframes form-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(20px) scale(0.985);
+	}
+}
+
+@keyframes content-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+}
+
+@keyframes panel-arrive {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes instrument-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(24px) scale(0.97);
+	}
+}

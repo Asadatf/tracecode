@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 // Bounds match Supabase's own defaults: a 6-character minimum server-side, and
 // bcrypt ignores everything past 72 bytes, so a longer password adds nothing.
-const MIN_PASSWORD_LENGTH = 8
-const MAX_PASSWORD_LENGTH = 72
+export const MIN_PASSWORD_LENGTH = 8
+export const MAX_PASSWORD_LENGTH = 72
 
 export const credentialsSchema = z.object({
 	mode: z.enum(['sign-in', 'sign-up']),

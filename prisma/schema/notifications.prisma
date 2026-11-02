@@ -1,0 +1,91 @@
+// M7.5B unified learning notifications: per-learner channel preferences, the
+// persistent in-app notification inbox, and the delivery ledger for external
+// channels (email now; Web Push later, as another `channel` value).
+//
+// Every table is user-scoped, so the migration that creates them must be followed
+// by the sanctioned hand-written `ALTER TABLE … ENABLE ROW LEVEL SECURITY` (no
+// policy, never FORCE — docs/rules/auth.md, docs/rules/migrations.md); `pnpm
+// check:rls` keeps CI red until it exists. Nothing here stores learner source,
+// traces, or free text: notification content is a small versioned, enum-only
+// payload rendered into words at display/send time.
+
+model NotificationPreference {
+	userId String @id @db.Uuid
+
+	// In-app reminders are low-intrusion, so they default ON; a learner can turn
+	// them off. Independent of email.
+	inAppEnabled Boolean @default(true)
+	// Email is explicit opt-in: OFF until the learner turns it on.
+	emailOptIn Boolean @default(false)
+	// 'daily' is the only cadence in v1.
+	cadence String @default("daily")
+	// 256-bit random, base64url. Authorises one action only — turning email off —
+	// from the link in every reminder email, without a session.
+	unsubscribeToken String @unique
+
+	createdAt DateTime @default(now()) @db.Timestamptz(6)
+	updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@map("notification_preferences")
+}
+
+model LearningNotification {
+	id     String @id @default(uuid()) @db.Uuid
+	userId String @db.Uuid
+
+	// Stable logical key, e.g. 'daily:2026-11-02'. Unique per learner, so a
+	// re-run or a concurrent run of the daily scheduler inserts it at most once
+	// (INSERT … ON CONFLICT DO NOTHING).
+	logicalKey String
+	// 'daily_reminder' in v1.
+	kind String
+	// Versioned, enum-only reminder plan (src/lib/learning/reminder-plan.ts):
+	// template, problem slug, reason code, concept tag. Rendered into words at
+	// display time; never free text.
+	payload Json
+
+	readAt    DateTime? @db.Timestamptz(6)
+	createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@unique([userId, logicalKey])
+	@@index([userId, createdAt])
+	@@map("learning_notifications")
+}
+
+model NotificationDelivery {
+	userId String @db.Uuid
+	// The UTC calendar date the delivery is for — the dedup unit with the daily
+	// scheduler (no per-user local time is promised).
+	deliveryDate DateTime @db.Date
+	// 'email' in v1; 'push' reserved.
+	channel String
+
+	// claimed → accepted | retry | failed | skipped. 'accepted' means the
+	// provider accepted the message (we store its id) — NOT that it was delivered.
+	status            String
+	providerMessageId String?
+	// Send attempts made for this slot; bounded by MAX_DELIVERY_ATTEMPTS.
+	attempts Int @default(0)
+	// When the current claim was taken; a 'claimed' row older than the claim TTL
+	// is a crashed run and may be reclaimed (still within the attempt bound).
+	claimedAt DateTime? @db.Timestamptz(6)
+	// A short error CODE (e.g. 'rate_limited'), never a message or address.
+	lastError String?
+	// The reminder frozen at the FIRST claim ({ plan, problemTitle }: enums and a
+	// catalog title, no free text). Retries and crash recovery re-send exactly
+	// this, so one idempotency key never carries two different payloads even if
+	// the learner's evidence changed in between.
+	payload Json?
+
+	createdAt DateTime @default(now()) @db.Timestamptz(6)
+	updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@id([userId, deliveryDate, channel])
+	@@map("notification_deliveries")
+}

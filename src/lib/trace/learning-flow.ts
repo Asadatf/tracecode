@@ -39,6 +39,16 @@ export function isContextualHintEligible(input: {
 	})
 }
 
+// The attempt that first passed every official test, if any. "Solved" is a
+// property of the whole history, not of the latest attempt: a later failing
+// experiment (e.g. while trying the optional optimization challenge) never
+// un-solves the problem, and the original solution stays retrievable.
+export function findSolvedAttempt<T extends { passed: boolean }>(
+	attempts: readonly T[]
+): T | undefined {
+	return attempts.find((attempt) => attempt.passed)
+}
+
 // Optimization prompts are only eligible once every official test passes.
 export function isOptimizationEligible(input: { allTestsPassed: boolean }): boolean {
 	return input.allTestsPassed

@@ -86,6 +86,26 @@ function nonNegative(value: number): number {
 	return value > 0 ? value : 0
 }
 
+const openaiExtractor: UsageExtractor = (response) => {
+	const parsed = openaiResponse.safeParse(response)
+	if (!parsed.success) return undefined
+	const { id, model, choices, usage } = parsed.data
+	const cached = usage.prompt_tokens_details?.cached_tokens ?? 0
+	return {
+		model,
+		requestId: id,
+		status: choices?.[0]?.finish_reason === 'content_filter' ? 'refusal' : 'ok',
+		tokens: {
+			inputTokens: nonNegative(usage.prompt_tokens - cached),
+			outputTokens: usage.completion_tokens,
+			// OpenAI does not bill for writing a cache entry, so there is
+			// no write figure to record — not a gap, an absence.
+			cacheWriteTokens: 0,
+			cacheReadTokens: cached
+		}
+	}
+}
+
 const EXTRACTORS: Record<AiProvider, UsageExtractor> = {
 	anthropic: (response) => {
 		const parsed = anthropicResponse.safeParse(response)
@@ -104,25 +124,11 @@ const EXTRACTORS: Record<AiProvider, UsageExtractor> = {
 		}
 	},
 
-	openai: (response) => {
-		const parsed = openaiResponse.safeParse(response)
-		if (!parsed.success) return undefined
-		const { id, model, choices, usage } = parsed.data
-		const cached = usage.prompt_tokens_details?.cached_tokens ?? 0
-		return {
-			model,
-			requestId: id,
-			status: choices?.[0]?.finish_reason === 'content_filter' ? 'refusal' : 'ok',
-			tokens: {
-				inputTokens: nonNegative(usage.prompt_tokens - cached),
-				outputTokens: usage.completion_tokens,
-				// OpenAI does not bill for writing a cache entry, so there is
-				// no write figure to record — not a gap, an absence.
-				cacheWriteTokens: 0,
-				cacheReadTokens: cached
-			}
-		}
-	},
+	openai: openaiExtractor,
+
+	// OpenRouter returns an OpenAI-compatible chat completion, so the same
+	// extractor reads it. The provider column still says `openrouter`.
+	openrouter: openaiExtractor,
 
 	google: (response) => {
 		const parsed = googleResponse.safeParse(response)

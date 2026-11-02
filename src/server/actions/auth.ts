@@ -10,6 +10,7 @@ import {
 	INVALID_CREDENTIALS_INPUT,
 	userCausedAuthMessage
 } from '@/lib/auth/credentials'
+import { safeReturnTo } from '@/lib/auth/return-to'
 
 // Email + password via Supabase Auth, nothing else (docs/rules/auth.md): the
 // session cookie is set by the Supabase client, and the only application data
@@ -20,8 +21,6 @@ export interface AuthFormState {
 	error?: string
 	notice?: string
 }
-
-const SIGNED_IN_HOME = '/progress'
 
 export async function authenticateAction(
 	_previous: AuthFormState,
@@ -34,6 +33,8 @@ export async function authenticateAction(
 	})
 	if (!parsed.success) return { error: INVALID_CREDENTIALS_INPUT }
 	const { mode, email, password } = parsed.data
+	// Untrusted (it rides in a form field): only a same-origin path survives.
+	const returnTo = safeReturnTo(formData.get('next')?.toString())
 
 	try {
 		const supabase = await createServerSupabaseClient()
@@ -60,7 +61,7 @@ export async function authenticateAction(
 
 	// redirect() throws, so it stays outside the try/catch above; the return is
 	// only for the type checker (next-intl's redirect isn't typed `never`).
-	redirect({ href: SIGNED_IN_HOME, locale: await getLocale() })
+	redirect({ href: returnTo, locale: await getLocale() })
 	return {}
 }
 

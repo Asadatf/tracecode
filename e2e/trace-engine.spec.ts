@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { TRACE_PROGRAM, pyodideIndexUrl } from '../src/lib/trace/trace-program'
 import { buildWorkerSource } from '../src/lib/trace/worker-source'
+import { astResultSchema, BUILTIN_CALL_ALLOWLIST } from '../src/lib/trace/code-features'
 import {
 	runResultSchema,
 	traceResultSchema,
@@ -193,7 +194,11 @@ function postToWorker(page: Page, message: unknown): Promise<unknown> {
 				}, 170_000)
 				worker.onmessage = (event: MessageEvent) => {
 					const data = event.data as { type?: string; result?: unknown }
-					if (data?.type === 'run_result' || data?.type === 'trace_result') {
+					if (
+						data?.type === 'run_result' ||
+						data?.type === 'trace_result' ||
+						data?.type === 'ast_result'
+					) {
 						clearTimeout(timer)
 						worker.terminate()
 						resolve(data.result)
@@ -300,4 +305,139 @@ test('run then replay: the same source and args reproduce the failing trace', as
 	expect(trace.status).toBe('completed')
 	expect(trace.actual).toEqual(LIST_0_0)
 	expect(trace.trace?.steps.some((s) => s.event === 'return')).toBe(true)
+})
+
+// ── M7.1: the additive `ast` message (parse only, never executes) ────────────
+
+const HASHMAP_TWO_SUM = [
+	'def two_sum(nums, target):',
+	'    seen = {}',
+	'    for i, n in enumerate(nums):',
+	'        c = target - n',
+	'        if c in seen:',
+	'            return [seen[c], i]',
+	'        seen[n] = i',
+	'    return []'
+].join('\n')
+
+test('ast: real Pyodide extracts nested-loop features from brute-force Two Sum', async ({
+	page
+}) => {
+	test.setTimeout(180_000)
+	await page.goto('/')
+	const raw = await postToWorker(page, { type: 'ast', request: { code: CORRECT_TWO_SUM } })
+	const result = astResultSchema.parse(raw)
+	expect(result.status).toBe('ok')
+	if (result.status !== 'ok') return
+	expect(result.features.loops).toEqual({ for: 2, while: 0, maxDepth: 2 })
+	expect(result.features.builtinCalls).toEqual(['len', 'range'])
+	expect(result.features.usesDict).toBe(false)
+	expect(result.features.lineCount).toBe(6)
+})
+
+test('ast: the hash-map solution shows a dict and a single loop', async ({ page }) => {
+	test.setTimeout(180_000)
+	await page.goto('/')
+	const result = astResultSchema.parse(
+		await postToWorker(page, { type: 'ast', request: { code: HASHMAP_TWO_SUM } })
+	)
+	expect(result.status).toBe('ok')
+	if (result.status !== 'ok') return
+	expect(result.features.loops).toEqual({ for: 1, while: 0, maxDepth: 1 })
+	expect(result.features.usesDict).toBe(true)
+	expect(result.features.builtinCalls).toEqual(['enumerate'])
+	for (const call of result.features.builtinCalls) expect(BUILTIN_CALL_ALLOWLIST).toContain(call)
+})
+
+test('ast: a syntax error is a validated syntax_error result', async ({ page }) => {
+	test.setTimeout(180_000)
+	await page.goto('/')
+	const result = astResultSchema.parse(
+		await postToWorker(page, {
+			type: 'ast',
+			request: { code: 'def two_sum(nums, target)\n    return []' }
+		})
+	)
+	expect(result.status).toBe('syntax_error')
+	if (result.status === 'syntax_error') expect(result.syntaxError.line).toBe(1)
+})
+
+test('ast: the source is parsed, never run (an infinite loop returns at once)', async ({
+	page
+}) => {
+	test.setTimeout(180_000)
+	await page.goto('/')
+	// If this were executed the worker would hang and the helper would time out.
+	const result = astResultSchema.parse(
+		await postToWorker(page, { type: 'ast', request: { code: 'while True:\n    pass' } })
+	)
+	expect(result.status).toBe('ok')
+	if (result.status === 'ok') expect(result.features.loops.while).toBe(1)
+})
+
+test('ast: run, ast and trace share one worker and none disturbs the others', async ({ page }) => {
+	test.setTimeout(180_000)
+	await page.goto('/')
+	const results = await page.evaluate<
+		Array<{ type: string; result: unknown }>,
+		{ workerSource: string; messages: unknown[] }
+	>(
+		({ workerSource, messages }) =>
+			new Promise((resolve, reject) => {
+				const url = URL.createObjectURL(
+					new Blob([workerSource], { type: 'application/javascript' })
+				)
+				const worker = new Worker(url)
+				const out: Array<{ type: string; result: unknown }> = []
+				const timer = setTimeout(() => {
+					worker.terminate()
+					reject(new Error('worker did not respond in time'))
+				}, 170_000)
+				worker.onmessage = (event: MessageEvent) => {
+					const data = event.data as { type?: string; result?: unknown }
+					if (data?.type === undefined || data.type === 'status') return
+					out.push({ type: data.type, result: data.result })
+					if (out.length === messages.length) {
+						clearTimeout(timer)
+						worker.terminate()
+						resolve(out)
+					} else worker.postMessage(messages[out.length])
+				}
+				worker.onerror = (event: ErrorEvent) => {
+					clearTimeout(timer)
+					reject(new Error(event.message || 'worker error'))
+				}
+				worker.postMessage(messages[0])
+			}),
+		{
+			workerSource: buildWorkerSource(pyodideIndexUrl(page.url())),
+			messages: [
+				runMessage(BUGGY_TWO_SUM),
+				{ type: 'ast', request: { code: BUGGY_TWO_SUM } },
+				{
+					type: 'trace',
+					request: {
+						code: BUGGY_TWO_SUM,
+						entry: 'two_sum',
+						input: { args: [[3, 2, 4], 6] },
+						limits: { maxSteps: 2000, timeoutMs: 120_000 }
+					}
+				},
+				runMessage(BUGGY_TWO_SUM)
+			]
+		}
+	)
+	expect(results.map((r) => r.type)).toEqual([
+		'run_result',
+		'ast_result',
+		'trace_result',
+		'run_result'
+	])
+	const [run1, ast, trace, run2] = results
+	const first = runResultSchema.parse(run1?.result)
+	expect(first.tests.map((t) => t.passed)).toEqual([true, false, false])
+	expect(astResultSchema.parse(ast?.result).status).toBe('ok')
+	assertBuggyTwoSumTrace(traceResultSchema.parse(trace?.result))
+	// Running after an ast gives exactly what running before it did.
+	expect(runResultSchema.parse(run2?.result)).toEqual(first)
 })
