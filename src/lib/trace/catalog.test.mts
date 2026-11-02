@@ -167,6 +167,11 @@ test(
 )
 
 test('reference solutions pass through the real Pyodide runtime too', async () => {
+	// Pyodide's one-off cold start isn't a solution's cost; pay it before any timer starts.
+	const warm = PROBLEMS[NEW_SLUGS[0]!]!
+	await runInPyodide(
+		buildRunRequest(warm, REFERENCE_SOLUTIONS[NEW_SLUGS[0]!]![0]!.source, RUN_LIMITS)
+	)
 	for (const slug of NEW_SLUGS) {
 		const problem = PROBLEMS[slug]!
 		for (const solution of REFERENCE_SOLUTIONS[slug]!) {
