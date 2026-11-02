@@ -141,11 +141,42 @@
 				"running": "A refresh is already in progress.",
 				"failed": "Couldn’t refresh the AI insight right now — showing your latest."
 			}
+		},
+		"reminders": {
+			"heading": "Reminders",
+			"description": "Daily nudges built from your current recommendation. Each one is independent.",
+			"inApp": "In-app notifications",
+			"inAppHelp": "A daily reminder in the bell at the top of the page.",
+			"email": "Daily reminder email",
+			"emailHelp": "One email a day with your recommended problem. Off unless you turn it on; every email has an unsubscribe link.",
+			"emailUnavailable": "Email reminders aren’t set up on this site yet, so none will be sent for now.",
+			"saved": "Saved.",
+			"failed": "Couldn’t save that — please try again."
 		}
 	},
 	"SiteFooter": {
 		"privacy": "Privacy",
 		"terms": "Terms",
 		"contact": "Contact"
+	},
+	"Notifications": {
+		"open": "Notifications",
+		"unread": "unread",
+		"heading": "Notifications",
+		"markAll": "Mark all as read",
+		"markRead": "Mark as read",
+		"empty": "No notifications yet. Your daily reminder will appear here.",
+		"error": "Notifications are unavailable right now.",
+		"loading": "Loading…"
+	},
+	"UnsubscribePage": {
+		"metaTitle": "Unsubscribe — TraceCode",
+		"heading": "Unsubscribe from reminder emails",
+		"body": "Confirm below to stop daily reminder emails. In-app notifications aren’t affected, and you can turn email back on from your progress page.",
+		"confirm": "Unsubscribe",
+		"working": "Unsubscribing…",
+		"done": "Done — you won’t get reminder emails any more.",
+		"failed": "Something went wrong. Please try again.",
+		"invalid": "This unsubscribe link isn’t valid. You can manage reminder emails from your progress page."
 	}
 }

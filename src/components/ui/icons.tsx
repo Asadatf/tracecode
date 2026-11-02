@@ -20,6 +20,7 @@
 import {
 	ArrowRight,
 	ArrowSquareOut,
+	Bell,
 	Calendar,
 	CaretDown,
 	CaretLeft,
@@ -93,6 +94,7 @@ function Glyph({ source: Source, size = DEFAULT_SIZE, className }: IconProps & {
 // provider's whole catalog here. Keep the list alphabetical.
 export const AlertIcon = (props: IconProps) => <Glyph source={Warning} {...props} />
 export const ArrowRightIcon = (props: IconProps) => <Glyph source={ArrowRight} {...props} />
+export const BellIcon = (props: IconProps) => <Glyph source={Bell} {...props} />
 export const CalendarIcon = (props: IconProps) => <Glyph source={Calendar} {...props} />
 export const CheckIcon = (props: IconProps) => <Glyph source={Check} {...props} />
 export const ChevronDownIcon = (props: IconProps) => <Glyph source={CaretDown} {...props} />

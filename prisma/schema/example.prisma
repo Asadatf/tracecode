@@ -27,5 +27,10 @@ model User {
 	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
 	recommendationCache RecommendationCache?
 
+	// M7.5B notifications (prisma/schema/notifications.prisma).
+	notificationPreference NotificationPreference?
+	learningNotifications  LearningNotification[]
+	notificationDeliveries NotificationDelivery[]
+
 	@@map("users")
 }

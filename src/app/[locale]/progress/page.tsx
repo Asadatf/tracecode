@@ -8,9 +8,11 @@ import { SiteHeader } from '@/components/site-header'
 import { ProgressEmpty } from '@/components/progress/progress-empty'
 import { ProgressSections } from '@/components/progress/progress-sections'
 import { RecommendationCard } from '@/components/progress/recommendation-card'
+import { ReminderPreferences } from '@/components/progress/reminder-preferences'
 import { Button } from '@/components/ui/button'
 import { signOutAction } from '@/server/actions/auth'
 import { getRecommendation, isRecommendationAiEnabled } from '@/server/learning/recommendation'
+import { getPreferences } from '@/server/notifications/inbox'
 
 // specs/features/progress-page.md. A personal page, not a marketing one →
 // noindex (which also opts it out of the SEO PUBLIC_PAGES requirement).
@@ -22,10 +24,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ProgressPage() {
 	// getRecommendation never calls OpenRouter, so fetching it alongside progress
 	// adds no AI request to a page load (M7.5A). Both degrade on their own.
-	const [t, progress, recommendation] = await Promise.all([
+	const [t, progress, recommendation, preferences] = await Promise.all([
 		getTranslations('ProgressPage'),
 		getLearningProgress(),
-		getRecommendation()
+		getRecommendation(),
+		getPreferences()
 	])
 
 	let content: React.ReactNode
@@ -41,6 +44,26 @@ export default async function ProgressPage() {
 					/>
 				) : null}
 				<ProgressSections view={buildProgressView(Object.values(PROBLEMS), progress)} />
+				{preferences.authenticated && preferences.available ? (
+					<ReminderPreferences
+						initial={{
+							inAppEnabled: preferences.inAppEnabled,
+							emailOptIn: preferences.emailOptIn
+						}}
+						emailConfigured={preferences.emailConfigured}
+						labels={{
+							heading: t('reminders.heading'),
+							description: t('reminders.description'),
+							inApp: t('reminders.inApp'),
+							inAppHelp: t('reminders.inAppHelp'),
+							email: t('reminders.email'),
+							emailHelp: t('reminders.emailHelp'),
+							emailUnavailable: t('reminders.emailUnavailable'),
+							saved: t('reminders.saved'),
+							failed: t('reminders.failed')
+						}}
+					/>
+				) : null}
 			</>
 		)
 

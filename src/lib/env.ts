@@ -58,6 +58,14 @@ const envSchema = z.object({
 	// unpriced). Empty string means "use the default".
 	OPENROUTER_MODEL: z.string().optional().or(z.literal('')),
 
+	// Resend, for M7.5B daily reminder emails. An email is sent only when ALL three
+	// are set and REMINDER_FROM_EMAIL's domain equals RESEND_VERIFIED_DOMAIN
+	// (src/lib/notifications/email-config.ts) — a key alone never sends. Unset →
+	// the email channel is skipped; in-app notifications are unaffected.
+	RESEND_API_KEY: z.string().optional(),
+	REMINDER_FROM_EMAIL: z.string().optional().or(z.literal('')),
+	RESEND_VERIFIED_DOMAIN: z.string().optional().or(z.literal('')),
+
 	NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
 	// Attached as the app_version property on every analytics event — optional,
