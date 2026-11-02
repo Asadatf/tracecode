@@ -1,0 +1,52 @@
+// M7.5 recommendation persistence. One current recommendation per authenticated
+// learner (userId is the PK), holding the full versioned M7.3/M7.4 payload bound
+// to the evidence hash it was built from, plus the durable AI-refresh claim and
+// the rate-limit timestamp.
+//
+// User-scoped like every learning table, so its create migration ENABLEs ROW
+// LEVEL SECURITY with no policy and never FORCE (docs/rules/auth.md,
+// docs/rules/migrations.md); `pnpm check:rls` enforces it in CI. The AI diagnosis
+// is OPTIONAL enrichment: `diagnosisSource` records whether the cached payload's
+// diagnosis is deterministic ('fallback') or AI ('ai'), and it is trusted only
+// while `evidenceHash` still matches freshly computed evidence (M7.3 stays the
+// authority — see src/server/learning/recommendation-cache.ts).
+
+model RecommendationCache {
+	userId String @id @db.Uuid
+
+	// Recommendation.v — the payload shape version.
+	v Int
+	// Content-addressed hash of the evidence this recommendation was built from
+	// (src/lib/learning/evidence-hash.ts). The cache is valid only while this
+	// equals freshly computed evidence; a backfill or new attempt changes it.
+	evidenceHash String
+	// The full serialized Recommendation (rankedProblems, focusConcepts, diagnosis).
+	payload Json
+	// The OpenRouter model that produced an AI diagnosis, or null for a
+	// deterministic-only row. Reused to decide whether a cached AI diagnosis is
+	// still valid after a model change.
+	model           String?
+	diagnosisSource String // 'fallback' | 'ai'
+
+	// When the payload was generated, and when the row last changed.
+	generatedAt DateTime @db.Timestamptz(6)
+	updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+	// Durable, concurrency-safe AI refresh claim. A refresh wins by an atomic
+	// conditional UPDATE flipping `refreshState` to 'running' only when it is not
+	// already running (or the previous claim is older than the TTL), so two
+	// concurrent refreshes never both call the model. `refreshClaimHash` records
+	// which evidence the live claim is for; `refreshClaimedAt` lets a crashed
+	// claim self-heal after the TTL.
+	refreshState     String    @default("idle") // 'idle' | 'running'
+	refreshClaimHash String?
+	refreshClaimedAt DateTime? @db.Timestamptz(6)
+
+	// When an AI refresh was last ATTEMPTED (claimed), for the per-user cooldown
+	// rate limit — independent of whether the attempt produced a diagnosis.
+	lastRefreshAt DateTime? @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@map("recommendation_cache")
+}

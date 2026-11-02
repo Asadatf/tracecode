@@ -24,5 +24,8 @@ model User {
 	learningEvents  LearningEvent[]
 	problemProgress ProblemProgress[]
 
+	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
+	recommendationCache RecommendationCache?
+
 	@@map("users")
 }

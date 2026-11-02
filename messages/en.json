@@ -112,6 +112,35 @@
 				"recent": "your last 10 runs, passed or failed",
 				"topics": "how many problems you've solved in each topic"
 			}
+		},
+		"recommendations": {
+			"heading": "What to practise next",
+			"subheading": "A suggestion based on your saved runs — your choice, not a rule.",
+			"empty": "No recommendation yet. Solve or attempt a problem and it will appear here.",
+			"focusConcepts": "Focus concepts",
+			"difficulty": {
+				"easy": "Easy",
+				"medium": "Medium",
+				"hard": "Hard"
+			},
+			"action": {
+				"start": "Start",
+				"continue": "Continue",
+				"open": "Open"
+			},
+			"insight": {
+				"aiHeading": "AI insight",
+				"fallbackHeading": "From your activity",
+				"nextStep": "Next step:",
+				"aiDisclaimer": "Generated from your activity patterns and the structure of your code — the model never sees your source code.",
+				"fallbackDisclaimer": "Based only on your recorded runs and results.",
+				"refresh": "Refresh AI insight",
+				"refreshing": "Refreshing…",
+				"upToDate": "Already up to date.",
+				"cooldown": "You refreshed recently — try again in a few minutes.",
+				"running": "A refresh is already in progress.",
+				"failed": "Couldn’t refresh the AI insight right now — showing your latest."
+			}
 		}
 	},
 	"SiteFooter": {
