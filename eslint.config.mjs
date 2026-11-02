@@ -32,7 +32,13 @@ const AI_SDK_IMPORTS = {
 		'@google/genai',
 		'@google/genai/**',
 		'@google/generative-ai',
-		'ai',
+		// Anchored (leading `/`) so these match the Vercel AI SDK package `ai`
+		// and its subpaths, NOT the `src/server/ai/` directory segment — feature
+		// code is SUPPOSED to import the wrappers there (e.g. '@/server/ai/openrouter').
+		// A bare `ai` here uses gitignore semantics and would wrongly ban every
+		// '@/server/ai/*' import, the exact path docs/rules/ai-usage.md prescribes.
+		'/ai',
+		'/ai/**',
 		'@ai-sdk/**'
 	],
 	message:
