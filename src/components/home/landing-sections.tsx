@@ -60,6 +60,7 @@ export async function LearningLoop() {
 
 	return (
 		<section
+			data-cursor-dark
 			id="how-it-works"
 			data-reveal
 			className={`${styles.loopSection} ${motion.loopSection}`}
@@ -90,6 +91,7 @@ export async function ClosingCta() {
 		<section
 			data-reveal
 			className={`${styles.closing} ${motion.closing}`}
+			data-cursor-dark
 			aria-labelledby="closing-title"
 		>
 			<span className={`${styles.sectionKicker} ${motion.closingPart}`}>{t('closing.kicker')}</span>

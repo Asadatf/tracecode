@@ -422,16 +422,16 @@
 }
 
 .codeBody {
-	padding: 20px 0;
-	overflow-x: auto;
+	min-width: 0;
+	padding: 20px 16px 20px 0;
 }
 
 .codeLine {
 	color: color-mix(in srgb, var(--text) 76%, transparent);
 	border-left: 3px solid #0000;
 	display: grid;
-	min-width: 470px;
-	grid-template-columns: 44px 1fr;
+	min-width: 0;
+	grid-template-columns: 44px minmax(0, 1fr);
 	align-items: center;
 	font-size: 12px;
 	line-height: 2.05;
@@ -448,8 +448,10 @@
 }
 
 .codeLine code {
+	min-width: 0;
 	font-family: var(--font-mono);
-	white-space: pre;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
 }
 
 .codeLineActive {
@@ -1234,12 +1236,6 @@
 	}
 }
 
-#how-it-works,
-#problems,
-#guided-preview-title {
-	scroll-margin-top: 24px;
-}
-
 @media (max-width: 1120px) {
 	.hero {
 		grid-template-columns: 1fr;
@@ -1382,7 +1378,7 @@
 	}
 
 	.codeLine {
-		min-width: 420px;
+		min-width: 0;
 	}
 
 	.statePanel {
@@ -1637,49 +1633,51 @@
 	color: var(--text);
 }
 
-:global(html:has(.page)) {
-	scroll-behavior: smooth;
+@media (prefers-reduced-motion: no-preference) {
+	.header {
+		animation: layer-in 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+	.heroCopy {
+		animation: none;
+	}
+	.heroCopy > * {
+		animation: copy-enter 700ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+	.heroCopy > :nth-child(2) {
+		animation-delay: 180ms;
+	}
+	.heroDescription {
+		animation-delay: 300ms;
+	}
+	.heroActions {
+		animation-delay: 380ms;
+	}
+	.trustLine {
+		animation-delay: 650ms;
+	}
+	.tour {
+		animation-delay: 450ms;
+	}
 }
 
 .page :is([id], section) {
 	scroll-margin-top: 100px;
 }
 
-.heroShell::before {
-	animation: none;
-}
-
-@supports (animation-timeline: view()) {
-	@media (prefers-reduced-motion: no-preference) {
-		.heroTitle {
-			animation: hero-depart linear both;
-			animation-timeline: view();
-			animation-range: exit 0% exit 100%;
-		}
-		.loopGrid {
-			background: linear-gradient(var(--accent), var(--accent)) left top / 0% 1px no-repeat;
-			animation: loop-progress linear both;
-			animation-timeline: view();
-			animation-range: entry 0% entry 100%;
-		}
-	}
-}
-
-@keyframes hero-depart {
-	to {
-		opacity: 0.35;
-		transform: translateY(-24px);
-	}
-}
-
-@keyframes loop-progress {
-	to {
-		background-size: 100% 1px;
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
-	:global(html:has(.page)) {
+	:global(html):has(.page) {
 		scroll-behavior: auto;
 	}
+}
+
+.nav a {
+	text-decoration: underline;
+	text-decoration-color: transparent;
+	text-underline-offset: 6px;
+	transition:
+		color 180ms ease,
+		text-decoration-color 180ms ease;
+}
+.nav a:hover {
+	text-decoration-color: currentColor;
 }

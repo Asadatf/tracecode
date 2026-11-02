@@ -248,3 +248,15 @@ test('AC17: explore link lands at the next narrative heading', async ({ page }) 
 			.toBe(100)
 	}
 })
+
+test('AC13: guided preview code fits its panel without horizontal scrolling', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' })
+	for (const width of [1440, 1280, 768, 390]) {
+		await page.setViewportSize({ width, height: 1000 })
+		await page.goto('/')
+		const source = page.getByLabel('Python source from the committed Two Sum trace')
+		expect(await source.evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0)
+		await expect(source.locator('code')).toHaveCount(6)
+		await expect(source.locator('code').nth(3)).toHaveText('if nums[i] + nums[j] == target:')
+	}
+})

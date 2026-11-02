@@ -309,3 +309,14 @@
 		}
 	}
 }
+
+/* Arming a reveal must set its start pose immediately. Delays belong only
+   to the entrance; delaying the pending pose can skip the intended sequence. */
+@media (prefers-reduced-motion: no-preference) {
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending'],
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending'] *,
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending']::before,
+	:is(.narrative, .loopSection, .catalogSection, .closing)[data-state='pending'] *::before {
+		transition: none !important;
+	}
+}

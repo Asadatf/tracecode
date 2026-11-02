@@ -9,6 +9,7 @@ import { buildProblemTable } from '@/lib/home/problem-rows'
 import { getLearningProgress } from '@/server/learning/progress'
 import { ProblemTable } from '@/components/home/problem-table'
 import { LandingHeader } from '@/components/home/landing-header'
+import { LandingCursor } from '@/components/home/landing-cursor'
 import { ScrollReveal } from '@/components/home/scroll-reveal'
 import { ExecutionTour } from '@/components/home/execution-tour'
 import { ClosingCta, LearningLoop, TraceNarrative } from '@/components/home/landing-sections'
@@ -32,9 +33,10 @@ export default async function HomePage() {
 	return (
 		<div className={styles.page}>
 			<ScrollReveal />
+			<LandingCursor />
 			<LandingHeader />
 			<main>
-				<div className={styles.heroShell}>
+				<div className={styles.heroShell} data-cursor-dark>
 					<section className={styles.hero} aria-labelledby="landing-title">
 						<div className={styles.heroCopy}>
 							<p className={styles.heroEyebrow}>{t('eyebrow')}</p>

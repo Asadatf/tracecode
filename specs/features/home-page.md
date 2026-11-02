@@ -201,4 +201,23 @@ Track B (UI)
   exceeds its reserved height, including larger text settings and narrow screens.
 
 - The hero’s “Explore the guided preview” link targets the next narrative heading
-  (), landing with the heading 100px below the viewport top.
+  (#narrative-title), landing with the heading 100px below the viewport top.
+
+## Cursor and cinematic refinement (approved user brief, 2026-11-02)
+
+- AC18: The landing page alone renders a transparent SVG arrow with white outline
+  and rounded joins. Its tip tracks viewport pointer coordinates via one scheduled
+  animation frame, without React state updates. A soft emerald spotlight follows
+  on eligible surfaces, stronger on dark sections. Overlay never receives events.
+- Text, code, fields and selection areas retain native cursors; interactive links
+  and buttons use the outlined arrow. Leaving the page, coarse/touch input, reduced
+  motion or unmount restores the native cursor. No overlay is required for use.
+- First load: navigation (500ms), copy (700ms with 120–380ms delays), instrument
+  (850ms after 450ms), supporting details (700ms after 650ms). Shared easing is
+  cubic-bezier(.2,.7,.2,1). The original mark remains unchanged.
+- Section reveal choreography uses the existing CSS module and one observer;
+  reduced-motion changes restore visible content immediately. No execution states,
+  palette changes, routing interception or new animation dependencies are added.
+
+- Preview source wraps long lines within its code panel at every viewport width,
+  preserving whitespace and source line numbers without horizontal scrolling.
