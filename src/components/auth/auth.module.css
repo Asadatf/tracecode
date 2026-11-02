@@ -377,3 +377,69 @@
 		transition: none;
 	}
 }
+
+@media (prefers-reduced-motion: no-preference) {
+	.formWrap {
+		animation: form-arrive 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.formWrap > * {
+		animation: content-arrive 600ms 120ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.formWrap > :nth-child(2) {
+		animation-delay: 200ms;
+	}
+
+	.formWrap > form {
+		animation-delay: 280ms;
+	}
+
+	.formWrap > .switch {
+		animation-delay: 380ms;
+	}
+
+	.visual {
+		animation: panel-arrive 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.visualEyebrow,
+	.visualHeading {
+		animation: content-arrive 700ms 180ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+
+	.visualHeading {
+		animation-delay: 280ms;
+	}
+
+	.window {
+		animation: instrument-arrive 850ms 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	}
+}
+
+@keyframes form-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(20px) scale(0.985);
+	}
+}
+
+@keyframes content-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+}
+
+@keyframes panel-arrive {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes instrument-arrive {
+	from {
+		opacity: 0;
+		transform: translateY(24px) scale(0.97);
+	}
+}

@@ -156,7 +156,6 @@
 	);
 	content: '';
 	pointer-events: none;
-	animation: field-drift 18s ease-in-out infinite alternate;
 }
 
 .hero {
@@ -294,6 +293,7 @@
 }
 
 .tourTopbar {
+	animation: layer-in 650ms 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 	border-bottom: 1px solid var(--border);
 	background: var(--surface-subtle);
 	display: flex;
@@ -331,6 +331,7 @@
 }
 
 .stageRail {
+	animation: layer-in 650ms 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 	border-bottom: 1px solid var(--border);
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -378,19 +379,20 @@
 
 .tourWorkspace {
 	display: grid;
-	min-height: 372px;
+	min-height: 460px;
 	grid-template-columns: minmax(0, 1.18fr) minmax(250px, 0.82fr);
 }
 
 .codePanel {
-	background: var(--text);
-	color: var(--bg);
+	animation: layer-in 650ms 480ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+	background: var(--bg);
+	color: var(--text);
 	min-width: 0;
 }
 
 .codeHeader {
-	border-bottom: 1px solid color-mix(in srgb, var(--bg) 10%, transparent);
-	color: color-mix(in srgb, var(--bg) 64%, transparent);
+	border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+	color: color-mix(in srgb, var(--text) 64%, transparent);
 	display: flex;
 	min-height: 44px;
 	align-items: center;
@@ -400,7 +402,7 @@
 }
 
 .codeHeader code {
-	color: var(--bg);
+	color: var(--text);
 	font: 600 11px var(--font-mono);
 }
 
@@ -425,7 +427,7 @@
 }
 
 .codeLine {
-	color: color-mix(in srgb, var(--bg) 76%, transparent);
+	color: color-mix(in srgb, var(--text) 76%, transparent);
 	border-left: 3px solid #0000;
 	display: grid;
 	min-width: 470px;
@@ -440,7 +442,7 @@
 }
 
 .codeLine > span {
-	color: color-mix(in srgb, var(--bg) 30%, transparent);
+	color: color-mix(in srgb, var(--text) 30%, transparent);
 	font: 500 10px var(--font-mono);
 	text-align: center;
 }
@@ -452,11 +454,15 @@
 
 .codeLineActive {
 	background: color-mix(in srgb, var(--accent) 18%, transparent);
-	color: var(--bg);
+	color: var(--text);
 	border-left-color: var(--accent);
 }
 
 .statePanel {
+	height: 460px;
+	min-height: 0;
+	overflow-y: auto;
+	animation: layer-in 650ms 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 	border-left: 1px solid var(--border);
 	background: var(--surface);
 	display: flex;
@@ -465,6 +471,7 @@
 }
 
 .stateHeading {
+	flex-shrink: 0;
 	border-bottom: 1px solid var(--border);
 	color: var(--text-muted);
 	display: flex;
@@ -488,6 +495,7 @@
 
 .stageMessage,
 .exploreState {
+	flex-shrink: 0;
 	display: flex;
 	flex: 1;
 	flex-direction: column;
@@ -1181,10 +1189,55 @@
 	}
 }
 
-@keyframes field-drift {
-	to {
-		transform: translate3d(-20px, 18px, 0) scale(1.03);
+@keyframes layer-in {
+	from {
+		opacity: 0;
+		transform: translateY(14px);
 	}
+}
+
+@keyframes hero-exit {
+	to {
+		opacity: 0.18;
+		transform: translateY(-56px) scale(0.975);
+	}
+}
+
+@keyframes ring-parallax {
+	to {
+		transform: translate3d(-24px, 120px, 0) scale(1.08);
+	}
+}
+
+/* Scroll-driven hero exit and ring parallax: pure CSS, compositor-only
+   properties, no listener. Browsers without animation-timeline keep the
+   static composition. */
+@supports (animation-timeline: view()) {
+	.hero {
+		animation: hero-exit linear both;
+		animation-timeline: view();
+		animation-range: exit 25% exit 100%;
+	}
+
+	.heroShell::before {
+		animation: ring-parallax linear both;
+		animation-timeline: view();
+		animation-range: exit 0% exit 100%;
+	}
+}
+
+/* Anchor navigation is native; this only makes it glide, and only on the
+   landing page (:has drops out when the visitor navigates elsewhere). */
+@media (prefers-reduced-motion: no-preference) {
+	:global(html):has(.page) {
+		scroll-behavior: smooth;
+	}
+}
+
+#how-it-works,
+#problems,
+#guided-preview-title {
+	scroll-margin-top: 24px;
 }
 
 @media (max-width: 1120px) {
@@ -1240,7 +1293,7 @@
 	}
 
 	.statePanel {
-		min-height: 330px;
+		min-height: 0;
 		border-top: 1px solid var(--border);
 		border-left: 0;
 	}
@@ -1401,6 +1454,11 @@
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
+	}
+
+	.hero,
+	.heroShell::before {
+		animation: none !important;
 	}
 }
 
@@ -1577,4 +1635,51 @@
 	--danger: #e5806f;
 	--danger-soft: #3a2724;
 	color: var(--text);
+}
+
+:global(html:has(.page)) {
+	scroll-behavior: smooth;
+}
+
+.page :is([id], section) {
+	scroll-margin-top: 100px;
+}
+
+.heroShell::before {
+	animation: none;
+}
+
+@supports (animation-timeline: view()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.heroTitle {
+			animation: hero-depart linear both;
+			animation-timeline: view();
+			animation-range: exit 0% exit 100%;
+		}
+		.loopGrid {
+			background: linear-gradient(var(--accent), var(--accent)) left top / 0% 1px no-repeat;
+			animation: loop-progress linear both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 100%;
+		}
+	}
+}
+
+@keyframes hero-depart {
+	to {
+		opacity: 0.35;
+		transform: translateY(-24px);
+	}
+}
+
+@keyframes loop-progress {
+	to {
+		background-size: 100% 1px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:global(html:has(.page)) {
+		scroll-behavior: auto;
+	}
 }

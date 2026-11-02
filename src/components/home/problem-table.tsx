@@ -5,6 +5,7 @@ import { isGuestPracticeSlug } from '@/lib/auth/access'
 import { LockIcon } from '@/components/ui/icons'
 import type { ProblemTable as ProblemTableData } from '@/lib/home/problem-rows'
 import styles from './landing.module.css'
+import motion from './landing-motion.module.css'
 
 // The home page's problem list (specs/features/home-page.md, AC6–AC8).
 export async function ProblemTable({
@@ -18,15 +19,20 @@ export async function ProblemTable({
 	const columns = ['number', 'title', 'topics', 'difficulty', 'status'] as const
 
 	return (
-		<section id="problems" aria-labelledby="problems-heading" className={styles.catalogSection}>
-			<div className={styles.catalogIntro}>
+		<section
+			id="problems"
+			data-reveal
+			aria-labelledby="problems-heading"
+			className={`${styles.catalogSection} ${motion.catalogSection}`}
+		>
+			<div className={`${styles.catalogIntro} ${motion.catalogHeading}`}>
 				<p className={styles.catalogKicker}>{t('kicker')}</p>
 				<h2 id="problems-heading" className={styles.catalogTitle}>
 					{t('heading')}
 				</h2>
 				<p className={styles.catalogDescription}>{t('description')}</p>
 			</div>
-			<div className={styles.tableFrame}>
+			<div className={`${styles.tableFrame} ${motion.catalogFrame}`}>
 				<table className={styles.table}>
 					<thead>
 						<tr className={styles.tableHead}>
@@ -48,7 +54,7 @@ export async function ProblemTable({
 								// Sign In and come back here (specs/features/auth-access.md AC5).
 								const locked = !authenticated && !isGuestPracticeSlug(row.slug)
 								return (
-									<tr key={row.slug} className={styles.tableRow}>
+									<tr key={row.slug} className={`${styles.tableRow} ${motion.catalogRow}`}>
 										<td className={styles.problemNumber}>{row.number}</td>
 										<td>
 											{locked ? (

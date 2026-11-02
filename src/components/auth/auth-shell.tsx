@@ -21,7 +21,7 @@ export async function AuthShell({
 }) {
 	const t = await getTranslations('Auth')
 	return (
-		<main className={styles.shell}>
+		<main key={variant} className={styles.shell}>
 			<section className={styles.formPanel}>
 				<Link href="/" aria-label={t('home')} className={styles.brand}>
 					<span aria-hidden="true" className={styles.brandMark}>

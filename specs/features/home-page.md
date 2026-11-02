@@ -87,7 +87,7 @@ to execute Python on the landing page.
   CTA remain readable; the preview stacks where needed; and the document has no
   horizontal overflow.
 - **AC14** — GIVEN the completed page WHEN its boundary is inspected THEN the route
-  and static sections remain Server Components. Only the guided preview is a Client
+  and static sections remain Server Components. The motion coordinator and guided preview are Client
   Component; it receives the serializable fixture projection and imports no Pyodide,
   worker, grading, database or AI code.
 - **AC15** — GIVEN a device that prefers either light or dark mode WHEN the public
@@ -110,7 +110,7 @@ to execute Python on the landing page.
   (`src/lib/trace/problems.ts`). Status reuses `getLearningProgress()`
   (`src/server/learning/progress.ts`), which already degrades to
   `authenticated: false` / `available: false`.
-- The page stays a Server Component. One narrow guided-preview Client Component
+- The page stays a Server Component. A small motion coordinator and one narrow guided-preview Client Component
   owns local tour state and event handlers. It receives only the serializable
   fixture projection and imports no Pyodide, editor, engine, grading, database,
   authentication or AI module.
@@ -182,3 +182,23 @@ Track B (UI)
   combined sign-in and registration page exists.
 - 2026-11-02 — corrected the public sequence to green, white, green, white, green.
 - 2026-11-02 — header and problem catalog became auth-aware (separate Sign In / Register, locked rows); see `auth-access.md`.
+
+## Landing motion (approved design restoration)
+
+- AC16: Viewport entry reveals the narrative copy and visual, then its fixture
+  code, array, pointers and explanation in order. Learning cards stagger in stage
+  order; catalog heading and semantic rows reveal; closing content concludes in
+  sequence. Reveals run once, with visible static content as the default fallback.
+- AC17: Native anchors scroll smoothly with a 100px target margin, retaining hash
+  URLs and browser history. Reduced motion uses instant scrolling and no reveals.
+- The coordinator observes entry only (no scroll listeners), cancels on unmount
+  or reduced-motion changes, and never controls execution or changes fixture data.
+- Supported browsers additionally fade/translate the departing hero headline and
+  draw a progression line above the learning cards using CSS view timelines.
+
+- Preview sizing: switching Write, Run, Explore or Improve keeps the card height
+  stable at each viewport width. The state panel scrolls internally when content
+  exceeds its reserved height, including larger text settings and narrow screens.
+
+- The hero’s “Explore the guided preview” link targets the next narrative heading
+  (), landing with the heading 100px below the viewport top.

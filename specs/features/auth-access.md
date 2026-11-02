@@ -60,6 +60,13 @@ that matches the approved Landing Page. The Supabase Auth backend is unchanged.
   the approved light-first canvas; emerald is reserved for actions and state,
   while only the cinematic execution panel uses the graphite treatment.
 
+- **AC13** — Opening either auth page reveals the form card over 700ms, with
+  heading, description, form and switch link staggered over 120–380ms. On desktop
+  the visual panel fades in over 900ms; its caption, heading and instrument enter
+  with 180–360ms delays. Entrances run once per page opening using opacity and
+  transform, preserve layout and field operation, and are disabled for reduced
+  motion. The original logo stays static and mobile retains the form-only layout.
+
 ## Data / API
 
 - No schema, migration or Supabase configuration change.

@@ -9,6 +9,7 @@ import { buildProblemTable } from '@/lib/home/problem-rows'
 import { getLearningProgress } from '@/server/learning/progress'
 import { ProblemTable } from '@/components/home/problem-table'
 import { LandingHeader } from '@/components/home/landing-header'
+import { ScrollReveal } from '@/components/home/scroll-reveal'
 import { ExecutionTour } from '@/components/home/execution-tour'
 import { ClosingCta, LearningLoop, TraceNarrative } from '@/components/home/landing-sections'
 import styles from '@/components/home/landing.module.css'
@@ -30,6 +31,7 @@ export default async function HomePage() {
 
 	return (
 		<div className={styles.page}>
+			<ScrollReveal />
 			<LandingHeader />
 			<main>
 				<div className={styles.heroShell}>
@@ -44,7 +46,7 @@ export default async function HomePage() {
 								<Link href={`/practice/${twoSum.slug}`} className={styles.primaryCta}>
 									{t('cta')}
 								</Link>
-								<a href="#guided-preview-title" className={styles.secondaryCta}>
+								<a href="#narrative-title" className={styles.secondaryCta}>
 									{t('exploreDemo')}
 								</a>
 								<a href="#problems" className={styles.textCta}>

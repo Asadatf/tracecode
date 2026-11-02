@@ -151,7 +151,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		)
 		await expect(tour).toHaveCSS('background-color', 'rgb(22, 28, 25)')
 		await expect(activeStage).toHaveCSS('background-color', 'rgb(238, 242, 239)')
-		await expect(codePanel).toHaveCSS('background-color', 'rgb(238, 242, 239)')
+		await expect(codePanel).toHaveCSS('background-color', 'rgb(15, 20, 18)')
 		await expect(tourControls).toHaveCSS('background-color', 'rgb(26, 33, 29)')
 		await expect(heroShell).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 		await expect(page.getByRole('link', { name: 'Solve Two Sum' })).toHaveCSS(
@@ -181,3 +181,70 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		)
 	})
 }
+
+test('AC13: catalog reveal never creates a transient horizontal scrollbar', async ({ page }) => {
+	await page.setViewportSize({ width: 1440, height: 1000 })
+	await page.goto('/')
+	await page
+		.locator('#problems')
+		.evaluate((element) => element.scrollIntoView({ behavior: 'instant' }))
+	const overflow = await page.locator('#problems table').evaluate(async (table) => {
+		const frame = table.parentElement!
+		let maximum = 0
+		const start = performance.now()
+		while (performance.now() - start < 2000) {
+			maximum = Math.max(maximum, frame.scrollWidth - frame.clientWidth)
+			await new Promise(requestAnimationFrame)
+		}
+		return maximum
+	})
+	expect(overflow).toBe(0)
+	await page.setViewportSize({ width: 390, height: 844 })
+	const frame = page.locator('#problems table').locator('..')
+	expect(await frame.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
+})
+
+test('AC13: preview height stays stable when selecting any stage', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' })
+	for (const width of [1440, 768, 390]) {
+		await page.setViewportSize({ width, height: 1000 })
+		await page.goto('/')
+		const tour = page.getByRole('region', { name: 'See the state change' })
+		const initial = await tour.evaluate((element) => element.getBoundingClientRect().height)
+		for (const stage of ['Run', 'Explore', 'Improve', 'Write']) {
+			await tour.getByRole('button', { name: new RegExp('^0[1-4] ' + stage + '$') }).click()
+			const height = await tour.evaluate((element) => element.getBoundingClientRect().height)
+			expect(Math.abs(height - initial)).toBeLessThanOrEqual(1)
+		}
+		await tour.getByRole('button', { name: /04 Improve/ }).click()
+		await expect(tour.getByRole('link', { name: /Fix it in Practice/ })).toBeVisible()
+	}
+})
+
+test('AC17: explore link lands at the next narrative heading', async ({ page }) => {
+	for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+		await page.emulateMedia({ reducedMotion })
+		await page.goto('/')
+		await page.getByRole('link', { name: 'Explore the guided preview' }).click()
+		await expect(page).toHaveURL(/#narrative-title$/)
+		await expect
+			.poll(async () =>
+				Math.round(
+					await page
+						.locator('#narrative-title')
+						.evaluate((element) => element.getBoundingClientRect().top)
+				)
+			)
+			.toBe(100)
+		await page.reload()
+		await expect
+			.poll(async () =>
+				Math.round(
+					await page
+						.locator('#narrative-title')
+						.evaluate((element) => element.getBoundingClientRect().top)
+				)
+			)
+			.toBe(100)
+	}
+})
