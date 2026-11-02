@@ -417,6 +417,35 @@ const RULES = [
 		validate: (secret) => !isPlaceholderValue(secret)
 	},
 	{
+		// A Supabase project ref (20 lowercase alphanumerics) is not a credential
+		// on its own, but it names the production database and is what an attacker
+		// aims a leaked password at, so it stays out of committed transcripts. Only
+		// recognised where its position says so (connection-string user, host,
+		// dashboard URL) — never a bare 20-char token. The session-log hook
+		// rewrites these to `[SUPABASE_REF REDACTED]`, which has brackets and a
+		// space and so can never match the 20-character shape. Mirrors
+		// STRUCTURED_REF_PATTERNS in .claude/hooks/extract-log.py.
+		id: 'supabase-project-ref',
+		description: 'a Supabase project ref in a connection string',
+		regex: /\bpostgres\.([a-z0-9]{20})(?![a-z0-9])(?=:)/g,
+		group: 1,
+		validate: (ref) => isProjectRef(ref)
+	},
+	{
+		id: 'supabase-project-ref',
+		description: 'a Supabase project ref in a host name',
+		regex: /(?<![A-Za-z0-9])([a-z0-9]{20})\.supabase\.(?:co|com)\b/g,
+		group: 1,
+		validate: (ref) => isProjectRef(ref)
+	},
+	{
+		id: 'supabase-project-ref',
+		description: 'a Supabase project ref in a dashboard URL',
+		regex: /supabase\.com\/dashboard\/project\/([a-z0-9]{20})(?![a-z0-9])/g,
+		group: 1,
+		validate: (ref) => isProjectRef(ref)
+	},
+	{
 		id: 'jwt',
 		description: 'a JWT (a legacy Supabase service-role / anon key is one)',
 		regex: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{6,}\b/g,
@@ -470,6 +499,15 @@ const RULES = [
 			looksLikeSecretValue(value)
 	}
 ]
+
+// Position already says this is a project ref, so entropy is deliberately NOT
+// consulted: a ref with a repeated or ordered run (`aaaaabbbbbcccccddddd`) is
+// still a live ref and must not slip through for looking un-random. The one
+// exemption is a single repeated character (`xxxxxxxxxxxxxxxxxxxx`), which no
+// generated ref is and is how a placeholder is spelled.
+function isProjectRef(ref) {
+	return !/^(.)\1*$/.test(ref)
+}
 
 function maskSecret(secret) {
 	if (secret.length <= 8) return `${secret[0] ?? ''}***`

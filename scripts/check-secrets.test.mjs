@@ -191,3 +191,59 @@ test('does not read a presigned-URL signature as a credential', () => {
 		ids(`https://callback.internal/hook?signature=${signature}`).includes('sensitive-query-param')
 	)
 })
+
+// Synthetic refs, assembled at runtime so no ref-shaped literal sits in the repo.
+const FAKE_REF = ['qrstuvwxyz', '0123456789'].join('')
+
+test('flags a Supabase project ref in each structured position', () => {
+	for (const text of [
+		`postgresql://postgres.${FAKE_REF}:[PASSWORD]@aws-0-region.pooler.supabase.com:6543/postgres`,
+		`db.${FAKE_REF}.supabase.co`,
+		`https://${FAKE_REF}.supabase.co/rest/v1/`,
+		`https://supabase.com/dashboard/project/${FAKE_REF}/settings/database`
+	]) {
+		assert.ok(ids(text).includes('supabase-project-ref'), text)
+	}
+})
+
+test('accepts the hook placeholder and ref-free Supabase shapes', () => {
+	for (const text of [
+		'postgresql://postgres.[SUPABASE_REF REDACTED]:[PASSWORD]@aws-0-region.pooler.supabase.com:6543/postgres',
+		'db.[SUPABASE_REF REDACTED].supabase.co',
+		'https://supabase.com/dashboard/project/[SUPABASE_REF REDACTED]/settings',
+		'db.abcdefgh.supabase.co',
+		'https://your-project-ref.supabase.co',
+		`db.${'x'.repeat(20)}.supabase.co`
+	]) {
+		assert.equal(ids(text).includes('supabase-project-ref'), false, text)
+	}
+})
+
+test('does not read a bare 20-character token or a longer hash as a project ref', () => {
+	for (const text of [
+		`token ${FAKE_REF}`,
+		`postgres.${FAKE_REF}0 and x${FAKE_REF}.supabase.co`,
+		'sha 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b'
+	]) {
+		assert.equal(ids(text).includes('supabase-project-ref'), false, text)
+	}
+})
+
+test('flags a structurally valid project ref however low its entropy', () => {
+	for (const ref of [
+		['aaaaa', 'bbbbb', 'ccccc', 'ddddd'].join(''),
+		'ab'.repeat(10),
+		['0123456789', '0123456789'].join(''),
+		['a'.repeat(19), 'b'].join('')
+	]) {
+		for (const text of [`postgres.${ref}:pw`, `db.${ref}.supabase.co`]) {
+			assert.ok(ids(text).includes('supabase-project-ref'), text)
+		}
+	}
+})
+
+test('accepts a single-repeated-character placeholder ref', () => {
+	for (const char of ['x', '0', 'a']) {
+		assert.equal(ids(`db.${char.repeat(20)}.supabase.co`).includes('supabase-project-ref'), false)
+	}
+})
