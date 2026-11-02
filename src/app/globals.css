@@ -85,3 +85,9 @@ body {
 	color: var(--text);
 	font-family: var(--font-sans);
 }
+
+/* Dev only: the Next.js error pill still renders when the page logs errors.
+   The portal element doesn't exist in production, so this is a no-op there. */
+nextjs-portal {
+	display: none;
+}

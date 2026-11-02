@@ -1,7 +1,7 @@
 // Where to send a learner after they authenticate. `next` arrives from the URL
 // or a form field, so it is untrusted: only a same-origin absolute path is
 // followed, and never one that lands back on an auth page (a redirect loop).
-export const DEFAULT_RETURN_TO = '/progress'
+export const DEFAULT_RETURN_TO = '/dashboard'
 
 const AUTH_PATHS = new Set(['/login', '/register'])
 const UNSAFE_CHARS = /[\\\u0000-\u001f\u007f]/

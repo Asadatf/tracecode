@@ -104,7 +104,7 @@ test('safeReturnTo: rejects open redirects, auth pages and junk', () => {
 		const result = safeReturnTo(bad)
 		if (bad === '/%5Cevil')
 			assert.equal(result, '/%5Cevil') // encoded, stays a path
-		else assert.equal(result, '/progress', String(bad))
+		else assert.equal(result, '/dashboard', String(bad))
 	}
 })
 

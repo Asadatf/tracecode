@@ -1,0 +1,317 @@
+/* Dashboard content. Colours come from the shell's tokens (the landing light
+   theme); nothing here defines a palette. */
+
+.board {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+.centre {
+	display: contents;
+}
+.head {
+	margin-bottom: 18px;
+}
+.summary {
+	order: 1;
+}
+.side {
+	order: 2;
+}
+.recent {
+	order: 4;
+}
+
+.eyebrow {
+	margin: 0 0 6px;
+	color: var(--accent);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+}
+.title {
+	margin: 0;
+	font-size: clamp(30px, 3.4vw, 42px);
+	font-weight: 700;
+	letter-spacing: -0.045em;
+	line-height: 1.05;
+}
+.unavailable {
+	margin: 0;
+	color: var(--warning);
+}
+
+.summary {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+	margin: 0;
+}
+.stat {
+	padding: 16px 18px;
+	border: 1px solid var(--border);
+	border-radius: 16px;
+	background: var(--surface);
+}
+.stat dt {
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 600;
+}
+.stat dd {
+	margin: 6px 0 0;
+	font-size: 28px;
+	font-weight: 700;
+	letter-spacing: -0.03em;
+}
+.stat dd span {
+	color: var(--text-muted);
+	font-size: 14px;
+	font-weight: 600;
+	letter-spacing: 0;
+}
+
+.card {
+	padding: 20px;
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	background: var(--surface);
+}
+.cardTitle {
+	margin: 0 0 14px;
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.tableWrap {
+	overflow-x: auto;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+}
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+.table th {
+	padding: 12px 16px;
+	background: var(--surface-subtle);
+	color: var(--text-muted);
+	font-weight: 600;
+	text-align: left;
+	white-space: nowrap;
+}
+.table td {
+	padding: 14px 16px;
+	border-top: 1px solid var(--border);
+}
+.problemCell a {
+	color: var(--text);
+	font-weight: 600;
+	text-decoration: none;
+}
+.problemCell a:hover {
+	color: var(--accent);
+	text-decoration: underline;
+}
+.pass,
+.fail {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font: 600 13px var(--font-mono);
+	white-space: nowrap;
+}
+.pass {
+	background: color-mix(in srgb, var(--success) 12%, transparent);
+	color: var(--success);
+}
+.fail {
+	background: var(--danger-soft);
+	color: var(--danger);
+}
+.when {
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+.note {
+	margin: 12px 0 0;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+.empty {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+	color: var(--text-muted);
+}
+.empty p {
+	margin: 0;
+}
+.cta {
+	display: inline-flex;
+	align-items: center;
+	min-height: 42px;
+	padding: 0 18px;
+	border-radius: 10px;
+	background: var(--accent);
+	color: var(--accent-ink);
+	font-weight: 700;
+	text-decoration: none;
+}
+.cta:hover {
+	background: var(--accent-hover);
+}
+
+.sideSection {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.floatCard {
+	padding: 22px 22px 24px;
+	border-radius: 20px;
+	background:
+		radial-gradient(
+			circle at 100% 0%,
+			color-mix(in srgb, var(--accent) 30%, transparent),
+			transparent 14rem
+		),
+		color-mix(in srgb, var(--accent) 34%, #0f1412);
+	color: #fff;
+	box-shadow:
+		0 2px 6px rgba(15, 20, 18, 0.18),
+		0 28px 56px -8px rgba(15, 20, 18, 0.4);
+}
+.floatCard .cardTitle {
+	color: #fff;
+}
+.floatCard .topicCount {
+	color: rgba(255, 255, 255, 0.72);
+}
+.floatCard .bar {
+	background: rgba(255, 255, 255, 0.16);
+}
+.floatCard .barFill {
+	background: #58d7a2;
+}
+
+.floatLight {
+	border-radius: 20px;
+	background: var(--surface);
+	box-shadow:
+		0 2px 6px rgba(15, 20, 18, 0.08),
+		0 24px 48px -10px rgba(15, 20, 18, 0.24);
+}
+.nextWidget {
+	padding: 22px;
+}
+.nextHead {
+	margin-bottom: 16px;
+}
+.nextHead .cardTitle {
+	margin-bottom: 4px;
+}
+.nextHead p {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.topicList {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.topicRow {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 14px;
+	font-weight: 600;
+}
+.topicCount {
+	font-family: var(--font-mono);
+	color: var(--text-muted);
+}
+.bar {
+	height: 6px;
+	margin-top: 8px;
+	border-radius: 999px;
+	background: var(--surface-hover);
+	overflow: hidden;
+}
+.barFill {
+	height: 100%;
+	border-radius: inherit;
+	background: var(--accent);
+}
+
+@media (min-width: 1024px) {
+	/* One page-level scroll (the shell's main region, scrollbar at the far
+	   right). The topic panel stays put in its own sticky column. */
+	.board {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 340px;
+		align-items: start;
+		gap: 24px;
+	}
+	.centre {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+		min-width: 0;
+		padding: 4px 0 28px 4px;
+	}
+	.side {
+		position: sticky;
+		top: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 22px;
+		padding: 4px 8px 28px 0;
+		/* Taller than the window → wheel-scroll inside, no visible bar. */
+		max-height: calc(100dvh - 96px);
+		overflow-y: auto;
+		scrollbar-width: none;
+	}
+	.side::-webkit-scrollbar {
+		display: none;
+	}
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+	.float {
+		animation: drift 7s ease-in-out infinite alternate;
+	}
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+	.floatLight.float {
+		animation-delay: -3.5s;
+	}
+}
+@keyframes drift {
+	from {
+		transform: translateY(0);
+	}
+	to {
+		transform: translateY(-6px);
+	}
+}
+
+@media (max-width: 520px) {
+	.summary {
+		grid-template-columns: 1fr;
+	}
+	.card {
+		padding: 16px;
+	}
+}

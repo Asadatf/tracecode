@@ -261,7 +261,8 @@
 			"emailUnavailable": "Email reminders aren’t set up on this site yet, so none will be sent for now.",
 			"saved": "Saved.",
 			"failed": "Couldn’t save that — please try again."
-		}
+		},
+		"loading": "Loading your progress"
 	},
 	"SiteFooter": {
 		"privacy": "Privacy",
@@ -276,7 +277,13 @@
 		"markRead": "Mark as read",
 		"empty": "No notifications yet. Your daily reminder will appear here.",
 		"error": "Notifications are unavailable right now.",
-		"loading": "Loading…"
+		"loading": "Loading…",
+		"subheading": "Your learning updates, all in one place.",
+		"newCount": "{count} new",
+		"all": "All",
+		"unreadTab": "Unread ({count})",
+		"emptyUnread": "You're all caught up.",
+		"settings": "Notification settings"
 	},
 	"UnsubscribePage": {
 		"metaTitle": "Unsubscribe — TraceCode",
@@ -324,6 +331,98 @@
 			"line": "Line",
 			"variables": "Variables",
 			"step": "Step"
+		}
+	},
+	"AppShell": {
+		"home": "TraceCode home",
+		"navLabel": "Main",
+		"collapse": "Collapse sidebar",
+		"expand": "Expand sidebar",
+		"openMenu": "Open menu",
+		"closeMenu": "Close menu",
+		"groups": {
+			"learn": "Learn",
+			"account": "Account"
+		},
+		"nav": {
+			"overview": "Overview",
+			"problems": "Problems",
+			"progress": "Progress",
+			"settings": "Settings"
+		},
+		"search": {
+			"label": "Search problems",
+			"placeholder": "Search problems…",
+			"empty": "No problems match"
+		},
+		"account": {
+			"menu": "Account menu",
+			"signedInAs": "Signed in as",
+			"settings": "Settings",
+			"signOut": "Sign out"
+		}
+	},
+	"Dashboard": {
+		"metaTitle": "Dashboard — TraceCode",
+		"eyebrow": "Learning workspace",
+		"heading": "Overview",
+		"unavailable": "Saved progress is unavailable right now.",
+		"summary": {
+			"solved": "Solved",
+			"of": "of {total}",
+			"attempted": "Attempted",
+			"runs": "Runs"
+		},
+		"recent": {
+			"heading": "Recent runs",
+			"columns": {
+				"problem": "Problem",
+				"result": "Result",
+				"when": "When"
+			},
+			"result": "{passed}/{total} passed",
+			"empty": "No runs yet. Solve a problem and your runs will show up here.",
+			"cta": "Solve Two Sum",
+			"note": "Your last 10 runs."
+		},
+		"topics": {
+			"heading": "Coverage by topic"
+		}
+	},
+	"ApplicationNav": {
+		"home": "TraceCode home",
+		"nav": "Main",
+		"how": "How it works",
+		"problems": "Problems",
+		"progress": "Progress",
+		"settings": "Settings",
+		"signOut": "Sign out",
+		"account": "Account menu",
+		"signedInAs": "Signed in as"
+	},
+	"SettingsPage": {
+		"metaTitle": "Settings — TraceCode",
+		"heading": "Settings",
+		"unavailable": "Settings are unavailable right now.",
+		"profile": "Profile",
+		"profileDescription": "The account you're signed in with.",
+		"email": "Email",
+		"emailMissing": "No email on this account",
+		"emailHelp": "Your email comes from your sign-in and can't be changed here.",
+		"profileDeferred": "Display names aren't editable yet.",
+		"saving": "Saving…",
+		"cadence": "Frequency",
+		"daily": "Daily",
+		"reminders": {
+			"heading": "Learning reminders",
+			"description": "Choose how TraceCode nudges you to keep practising.",
+			"inApp": "In-app reminders",
+			"inAppHelp": "Show your daily suggestion in your notifications.",
+			"email": "Email reminders",
+			"emailHelp": "Also send the suggestion by email. Off unless you turn it on.",
+			"emailUnavailable": "Email delivery isn't set up on this server yet.",
+			"saved": "Saved.",
+			"failed": "Couldn't save. Try again."
 		}
 	}
 }

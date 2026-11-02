@@ -44,6 +44,9 @@ const nextConfig: NextConfig = {
 		]
 	},
 	reactStrictMode: true,
+	// Hides the dev-only Next.js badge (issue count / route info). Dev overlay
+	// errors still appear; flip back to the default to see the badge again.
+	devIndicators: false,
 	// Top-level as of Next.js 16, not under `experimental`. Strictest
 	// setting: any Compiler bailout fails the build instead of silently
 	// skipping optimization for that component. Catch Compiler-incompatible code at build time, not as a

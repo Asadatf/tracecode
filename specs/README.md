@@ -102,6 +102,7 @@ Update this table in the same PR that changes a status.
 | [`features/fail-and-replay.md`](features/fail-and-replay.md)                   | Draft                                          | Track A + B |
 | [`features/home-page.md`](features/home-page.md)                               | In progress                                    | Asad        |
 | [`features/progress-page.md`](features/progress-page.md)                       | In progress                                    | Asad        |
+| [`features/dashboard-page.md`](features/dashboard-page.md)                     | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/learning-statistics.md`](features/learning-statistics.md)           | Draft                                          | Umair       |
 | [`features/learning-recommendations.md`](features/learning-recommendations.md) | In progress (M7.1 built; no teammate sign-off) | Umair       |
 | [`features/curated-problem-pack.md`](features/curated-problem-pack.md)         | In progress (no teammate sign-off)             | Umair       |

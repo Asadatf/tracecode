@@ -47,10 +47,10 @@ that matches the approved Landing Page. The Supabase Auth backend is unchanged.
   calling the server.
 - **AC8** — GIVEN a successful sign-in/sign-up that yields a session WHEN the
   action finishes THEN the learner is redirected to the sanitised `next`, or
-  `/progress` when absent or unsafe.
+  `/dashboard` when absent or unsafe.
 - **AC9** — `next` is accepted only if it is a same-origin absolute path that is
   not `//…`, contains no backslash or control characters, and does not point at
-  `/login` or `/register`; anything else falls back to `/progress`.
+  `/login` or `/register`; anything else falls back to `/dashboard`.
 - **AC10** — GIVEN a signed-in learner WHEN they open `/login` or `/register`
   THEN they are redirected to the sanitised `next` (no redirect loop).
 - **AC11** — GIVEN reduced motion or a phone-width viewport THEN the visual panel
@@ -103,3 +103,4 @@ that matches the approved Landing Page. The Supabase Auth backend is unchanged.
 
 - 2026-11-02 — created and built.
 - 2026-11-02 — scoped the auth presentation to the approved light-first palette.
+- 2026-11-03 — default post-login destination changed from `/progress` to `/dashboard` (dashboard-page AC16).

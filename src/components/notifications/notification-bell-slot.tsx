@@ -16,7 +16,13 @@ export async function NotificationBellSlot() {
 		markRead: t('markRead'),
 		empty: t('empty'),
 		error: t('error'),
-		loading: t('loading')
+		loading: t('loading'),
+		subheading: t('subheading'),
+		newCount: t('newCount', { count: '{count}' }),
+		all: t('all'),
+		unreadTab: t('unreadTab', { count: '{count}' }),
+		emptyUnread: t('emptyUnread'),
+		settings: t('settings')
 	}
 	return <NotificationBell initialUnread={unread.count} labels={labels} />
 }
