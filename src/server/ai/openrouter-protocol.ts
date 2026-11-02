@@ -36,9 +36,43 @@ export type OpenRouterFailure =
 	| 'invalid_response' // 2xx with no usable assistant message
 	| 'network_error' // fetch threw for another reason
 
+// Bounded facts about a 2xx response, for diagnosing why an enrichment was
+// rejected. Booleans, small enums and counts only — never the content, the
+// reasoning text or anything the learner sent (spec: "Enrichment diagnostics").
+export type FinishReason =
+	'stop' | 'length' | 'content_filter' | 'tool_calls' | 'error' | 'other' | 'absent'
+
+export interface ResponseDiagnostics {
+	// OpenRouter's normalized finish reason. `length` is a signal, not proof of
+	// why a diagnosis was rejected.
+	finishReason: FinishReason
+	hasContent: boolean
+	contentChars: number
+	// Whether the model emitted reasoning (a reasoning field, details, or a
+	// reasoning-token count). Presence only; the text is never read out.
+	hasReasoning: boolean
+	// Whether the provider itself reported prompt and completion token counts
+	// (as opposed to our zero default for a missing figure).
+	usageReported: boolean
+	// The provider's response id, to join a log line to its `ai_usage` row.
+	requestId?: string
+}
+
 export type OpenRouterResult =
-	| { ok: true; content: string; model: string }
-	| { ok: false; reason: OpenRouterFailure; status?: number }
+	| { ok: true; content: string; model: string; diagnostics?: ResponseDiagnostics }
+	| { ok: false; reason: OpenRouterFailure; status?: number; diagnostics?: ResponseDiagnostics }
+
+export type StatusClass = '2xx' | '4xx' | '5xx' | 'other' | 'none'
+
+// The class of an HTTP status; `none` when there was no response at all (a
+// timeout or a network error).
+export function statusClass(status: number | undefined): StatusClass {
+	if (status == null) return 'none'
+	if (status >= 200 && status < 300) return '2xx'
+	if (status >= 400 && status < 500) return '4xx'
+	if (status >= 500 && status < 600) return '5xx'
+	return 'other'
+}
 
 // Only a transient failure is worth a single retry; a bad response or a missing
 // key will fail again identically.
@@ -109,6 +143,91 @@ export function extractContent(
 	const content = parsed.data.choices?.[0]?.message?.content
 	if (content == null || content.trim() === '') return null
 	return { content, model: parsed.data.model ?? null }
+}
+
+const diagnosticsSchema = z.object({
+	id: z.string().optional(),
+	choices: z
+		.array(
+			z.object({
+				finish_reason: z.string().nullish(),
+				message: z
+					.object({
+						content: z.string().nullish(),
+						reasoning: z.unknown().optional(),
+						reasoning_details: z.unknown().optional()
+					})
+					.nullish()
+			})
+		)
+		.optional(),
+	usage: z
+		.object({
+			prompt_tokens: z.number().nullish(),
+			completion_tokens: z.number().nullish(),
+			completion_tokens_details: z.object({ reasoning_tokens: z.number().nullish() }).nullish()
+		})
+		.nullish()
+})
+
+const KNOWN_FINISH_REASONS = ['stop', 'length', 'content_filter', 'tool_calls', 'error'] as const
+// A provider response id is an opaque token; anything else (free text) is dropped
+// rather than logged.
+const REQUEST_ID = /^[A-Za-z0-9_.:-]{1,80}$/
+
+function nonEmpty(value: unknown): boolean {
+	if (typeof value === 'string') return value.trim() !== ''
+	if (Array.isArray(value)) return value.length > 0
+	return false
+}
+
+// Summarises a raw chat-completion response into `ResponseDiagnostics`. Tolerates
+// any shape (a wrong one reads as "nothing present") and never throws, so it can
+// sit on the failure path without ever making things worse.
+export function describeResponse(response: unknown): ResponseDiagnostics {
+	const parsed = diagnosticsSchema.safeParse(response)
+	if (!parsed.success) {
+		return {
+			finishReason: 'absent',
+			hasContent: false,
+			contentChars: 0,
+			hasReasoning: false,
+			usageReported: false
+		}
+	}
+	const { id, choices, usage } = parsed.data
+	const choice = choices?.[0]
+	const content = choice?.message?.content?.trim() ?? ''
+	const rawFinish = choice?.finish_reason
+	const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens ?? 0
+	return {
+		finishReason:
+			rawFinish == null ? 'absent' : (KNOWN_FINISH_REASONS.find((k) => k === rawFinish) ?? 'other'),
+		hasContent: content !== '',
+		contentChars: content.length,
+		hasReasoning:
+			nonEmpty(choice?.message?.reasoning) ||
+			nonEmpty(choice?.message?.reasoning_details) ||
+			reasoningTokens > 0,
+		usageReported:
+			typeof usage?.prompt_tokens === 'number' && typeof usage?.completion_tokens === 'number',
+		...(id != null && REQUEST_ID.test(id) ? { requestId: id } : {})
+	}
+}
+
+// Turns a 2xx response body into the typed result the caller branches on, with
+// the bounded diagnostics attached either way. Pure, so the empty / reasoning-only
+// / length-stopped shapes are testable without a network.
+export function resultFromResponse(response: unknown, requestedModel: string): OpenRouterResult {
+	const diagnostics = describeResponse(response)
+	const extracted = extractContent(response)
+	if (extracted == null) return { ok: false, reason: 'invalid_response', diagnostics }
+	return {
+		ok: true,
+		content: extracted.content,
+		model: extracted.model ?? requestedModel,
+		diagnostics
+	}
 }
 
 // The model to call: the configured override when it is a mapped slug, else the

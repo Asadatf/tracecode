@@ -8,9 +8,9 @@ import {
 	OPENROUTER_MAX_RETRIES,
 	OPENROUTER_TIMEOUT_MS,
 	buildChatBody,
-	extractContent,
 	failureForStatus,
 	isRetryable,
+	resultFromResponse,
 	type OpenRouterPrompt,
 	type OpenRouterResult
 } from './openrouter-protocol'
@@ -73,9 +73,10 @@ async function attempt(
 				return (await res.json()) as unknown
 			}
 		)
-		const extracted = extractContent(response)
-		if (extracted == null) return { ok: false, reason: 'invalid_response' }
-		return { ok: true, content: extracted.content, model: extracted.model ?? context.model }
+		// Bounded diagnostics ride along with the result (finish reason, content and
+		// reasoning presence, whether usage was reported); computed after tracking
+		// and never alters it.
+		return resultFromResponse(response, context.model)
 	} catch (error) {
 		return mapError(error)
 	}

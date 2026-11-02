@@ -7,7 +7,13 @@ import {
 } from '@/lib/learning/recommend'
 import type { RecommendationEvidence } from '@/lib/learning/recommendation-evidence'
 import { STRUCTURAL_FEATURES } from '@/lib/learning/solution-evolution'
-import type { OpenRouterPrompt, OpenRouterResult } from '@/server/ai/openrouter-protocol'
+import {
+	statusClass,
+	type FinishReason,
+	type OpenRouterPrompt,
+	type OpenRouterResult,
+	type StatusClass
+} from '@/server/ai/openrouter-protocol'
 
 // Evidence-grounded AI enrichment (M7.4). OpenRouter is OPTIONAL enrichment of a
 // recommendation: it may re-word the diagnosis and suggest how to approach the
@@ -303,10 +309,74 @@ type OpenRouterFailureReason = Extract<OpenRouterResult, { ok: false }>['reason'
 export type EnrichFailure =
 	OpenRouterFailureReason | 'invalid_json' | 'schema_rejected' | DiagnosisRejection
 
+// Where in the pipeline an enrichment was dropped, coarse enough to group by.
+export type EnrichStage = 'provider' | 'missing_content' | 'invalid_json' | 'schema' | 'evidence'
+
+// Everything a rejected enrichment is allowed to say about itself: enums,
+// booleans and counts. By construction there is no field that can carry the
+// prompt, the model's text, the reasoning, learner source, a name or an email.
+// `finishReason: 'length'` is a hint to look at the token budget, not a verdict.
+export interface EnrichDiagnostics {
+	stage: EnrichStage
+	reason: EnrichFailure
+	httpClass: StatusClass
+	finishReason?: FinishReason
+	hasContent?: boolean
+	contentChars?: number
+	hasReasoning?: boolean
+	usageReported?: boolean
+	requestId?: string
+}
+
 export interface EnrichDeps {
 	askModel: AskModel
-	// Safe reporter: receives an enum reason only, never prompt/response content.
-	report?: (reason: EnrichFailure) => void
+	// Safe reporter: receives an enum reason (and bounded diagnostics) only, never
+	// prompt/response content.
+	report?: (reason: EnrichFailure, diagnostics: EnrichDiagnostics) => void
+}
+
+const EVIDENCE_REJECTIONS: ReadonlySet<EnrichFailure> = new Set<DiagnosisRejection>([
+	'unknown_slug',
+	'unresolved_metric',
+	'wrong_metric_value',
+	'unknown_concept',
+	'disallowed_claim'
+])
+
+function stageOf(reason: EnrichFailure): EnrichStage {
+	if (reason === 'invalid_response') return 'missing_content'
+	if (reason === 'invalid_json') return 'invalid_json'
+	if (reason === 'schema_rejected') return 'schema'
+	return EVIDENCE_REJECTIONS.has(reason) ? 'evidence' : 'provider'
+}
+
+/**
+ * Builds the diagnostic record for a dropped enrichment from the provider result
+ * and the rejection reason. Pure; copies only the whitelisted bounded fields, so
+ * nothing else on `result` (notably `content`) can reach a log line.
+ */
+export function describeEnrichFailure(
+	reason: EnrichFailure,
+	result: OpenRouterResult
+): EnrichDiagnostics {
+	const facts = result.diagnostics
+	return {
+		stage: stageOf(reason),
+		reason,
+		// Diagnostics exist only when a 2xx body was read, so their presence means a
+		// response arrived even though a failure result carries no status of its own.
+		httpClass: result.ok || facts != null ? '2xx' : statusClass(result.status),
+		...(facts == null
+			? {}
+			: {
+					finishReason: facts.finishReason,
+					hasContent: facts.hasContent,
+					contentChars: facts.contentChars,
+					hasReasoning: facts.hasReasoning,
+					usageReported: facts.usageReported,
+					...(facts.requestId == null ? {} : { requestId: facts.requestId })
+				})
+	}
 }
 
 export interface EnrichInput {
@@ -340,9 +410,10 @@ function parseJsonLoose(content: string): unknown {
  */
 export async function enrichWithAi(input: EnrichInput, deps: EnrichDeps): Promise<Recommendation> {
 	const { evidence, recommendation } = input
-	const report = (reason: EnrichFailure) => deps.report?.(reason)
 
 	const result = await deps.askModel(buildDiagnosisPrompt(buildAiContext(evidence, recommendation)))
+	const report = (reason: EnrichFailure) =>
+		deps.report?.(reason, describeEnrichFailure(reason, result))
 	if (!result.ok) {
 		// A missing key is "AI disabled", not an error worth reporting.
 		if (result.reason !== 'no_api_key') report(result.reason)
@@ -387,20 +458,26 @@ export async function diagnoseRecommendation(
 	input: EnrichInput,
 	options: DiagnoseOptions = {}
 ): Promise<Recommendation> {
-	const [{ askOpenRouter }, { resolveModel }, { env }, { captureError }] = await Promise.all([
-		import('@/server/ai/openrouter'),
-		import('@/server/ai/openrouter-protocol'),
-		import('@/lib/env'),
-		import('@/lib/observability/capture-error')
-	])
+	const [{ askOpenRouter }, { resolveModel }, { env }, { captureError }, { log }] =
+		await Promise.all([
+			import('@/server/ai/openrouter'),
+			import('@/server/ai/openrouter-protocol'),
+			import('@/lib/env'),
+			import('@/lib/observability/capture-error'),
+			import('@/server/lib/logger')
+		])
 	const model = resolveModel(env.OPENROUTER_MODEL)
 	return enrichWithAi(input, {
 		askModel: (prompt) =>
 			askOpenRouter({ feature: 'learning_recommendation', model, meta: options.meta }, prompt),
-		report: (reason) =>
+		report: (reason, diagnostics) => {
+			// The record of what happened: one structured line per dropped enrichment,
+			// enums/booleans/counts only (EnrichDiagnostics has no free-text field).
+			log.warn('learning recommendation enrichment skipped', { model, ...diagnostics })
 			captureError(new Error(`learning_recommendation enrichment skipped: ${reason}`), {
 				area: 'recommend-ai',
 				reason
 			})
+		}
 	})
 }
