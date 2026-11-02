@@ -29,3 +29,16 @@ export async function currentLearnerId(): Promise<string | null> {
 	const { data } = await supabase.auth.getUser()
 	return resolveLearnerId(data.user, provisionUser)
 }
+
+// The signed-in account for DISPLAY (the header's account menu): id and email
+// from the same server-verified getUser() call, or null. Same resilience as
+// currentUserIdSafe — never throws, so a Supabase outage renders signed-out.
+export async function currentAccountSafe(): Promise<{ id: string; email: string | null } | null> {
+	try {
+		const supabase = await createServerSupabaseClient()
+		const { data } = await supabase.auth.getUser()
+		return data.user == null ? null : { id: data.user.id, email: data.user.email ?? null }
+	} catch {
+		return null
+	}
+}

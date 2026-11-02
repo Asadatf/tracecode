@@ -8,6 +8,7 @@ import { analyzeCode, isEngineBooted, runCode, traceCode, warmUpEngine } from '@
 import { withCodeFeatures } from '@/lib/learning/attempt-features'
 import { problemMeta, type ProblemDefinition } from '@/lib/trace/problem'
 import { PROBLEMS } from '@/lib/trace/problems'
+import { isGuestPracticeSlug } from '@/lib/auth/access'
 import { optimizationPrompt, teach, type TeachingPrompt } from '@/lib/trace/teach'
 import { buildRunRequest } from '@/lib/trace/grading'
 import {
@@ -382,7 +383,7 @@ function ProblemWorkspace({
 					>
 						{Object.values(PROBLEMS).map((p) => (
 							<option key={p.slug} value={p.slug}>
-								{p.title}
+								{!isAuthenticated && !isGuestPracticeSlug(p.slug) ? `${p.title} 🔒` : p.title}
 							</option>
 						))}
 					</select>

@@ -111,3 +111,5 @@ look as the home page and shows only what the app really records.
 
 - 2026-11-01 — created from the approved design; agreed.
 - 2026-11-01 — built; Shipped once merged to `main`.
+
+- 2026-11-02 — `/progress` now requires a session: signed-out requests redirect to `/login?next=/progress` (`auth-access.md` AC4). The signed-out state (AC2) is no longer reachable.

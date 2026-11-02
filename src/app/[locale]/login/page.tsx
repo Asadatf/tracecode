@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { getLocale } from 'next-intl/server'
-import { redirect } from '@/i18n/routing'
-import { LoginForm } from '@/components/auth/login-form'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { Link, redirect } from '@/i18n/routing'
+import { AuthForm } from '@/components/auth/auth-form'
+import { AuthShell } from '@/components/auth/auth-shell'
+import { authHref, safeReturnTo } from '@/lib/auth/return-to'
 import { currentUserIdSafe } from '@/server/auth/session'
 
 // An account form, not a marketing page → noindex (which also opts it out of
@@ -12,25 +13,33 @@ export const metadata: Metadata = {
 	robots: { index: false }
 }
 
-export default async function LoginPage() {
+export default async function LoginPage({
+	searchParams
+}: {
+	searchParams: Promise<{ next?: string | string[] }>
+}) {
+	const { next } = await searchParams
+	const requested = typeof next === 'string' ? next : null
+
+	// Already signed in: go where they were headed. safeReturnTo never yields
+	// /login or /register, so this cannot loop.
 	if ((await currentUserIdSafe()) != null) {
-		redirect({ href: '/progress', locale: await getLocale() })
+		redirect({ href: safeReturnTo(requested), locale: await getLocale() })
 	}
 
+	const t = await getTranslations('Auth.signInPage')
 	return (
-		<main className="mx-auto flex max-w-md flex-col gap-6 px-4 py-10 sm:px-6">
-			<Card>
-				<CardHeader>
-					<CardTitle>Sign in to TraceCode</CardTitle>
-					<CardDescription>
-						An account saves your attempts and progress across devices. Practising works without
-						one.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<LoginForm />
-				</CardContent>
-			</Card>
-		</main>
+		<AuthShell
+			variant="sign-in"
+			title={t('title')}
+			description={t('description')}
+			footer={
+				<>
+					{t('switchPrompt')} <Link href={authHref('register', requested)}>{t('switchLink')}</Link>
+				</>
+			}
+		>
+			<AuthForm mode="sign-in" next={requested == null ? null : safeReturnTo(requested)} />
+		</AuthShell>
 	)
 }

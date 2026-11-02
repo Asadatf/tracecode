@@ -6,8 +6,112 @@
 		},
 		"title": "Practice Python. When it fails, watch it run.",
 		"description": "Solve short problems in the browser. If a test fails, step through your code line by line and see the values change, so you know why.",
+		"eyebrow": "Python, made visible",
 		"cta": "Solve Two Sum",
-		"seeAll": "See all problems"
+		"seeAll": "See all problems",
+		"exploreDemo": "Explore the guided preview",
+		"trust": "Real execution in Practice. Fixture-backed preview here."
+	},
+	"LandingHeader": {
+		"home": "TraceCode home",
+		"nav": "Main",
+		"how": "How it works",
+		"problems": "Problems",
+		"progress": "Progress",
+		"cta": "Start practicing",
+		"signIn": "Sign in",
+		"register": "Register",
+		"account": "Account menu",
+		"signedInAs": "Signed in as",
+		"signOut": "Sign out"
+	},
+	"ExecutionTour": {
+		"label": "Guided product preview",
+		"title": "See the state change",
+		"illustrative": "Illustrative · not live Python",
+		"stageNav": "Preview stages",
+		"sourceLabel": "Python source from the committed Two Sum trace",
+		"stepCount": "Step {current} of {total}",
+		"stages": {
+			"write": "Write",
+			"run": "Run",
+			"explore": "Explore",
+			"improve": "Improve"
+		},
+		"controls": {
+			"run": "Run",
+			"previous": "Previous",
+			"next": "Next",
+			"reset": "Reset"
+		},
+		"status": {
+			"write": "Write stage. The recorded Two Sum example is ready to run.",
+			"run": "Run stage. Expected {expected}; received {actual}.",
+			"explore": "Explore stage. Step {current} of {total}.",
+			"improve": "Improve stage. The self-pairing bug is explained."
+		},
+		"write": {
+			"heading": "Start with a real attempt",
+			"body": "This short function comes from the committed Two Sum demonstration. Run the recorded test to see where its state goes wrong."
+		},
+		"run": {
+			"heading": "The result tells us what failed",
+			"body": "The function found two indices, but it reused the same array position.",
+			"expected": "Expected",
+			"actual": "Received"
+		},
+		"explore": {
+			"input": "Current input",
+			"step": "Python is about to execute line {line}. Follow the values as the recorded trace advances.",
+			"bug": "Both pointers are on index 0. The function adds the first value to itself and accepts an invalid pair."
+		},
+		"improve": {
+			"heading": "Now the bug has a shape",
+			"body": "The failed result was only the symptom. The replay reveals the state that caused it, so the next edit can be deliberate.",
+			"insightLabel": "What to change",
+			"insight": "Prevent the two pointers from selecting the same index before accepting a match.",
+			"cta": "Fix it in Practice"
+		}
+	},
+	"LandingSections": {
+		"narrative": {
+			"kicker": "The moment it diverges",
+			"title": "A result shows the failure. A trace reveals the cause.",
+			"body": "TraceCode connects the active line, the values in memory and the learner’s own reasoning. The error stops being mysterious and becomes a state you can inspect.",
+			"visualLabel": "The recorded Two Sum state where both pointers target index zero",
+			"activeLine": "Active source line",
+			"explanation": "i and j are both 0, so the value 3 is added to itself."
+		},
+		"loop": {
+			"kicker": "A learning loop with evidence",
+			"title": "From first attempt to a better mental model.",
+			"body": "Each stage keeps the learner in control while exposing only the information needed for the next decision.",
+			"stages": {
+				"write": {
+					"title": "Write",
+					"body": "Work through a focused Python problem with visible examples and a real editor."
+				},
+				"run": {
+					"title": "Run",
+					"body": "Execute against concrete tests and see the exact expected and actual results."
+				},
+				"explore": {
+					"title": "Explore",
+					"body": "Move through the trace line by line as variables, loops and pointers change."
+				},
+				"improve": {
+					"title": "Improve",
+					"body": "Use evidence-based guidance, revise intentionally and test the new mental model."
+				}
+			}
+		},
+		"closing": {
+			"kicker": "Make the invisible inspectable",
+			"title": "Your code is already telling a story. Learn to read it.",
+			"body": "Start with one small problem and see every state change that leads to the result.",
+			"primary": "Start with Two Sum",
+			"secondary": "View all problems"
+		}
 	},
 	"SiteHeader": {
 		"home": "TraceCode home",
@@ -29,6 +133,8 @@
 	},
 	"ProblemTable": {
 		"heading": "Problems",
+		"kicker": "Choose your next trace",
+		"description": "Six focused Python problems, each ready to run, replay and understand.",
 		"columns": {
 			"number": "#",
 			"title": "Title",
@@ -48,7 +154,10 @@
 			"unknown": "—"
 		},
 		"empty": "No problems yet.",
-		"signIn": "Sign in to track your progress."
+		"signIn": "Sign in to track your progress and unlock all six problems.",
+		"locked": "Sign in to unlock",
+		"lockedLabel": "{title} — sign in to unlock",
+		"free": "Free to try"
 	},
 	"ProgressPage": {
 		"metaTitle": "Your progress — TraceCode",
@@ -178,5 +287,43 @@
 		"done": "Done — you won’t get reminder emails any more.",
 		"failed": "Something went wrong. Please try again.",
 		"invalid": "This unsubscribe link isn’t valid. You can manage reminder emails from your progress page."
+	},
+	"Auth": {
+		"email": "Email",
+		"password": "Password",
+		"confirm": "Confirm password",
+		"show": "Show password",
+		"hide": "Hide password",
+		"signIn": "Sign in",
+		"signingIn": "Signing in…",
+		"create": "Create account",
+		"creating": "Creating account…",
+		"rules": "Use {min}–{max} characters.",
+		"errors": {
+			"passwordLength": "Your password must be {min}–{max} characters.",
+			"mismatch": "The two passwords don’t match."
+		},
+		"home": "TraceCode home",
+		"signInPage": {
+			"title": "Welcome back",
+			"description": "Sign in to save your attempts and pick up where you left off.",
+			"switchPrompt": "New to TraceCode?",
+			"switchLink": "Create an account"
+		},
+		"registerPage": {
+			"title": "Create your account",
+			"description": "Save attempts and progress across devices, and unlock all six problems.",
+			"switchPrompt": "Already have an account?",
+			"switchLink": "Sign in"
+		},
+		"visual": {
+			"label": "Illustrative Python trace",
+			"caption": "Illustrative · not live Python",
+			"signInHeading": "Pick up where your trace left off.",
+			"registerHeading": "See what your code is doing, line by line.",
+			"line": "Line",
+			"variables": "Variables",
+			"step": "Step"
+		}
 	}
 }

@@ -32,10 +32,13 @@ import {
 	Copy,
 	DotsThreeVertical,
 	DownloadSimple,
+	Eye,
+	EyeSlash,
 	FunnelSimple,
 	Gear,
 	Info,
 	List,
+	Lock,
 	MagnifyingGlass,
 	Minus,
 	PencilSimple,
@@ -106,8 +109,11 @@ export const CopyIcon = (props: IconProps) => <Glyph source={Copy} {...props} />
 export const DownloadIcon = (props: IconProps) => <Glyph source={DownloadSimple} {...props} />
 export const EditIcon = (props: IconProps) => <Glyph source={PencilSimple} {...props} />
 export const ExternalLinkIcon = (props: IconProps) => <Glyph source={ArrowSquareOut} {...props} />
+export const EyeIcon = (props: IconProps) => <Glyph source={Eye} {...props} />
+export const EyeOffIcon = (props: IconProps) => <Glyph source={EyeSlash} {...props} />
 export const FilterIcon = (props: IconProps) => <Glyph source={FunnelSimple} {...props} />
 export const InfoIcon = (props: IconProps) => <Glyph source={Info} {...props} />
+export const LockIcon = (props: IconProps) => <Glyph source={Lock} {...props} />
 export const MenuIcon = (props: IconProps) => <Glyph source={List} {...props} />
 export const MinusIcon = (props: IconProps) => <Glyph source={Minus} {...props} />
 export const MoreIcon = (props: IconProps) => <Glyph source={DotsThreeVertical} {...props} />

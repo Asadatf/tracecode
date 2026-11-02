@@ -1,5 +1,9 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
+import { redirect } from '@/i18n/routing'
+import { authHref } from '@/lib/auth/return-to'
+import { practiceAccess } from '@/lib/auth/access'
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { PracticeWorkspace } from '@/components/trace/practice-workspace'
@@ -38,9 +42,14 @@ export default async function PracticePage({
 	if (problem == null) notFound()
 
 	// Auth drives whether the workspace syncs to the server. No session (or
-	// Supabase unconfigured) → the page still works fully (Pyodide is
-	// client-side); attempts stay local.
+	// Supabase unconfigured) → Two Sum still works fully (Pyodide is
+	// client-side; attempts stay local). Every other problem needs an account:
+	// enforced here, on the server, not just by hiding links
+	// (specs/features/auth-access.md AC3/AC4).
 	const isAuthenticated = (await currentUserIdSafe()) != null
+	if (practiceAccess(slug, isAuthenticated) === 'sign-in') {
+		redirect({ href: authHref('login', `/practice/${slug}`), locale: await getLocale() })
+	}
 
 	return (
 		<div className={`${dmSans.variable} ${jetBrainsMono.variable}`}>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
-import { Link } from '@/i18n/routing'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { Link, redirect } from '@/i18n/routing'
+import { currentUserIdSafe } from '@/server/auth/session'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { buildProgressView } from '@/lib/progress/progress-view'
 import { getLearningProgress } from '@/server/learning/progress'
@@ -22,6 +23,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ProgressPage() {
+	// Personal data: no session, no page (specs/features/auth-access.md AC4).
+	// Checked before any loader runs so an anonymous request reads nothing.
+	if ((await currentUserIdSafe()) == null) {
+		redirect({ href: '/login?next=%2Fprogress', locale: await getLocale() })
+	}
 	// getRecommendation never calls OpenRouter, so fetching it alongside progress
 	// adds no AI request to a page load (M7.5A). Both degrade on their own.
 	const [t, progress, recommendation, preferences] = await Promise.all([

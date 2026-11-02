@@ -26,6 +26,8 @@ test('AC4: steps 1–5, the return step left to the caption', () => {
 	)
 	assert.equal(demo.rows[0]?.code, 'def two_sum(nums, target):')
 	assert.equal(demo.rows[0]?.i, '·')
+	assert.deepEqual(demo.input, ['3', '2', '4'])
+	assert.deepEqual(demo.source, fixture.trace?.source)
 })
 
 test('AC5: the highlighted step is the self-pairing bug — i and j both 0, 3 + 3 = 6', () => {
@@ -33,6 +35,7 @@ test('AC5: the highlighted step is the self-pairing bug — i and j both 0, 3 + 
 	assert.equal(highlighted.length, 1)
 	assert.deepEqual(highlighted[0], {
 		step: DEMO_HIGHLIGHT_STEP,
+		line: 4,
 		code: 'if nums[i] + nums[j] == target:',
 		i: '0',
 		j: '0',

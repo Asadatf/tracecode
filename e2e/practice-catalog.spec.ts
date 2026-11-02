@@ -1,3 +1,4 @@
+import { openAsLearner } from './helpers/auth'
 import { test, expect, type Locator, type Page } from '@playwright/test'
 
 // The four later curated problems in the real app: routes resolve, both the
@@ -38,8 +39,14 @@ const ROUTES = [
 ] as const
 
 for (const [slug, title] of ROUTES) {
-	test(`/practice/${slug} resolves and lists all six problems in the picker`, async ({ page }) => {
+	test(`/practice/${slug} sends a signed-out visitor to Sign In and back`, async ({ page }) => {
 		await page.goto(`/practice/${slug}`)
+		await expect(page).toHaveURL(`/login?next=${encodeURIComponent(`/practice/${slug}`)}`)
+		await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible()
+	})
+
+	test(`/practice/${slug} resolves and lists all six problems in the picker`, async ({ page }) => {
+		await openAsLearner(page, `/practice/${slug}`)
 		await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
 		await expect(page.locator('select option')).toHaveCount(6)
 	})
@@ -57,7 +64,7 @@ test('Valid Anagram: a passing solution unlocks the optional challenge, hints re
 	page
 }) => {
 	test.setTimeout(180_000)
-	await page.goto('/practice/valid-anagram')
+	await openAsLearner(page, '/practice/valid-anagram')
 	await expect(page.getByTestId('optimization-challenge')).toHaveCount(0)
 	await runCode(page, ANAGRAM_SORT, '18 / 18 passed')
 
@@ -95,7 +102,7 @@ test('Move Zeroes: returning a new list fails; in-place passes; the solve surviv
 	page
 }) => {
 	test.setTimeout(240_000)
-	await page.goto('/practice/move-zeroes')
+	await openAsLearner(page, '/practice/move-zeroes')
 
 	// Noncompliant baseline: a different list returned instead of changing nums.
 	await runCode(page, MZ_RETURNS_NEW, '0 / 19 passed')
@@ -144,7 +151,7 @@ test('Binary Search: linear and binary both pass; replay shows left/mid/right', 
 	page
 }) => {
 	test.setTimeout(240_000)
-	await page.goto('/practice/binary-search')
+	await openAsLearner(page, '/practice/binary-search')
 	await runCode(page, BS_LINEAR, '25 / 25 passed')
 	await expect(page.getByTestId('optimization-challenge')).toBeVisible()
 	await runCode(page, BS_BINARY, '25 / 25 passed')
@@ -169,7 +176,7 @@ test('Valid Parentheses: a counting shortcut fails; the stack passes and unlocks
 	page
 }) => {
 	test.setTimeout(180_000)
-	await page.goto('/practice/valid-parentheses')
+	await openAsLearner(page, '/practice/valid-parentheses')
 	await runCode(page, VP_COUNT_ONLY, /\d+ \/ 26 passed/)
 	await expect(page.getByText('0 / 26 passed')).toHaveCount(0)
 	await expect(page.getByTestId('optimization-challenge')).toHaveCount(0)

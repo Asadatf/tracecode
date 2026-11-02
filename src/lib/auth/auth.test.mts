@@ -4,6 +4,9 @@ import { AppError } from '../errors/app-error.ts'
 import { credentialsSchema, userCausedAuthMessage } from './credentials.ts'
 import { resolveLearnerId } from './learner.ts'
 import { assertOwnedBy } from './ownership.ts'
+import { authHref, safeReturnTo } from './return-to.ts'
+import { practiceAccess } from './access.ts'
+import { headerNav } from '../home/header-nav.ts'
 
 const USER = '11111111-1111-4111-8111-111111111111'
 const OTHER = '22222222-2222-4222-8222-222222222222'
@@ -75,4 +78,65 @@ test('ownership: another learner’s row and a missing row both read as 404', ()
 			(error) => error instanceof AppError && error.status === 404
 		)
 	}
+})
+
+test('safeReturnTo: follows same-origin paths and keeps query and hash', () => {
+	assert.equal(safeReturnTo('/practice/valid-anagram'), '/practice/valid-anagram')
+	assert.equal(safeReturnTo('/progress?x=1#top'), '/progress?x=1#top')
+})
+
+test('safeReturnTo: rejects open redirects, auth pages and junk', () => {
+	for (const bad of [
+		'https://evil.example',
+		'//evil.example',
+		'/\\evil.example',
+		'/%5Cevil',
+		'javascript:alert(1)',
+		'practice/two-sum',
+		'/ok\nSet-Cookie: x',
+		'/login',
+		'/register/',
+		'/login?next=/x',
+		'',
+		null,
+		undefined
+	]) {
+		const result = safeReturnTo(bad)
+		if (bad === '/%5Cevil')
+			assert.equal(result, '/%5Cevil') // encoded, stays a path
+		else assert.equal(result, '/progress', String(bad))
+	}
+})
+
+test('authHref: carries a safe destination and drops an unsafe one', () => {
+	assert.equal(authHref('login', '/practice/move-zeroes'), '/login?next=%2Fpractice%2Fmove-zeroes')
+	assert.equal(authHref('register', '//evil.example'), '/register')
+	assert.equal(authHref('login', null), '/login')
+})
+
+test('practiceAccess: only Two Sum is open to guests; learners open everything', () => {
+	assert.equal(practiceAccess('two-sum', false), 'open')
+	for (const slug of [
+		'contains-duplicate',
+		'valid-anagram',
+		'move-zeroes',
+		'binary-search',
+		'valid-parentheses'
+	]) {
+		assert.equal(practiceAccess(slug, false), 'sign-in', slug)
+		assert.equal(practiceAccess(slug, true), 'open', slug)
+	}
+})
+
+test('headerNav: guests get Sign In + Register and no learner navigation', () => {
+	const guest = headerNav(false)
+	assert.deepEqual(guest.actions, ['signIn', 'register'])
+	assert.equal(guest.links.includes('progress'), false)
+	assert.equal((guest.actions as string[]).includes('bell'), false)
+})
+
+test('headerNav: learners get Progress, the bell and the account menu', () => {
+	const learner = headerNav(true)
+	assert.deepEqual(learner.links, ['how', 'problems', 'progress'])
+	assert.deepEqual(learner.actions, ['bell', 'account'])
 })
