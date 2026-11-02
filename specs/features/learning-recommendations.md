@@ -1,6 +1,6 @@
 # Feature: Personalised learning recommendations (M7)
 
-Status: In progress — **M7.1 implemented**; M7.2–M7.5 are still Draft (not built).
+Status: In progress — **M7.1–M7.5B implemented in code.** The M7.5A/B schema (four new tables) is prepared but its migration and RLS-enable migration are **not yet generated or applied**, so every database-backed M7.5 path is verified only against in-memory fakes (see "Verification status" below).
 Owner: Umair
 Sign-off: M7.1 was implemented on Umair's decision. **Teammate (Asad / Track A + B)
 sign-off on the `ast` worker-protocol addition was not separately obtained** — see
@@ -38,8 +38,11 @@ not a generic "try again".
 - **Optional AI diagnosis** via OpenRouter (`qwen/qwen3-coder-30b-a3b-instruct`),
   validated against the evidence, cached, with a deterministic fallback.
 - A recommendations **card on the existing `/progress` page**.
-- **Opt-in daily email reminders** via Resend, with a durable, concurrency-safe
-  delivery ledger and inactivity-aware copy.
+- **Unified learning notifications (M7.5B, ADR-0004):** a persistent **in-app
+  notification inbox** (bell in the header, default ON) and **opt-in daily email
+  reminders** via Resend (default OFF), both rendered from one shared, deterministic
+  reminder plan and produced by one daily scheduler, with a durable,
+  concurrency-safe delivery ledger and inactivity-aware copy.
 
 ### Non-goals (v1)
 
@@ -53,6 +56,10 @@ not a generic "try again".
 - No per-user local send-time targeting; a single daily Vercel Hobby cron cannot
   honour per-user hours (see Email).
 - No reminder cadence other than **daily** in v1.
+- No browser push (service worker / Web Push) in v1 — the delivery ledger's
+  `channel` column and the shared planner keep it a later, additive change.
+- No notifications on submissions or test failures — at most one reminder per
+  channel per day, from the scheduler only.
 - No M8 / M9 implementation; their contracts are reused, not their code (below).
 - No change to `RunResult` / `TraceResult` (decision #1).
 
@@ -95,10 +102,16 @@ READ
   successful run and on backfill; `saveAttempt` / `saveCodeFeatures` persist it.
   **Structural facts only** — counts, booleans, a builtin allowlist. No claim of
   correctness, complexity, or mastery (adjustment B).
-- **M7.2 — Evidence assembler.** `src/lib/learning/recommendation-evidence.ts`,
-  pure: `buildRecommendationEvidence(analytics, sequences, catalog)`. Joins M6
-  output + attempt sequences + catalog metadata into `RecommendationEvidence`,
-  keeping `observedStructure` and `inferredGaps` in separate fields (adjustment B).
+- **M7.2 — Evidence assembler.** Three pure modules and one server loader.
+  `solution-evolution.ts`: `buildAttemptSequences(records)` turns stored attempt
+  outcomes + fingerprints (never source) into per-problem `AttemptSequence`s.
+  `recommendation-evidence.ts`: `buildRecommendationEvidence(analytics, sequences,
+catalog, { generatedAt? })` joins M6 output, the sequences and the catalog into
+  `RecommendationEvidence`, observed and inferred kept apart (adjustment B).
+  `evidence-hash.ts`: `computeEvidenceHash(evidence)`. The loader
+  `src/server/learning/recommendation-evidence.ts` (`getRecommendationEvidence()`)
+  reads only outcomes, failed test ids and the fingerprint, scoped to the session
+  user, and degrades like `getLearningAnalytics`.
 - **M7.3 — Deterministic engine.** `src/lib/learning/recommend.ts`, pure:
   `rankRecommendations(evidence)` → `Recommendation` with `diagnosis.source:
 'fallback'`, and `evidenceHash(evidence)`. **Always** produces a complete
@@ -109,10 +122,16 @@ READ
   `src/server/learning/recommend-ai.ts`. Takes M7.3 output + evidence, asks for a
   short diagnosis, validates with Zod **and** against the evidence, attaches on
   success, drops to fallback on any failure.
-- **M7.5 — Delivery.** `src/server/learning/recommendations.ts`
-  (`getRecommendation()`, degradation contract mirroring `getLearningAnalytics`),
-  a `/progress` card, `src/server/email/resend.ts` (the Resend wrapper), and the
-  cron route `GET /api/cron/recommendation-emails` guarded by `isCronAuthorized`.
+- **M7.5A — Persistence + refresh + card.** `src/server/learning/recommendation-cache.ts`
+  (pure policy), `src/server/learning/recommendation.ts` (`getRecommendation`,
+  `refreshRecommendation`, `recommendationForUser`), the `/progress` card.
+- **M7.5B — Notifications.** `src/lib/learning/reminder-plan.ts` (shared planner
+  and copy), `src/server/notifications/scheduler.ts` (pure scheduler) +
+  `daily-reminders.ts` (Prisma/Resend wiring), `inbox.ts` (session-scoped inbox
+  and preferences), `src/server/email/resend.ts` (the Resend wrapper),
+  `src/lib/notifications/*` (email config gate, email template, query builders),
+  the bell in `SiteHeader`, preferences on `/progress`, `/unsubscribe`, and
+  `GET /api/cron/learning-reminders` (`createCronRoute`).
 
 ## Typed data contracts
 
@@ -154,54 +173,124 @@ type UnanalyzableMarker = { v: 1; unanalyzable: 'syntax_error' | 'not_analyzable
 // field order and sorted arrays, so equal content serialises identically (feeds
 // the evidence hash below).
 
-// Bounded per-problem evolution (adjustment B). Window = latest 5 attempts.
+// M7.2 — solution evolution (src/lib/learning/solution-evolution.ts). Everything
+// here is OBSERVED. Window = the latest 5 attempts of one problem, oldest first.
 type AttemptSeqItem = {
-	order: number // 1-based within the kept window, oldest→newest
+	order: number // 1-based within the window
 	attemptId: string
 	createdAt: string
+	runStatus: 'completed' | 'syntax_error' | 'timeout' | 'engine_error' | 'other'
+	outcome: 'passed' | 'failed'
 	testsPassed: number
 	testsTotal: number
-	allPassed: boolean
-	failedTestIds: string[]
-	code: CodeFeatures | null // null tolerated throughout
+	failedTestIds: string[] // sorted, unique
+	code: CodeFeatures | null
+	codeStatus: 'features' | 'unanalyzable' | 'missing'
+	sameStructureAsPrevious: boolean | null // null when either lacks a fingerprint
 }
 type StructuralChange =
-	// OBSERVED delta between consecutive feature-bearing items
-	| 'nested_loops_removed'
+	// between two CONSECUTIVE attempts that both have a fingerprint
 	| 'nested_loops_added'
-	| 'dict_introduced'
-	| 'set_introduced'
-	| 'sorted_introduced'
-	| 'loop_depth_decreased'
+	| 'nested_loops_removed'
 	| 'loop_depth_increased'
+	| 'loop_depth_decreased'
+	| 'dict_introduced'
+	| 'dict_removed'
+	| 'set_introduced'
+	| 'set_removed'
+	| 'sorted_introduced'
+	| 'sorted_removed'
 	| 'recursion_introduced'
+	| 'recursion_removed'
+type StructuralTransition = {
+	change: StructuralChange
+	fromOrder: number
+	toOrder: number
+	fromAttemptId: string
+	toAttemptId: string
+	outcomeChange: 'failed_to_failed' | 'failed_to_passed' | 'passed_to_failed' | 'passed_to_passed'
+	// co-occurs with the change; never claimed to be caused by it
+}
+type PatternStatus = 'no_evidence' | 'absent' | 'appeared_once' | 'recurring' | 'disappeared'
+type StructuralPattern = {
+	feature: 'nested_loops' | 'dict' | 'set' | 'sorted' | 'recursion'
+	status: PatternStatus
+	presentIn: number
+	of: number // fingerprinted attempts that have it / all fingerprinted
+	inLatest: boolean | null
+	droppedWithFailToPass: boolean // a removal coincided with a failed → passed change
+}
 type AttemptSequence = {
 	problemSlug: string
-	total: number // may exceed items.length
+	windowSize: number
 	items: AttemptSeqItem[] // at most 5
-	structuralChanges: StructuralChange[] // facts, not judgements
+	coverage: { attempts: number; withFeatures: number; unanalyzable: number; missing: number }
+	transitions: StructuralTransition[]
+	patterns: StructuralPattern[]
+	contradictions: {
+		kind: 'inconsistent_attempt_record' | 'same_structure_different_outcome'
+		attemptIds: string[]
+	}[]
 }
 
-// M7.2 — exactly what M7.3 and (a redacted subset of) M7.4 see.
-type InferredGap = {
-	// reused from M6 behaviour/insights, kept separate
-	code: InferredSignalCode | InsightType
-	problemSlug: string | null
-	basis: 'inferred'
-}
+// M7.2 — the evidence (src/lib/learning/recommendation-evidence.ts). Observed and
+// inferred are separate fields at every level. M7.2 infers NOTHING of its own: the
+// inferred side is M6's signals and insights, re-filed unchanged. There is no
+// mastery score, no "struggling" flag, and no claim that a structural change
+// improves a solution.
 type RecommendationEvidence = {
-	generatedAt: string // volatile — EXCLUDED from evidenceHash
-	perProblem: {
-		slug: string
-		conceptTags: string[]
-		difficulty: 'easy' | 'medium' | 'hard'
-		mastery: 'none' | 'attempted' | 'solved'
-		sequence: AttemptSequence
-		observedStructure: StructuralChange[] // from the sequence (observed)
-		inferredGaps: InferredGap[] // from M6 (inferred) — never mixed
-	}[]
-	concepts: Record<string, { attempted: number; solved: number; struggling: boolean }>
-	insights: { type: InsightType; problemSlug: string | null }[] // top-k from M6
+	v: 1
+	generatedAt: string | null // volatile — EXCLUDED from the fingerprint
+	hasActivity: boolean
+	totals: LearningStatistics['totals'] // M6
+	problems: ProblemEvidence[] // every catalog problem + any other with history, by slug
+	concepts: ConceptEvidence[] // one per catalog concept tag, by tag
+	insights: { observed: InsightRef[]; inferred: InsightRef[] } // account-wide, from M6
+}
+type ProblemEvidence = {
+	slug: string
+	known: boolean // false: history on a problem the catalog no longer has
+	conceptTags: string[]
+	difficulty: 'easy' | 'medium' | 'hard' | null
+	progress: 'not_started' | 'attempted' | 'solved' // a status, not a mastery claim
+	observed: {
+		// M6 statistics + behaviour, reused as-is
+		attempts: number
+		passedAttempts: number
+		failedAttempts: number
+		solved: boolean
+		attemptsToFirstSolve: number | null
+		latestOutcome: 'passed' | 'failed' | 'none'
+		latestPassFraction: number | null
+		bestPassFraction: number | null
+		trend: ImprovementTrend
+		stepImprovements: number
+		longestFailureStreak: number
+		failurePattern: FailurePatternAnalysis
+		scoreChanges: ScoreChangeAnalysis
+		hints: HintCounts
+		replay: ReplayEngagement
+		windowCoversAllAttempts: boolean
+		sequence: AttemptSequence // M7.1 fingerprints + M7.2 evolution
+		insights: InsightRef[] // M6 insights tagged `observed`
+	}
+	inferred: {
+		signals: InferredSignal[] // M6, each `basis: 'inferred'`
+		insights: InsightRef[] // M6 insights tagged `inferred`
+	}
+}
+type ConceptEvidence = {
+	tag: string
+	problems: string[] // catalog problems carrying the tag
+	observed: {
+		problemsInCatalog: number
+		problemsAttempted: number
+		problemsSolved: number
+		problemsWithRepeatedFailures: number
+		problemsWithOpenRepeatedFailures: number
+		structuralPatterns: Record<StructuralFeature, Record<PatternStatus, number>>
+	}
+	inferred: { signals: Partial<Record<InferredSignalCode, number>> }
 }
 
 // M7.3 (+ M7.4) — one cached object, reused by dashboard and email.
@@ -277,17 +366,24 @@ must never run Python, so backfill is **browser-driven, lazy, and bounded**:
 - `recommendation_cache` holds one row per user: the full `Recommendation`, plus
   `evidenceHash`, `model`, `diagnosisSource`, `generatedAt`, and the refresh-claim
   fields below.
-- **`evidenceHash` is content-addressed** (adjustment 1). It is a stable,
-  deterministic hash over the **canonically serialised evidence content**:
-  - each in-scope attempt's outcome (`testsPassed`/`testsTotal`/`allPassed`/
-    `failedTestIds`) **and its full normalised `CodeFeatures` content** (all
-    values, or an explicit `"null"` marker when absent) — **not** merely
-    `codeFeatures.v`;
-  - the derived `structuralChanges` per problem;
-  - the M6 inferred-gap / insight codes in scope.
+- **`evidenceHash` is content-addressed** (adjustment 1). It is
+  `ev1:` + the SHA-256 of the **canonical JSON** (keys sorted at every level,
+  lists already normalised) of `{ fingerprint: 1, evidence }` with the volatile
+  `generatedAt` removed (`evidence-hash.ts`). Because it covers the whole evidence
+  it includes:
+  - each in-scope attempt's outcome (`testsPassed`/`testsTotal`/`outcome`/
+    `failedTestIds`/`runStatus`) **and its full normalised `CodeFeatures` content**
+    (or its `missing`/`unanalyzable` status) — **not** merely `codeFeatures.v`;
+  - the derived transitions, patterns and contradictions per problem;
+  - the M6 statistics, behaviour, signals and insights it carries, and the
+    catalog's tags and difficulty.
     It **excludes every volatile field**, including `RecommendationEvidence.generatedAt`
     and `Recommendation.generatedAt`, so re-reading unchanged data yields the same
-    hash.
+    hash. The version prefix means a change to the evidence shape or the
+    canonicalisation (bump `EVIDENCE_FINGERPRINT_VERSION`) invalidates everything
+    cached, and an old hash can never be mistaken for a new one. Recording that a
+    source can never be analysed (a marker) is a change in evidence and changes
+    the hash too.
   - **Consequence that adjustment 1 requires:** a backfill that fills a
     previously-`null` feature set changes the hashed content **even though the
     attempt ids and the AST schema version are unchanged**, so the old evidence
@@ -310,12 +406,20 @@ must never run Python, so backfill is **browser-driven, lazy, and bounded**:
 
 ## OpenRouter call triggers and cost limits (adjustments 4, C)
 
-- **Model:** `qwen/qwen3-coder-30b-a3b-instruct`, registered in `OPENROUTER_SLUGS`
-  (`src/server/lib/ai-usage/models.ts`) and configurable there. The public id has
-  been independently verified; **still run `pnpm check:ai-models` + `pnpm
-typecheck` at integration** to confirm it prices. Calls go only through
-  `src/server/ai/openrouter.ts`, tracked with `feature: 'learning_recommendation'`
-  (`_retry` for a retry), `meta` = ids/enums only.
+- **Model (implemented M7.4):** `nvidia/nemotron-3.5-super-vl:free` — a verified
+  **free** ($0/token) OpenRouter model with native structured-output and reasoning
+  support, registered in `OPENROUTER_SLUGS` (`src/server/lib/ai-usage/models.ts`).
+  The spec's first candidate `qwen/qwen3.6-plus:free` does **not** exist upstream
+  (only the paid `qwen/qwen3.6-plus`), and no free qwen model exists today, so this
+  is the verified substitute — never a silent paid fallback. Configurable via
+  `OPENROUTER_MODEL`, but only to another mapped slug (an unknown value falls back
+  to this default, so a call can never ship unpriced). A `:free` model records a
+  real $0 cost, not the NULL of an unmapped model (`pnpm check:ai-models` confirms
+  it still prices; 7/7 mapped). Calls go only through `src/server/ai/openrouter.ts`,
+  tracked with `feature: 'learning_recommendation'` (`_retry` for the one bounded
+  retry), `provider: 'openrouter'` (M7.5A: its own attribution value, read with the
+  OpenAI-compatible extractor since OpenRouter speaks that protocol), `meta` =
+  ids/enums only. `max_tokens` ≤ 600, 20 s timeout, `temperature` 0.
 - **The only triggers:** (1) explicit learner refresh; (2) — reserved — a future
   scheduled refresh. **v1 cron never calls OpenRouter** (adjustment C).
 - **Concurrency-safe refresh claim** (adjustment 4) — not just a timer. To call
@@ -334,52 +438,86 @@ refresh_claimed_at < now() - CLAIM_TTL)`. Only the writer whose statement
   across evidence changes; `max_tokens` bounded (≤600). **Never** on submit,
   replay, page load, or per-email.
 
-## Email: preferences, scheduling, deduplication (adjustments 2, 5, D, 6)
+## Notifications: planner, in-app, email, scheduling (M7.5B — as implemented)
 
-- **Preferences** (`reminder_preferences`, one row per user, **opt-in default
-  off**): `optIn`, `cadence` (`daily` only in v1), `unsubscribeToken`. All
-  reads/writes scoped by session user id. **No per-user send hour** (adjustment 2):
-  a single daily cron cannot honour it.
-- **Scheduling under Vercel Hobby** (adjustment 2): Hobby triggers a cron about
-  **once per day** within an approximate window (max two jobs). So M7 runs **one
-  daily cron at a fixed UTC hour** and dedupes on the **UTC calendar date**; it
-  does not attempt local-time delivery and keeps no per-user timezone. This
-  coarseness is a known, accepted limitation, documented here and in ADR-0003.
-- **Durable delivery ledger** (`email_deliveries`, adjustment 5 / D) — composite
-  PK `(userId, deliveryDate, channel)` is the uniqueness constraint and the atomic
-  claim:
-  - **Claim:** the cron claims a slot with an atomic insert (`ON CONFLICT DO
-NOTHING`) at `status: 'claimed'`. Inserted → this run owns the send; conflict
-    → another run already owns it → skip.
-  - **States:** `claimed → accepted | failed | skipped`. **`accepted`** means
-    Resend returned success and we stored its `providerMessageId`; it is **not**
-    `delivered` — we make no delivery claim without a webhook (out of v1 scope).
-  - **Retry limits:** each send attempt increments `attempts`; a transient failure
-    leaves the row claimable for the next daily run until `attempts` reaches
-    `MAX_ATTEMPTS` (3), then `failed`. An `accepted` row is never re-sent.
-  - **Provider idempotency + crash window** (adjustment 5): the send passes Resend
-    a stable **idempotency key** `reminder:{userId}:{deliveryDate}`. Resend
-    documents an `Idempotency-Key` on sends; **confirm the exact header and
-    semantics at integration** (no API call is made now). If the process crashes
-    **after** Resend accepts but **before** we persist `accepted`, the row stays
-    `claimed`; the next run retries with the same key and Resend de-duplicates, so
-    the learner is not emailed twice. This gives **effective at-most-once** from
-    the provider side. Exact-once end-to-end cannot be guaranteed across an
-    arbitrary crash without that provider idempotency; this residual crash-window
-    limitation is documented and accepted.
-- **Cron fallback without OpenRouter** (adjustment 6): for each opted-in user the
-  cron **reads or computes** a recommendation with no model call — if a
-  `recommendation_cache` row exists and its `evidenceHash` matches freshly
-  computed evidence it is reused; otherwise the cron runs M7.2 + M7.3
-  **server-side** (pure, no browser, no Python, no AI, tolerant of null features)
-  to produce a deterministic recommendation, upserts it, and sends from it. So an
-  opted-in learner who never opened the dashboard still gets a correct
-  deterministic reminder.
-- **Inactivity-aware, no activity gate** (adjustment D): opted-in inactive users
-  still get reminders (no "new activity since last email" gate); copy varies
-  ("pick up where you left off" vs. "you've been away — here's one problem to
-  restart with"). Daily cadence bounds frequency.
-- Every email carries an unsubscribe link (sets `optIn=false` via the token).
+**Shared planner.** `planReminder(recommendation, evidence, catalog, now)` turns
+the learner's current M7.3 recommendation into one enum-only `ReminderPlan`
+`{ v: 1, template, problemSlug, reasonCode, conceptTag, inactiveDays }`. Templates:
+`cold_start` (no saved attempt), `returning` (latest attempt ≥ 3 days old),
+`unfinished` (top pick attempted, unsolved), `new_problem` (top pick untried while
+other work exists), `revision` (everything solved). The problem is always the
+recommendation's top pick — the planner never re-ranks — and an unknown slug yields
+no plan, so no reminder can link to a missing page. `reminderCopy(plan, title)` is
+the single source of the words for both channels; every sentence states a status
+or a day count, never a judgement. No OpenRouter, no Python.
+
+**Preferences** (`notification_preferences`, one row per learner, scoped by the
+session id): `inAppEnabled` (default **true**), `emailOptIn` (default **false** —
+explicit opt-in), `cadence` (`daily`), `unsubscribeToken` (256-bit random,
+base64url, unique). The two channels are independent. A learner without a row is
+treated as in-app on, email off. No per-user send hour or timezone.
+
+**In-app.** `learning_notifications` rows, unique on `(userId, logicalKey)` with
+`logicalKey = daily:<UTC date>`, inserted `ON CONFLICT DO NOTHING`. The payload is
+the plan, rendered at display time; a payload that doesn't parse, or names a
+problem the catalog no longer has, renders as a neutral pointer to `/progress`.
+The bell shows the unread count (one indexed `COUNT` per page, behind
+`<Suspense>`), loads the latest 20 on open, and supports mark-read and mark-all-read
+— each a conditional `UPDATE … WHERE userId = <session> AND readAt IS NULL`.
+
+**Email.** Sent only when `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` and
+`RESEND_VERIFIED_DOMAIN` are all set and the sender's domain equals the declared
+verified domain (`resolveEmailConfig`, no network call) — a key alone never sends.
+Content: title, the evidence-grounded reason, the concept, a practice link, and an
+unsubscribe link; no source, trace or identifiers beyond the plan; HTML-escaped.
+Headers `List-Unsubscribe` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click`
+point at `POST /api/notifications/unsubscribe?token=` (RFC 8058). The visible link
+goes to `/unsubscribe?token=`, which asks for a confirming click so mail scanners
+that prefetch links can't unsubscribe anyone. Unsubscribing sets `emailOptIn=false`
+only and answers identically whether or not the token matched.
+
+**Delivery ledger** (`notification_deliveries`, PK `(userId, deliveryDate,
+channel)`; `channel` = `'email'`, `'push'` reserved):
+
+- **Claim:** atomic insert `ON CONFLICT DO NOTHING` (`status 'claimed'`,
+  `attempts 1`); otherwise one conditional `UPDATE` reclaims a `retry` row or a
+  `claimed` row older than the 10-minute claim TTL (a crashed run), only while
+  `attempts < 3`. Of two concurrent runs exactly one matches.
+- **States:** `claimed → accepted | retry | failed`. `accepted` = Resend returned a
+  message id; **never "delivered"** (no webhook in v1).
+- **Retries:** a transient error (5xx, 409, timeout, network) gets one immediate
+  in-run retry; a 429 marks the slot `retry` and stops email for the rest of the
+  run (circuit breaker); a permanent rejection (other 4xx) is `failed`. Attempts are
+  capped at 3 per slot. `lastError` holds a code, never a message or address.
+- **Frozen payload:** the first claim stores the planned reminder (`{ plan,
+problemTitle }`) in the slot's `payload`; retries and crash recovery re-send that
+  exact copy, because Resend rejects a reused idempotency key carrying a different
+  body rather than replaying it — and the learner's plan can change between a crash
+  and its recovery.
+- **Idempotency:** every send carries `Idempotency-Key: reminder:{userId}:{date}`.
+  After a crash between "Resend accepted" and "we recorded it", the slot is
+  reclaimed after the TTL and re-sent with the same key; Resend replays the
+  original response within its retention window (24 h at the time of writing —
+  **confirm against Resend's documentation before production**). Exactly-once
+  end-to-end is not claimed.
+
+**Scheduler** (`GET /api/cron/learning-reminders`, `CRON_SECRET` via
+`createCronRoute`, one UTC schedule `0 15 * * *` in `vercel.json`,
+`maxDuration = 60`): candidates are learners with in-app on (including no
+preference row) or email opted in, at most 5,000, rotated deterministically per
+date. Learners with nothing left to do today are skipped without planning. Each
+remaining learner is planned from the deterministic recommendation read path
+(`recommendationForUser`: cache reused when its hash matches, otherwise recomputed
+and cached — **no OpenRouter, no Python**), then in-app and email are delivered
+**independently** (one failing never blocks the other). The run stops _starting_
+learners after 300 or 45 s and reports `truncated`; it is idempotent, so any later
+invocation the same UTC day continues. The response and logs carry counts only.
+
+**Vercel Hobby limitation (accepted, ADR-0004):** one daily invocation with a capped
+duration. If more learners need work than fit in one run, the remainder waits for
+another invocation that day (a second Hobby cron entry or a manual authenticated
+call) or the next day. Delivery time is one fixed UTC hour; no local time is
+promised.
 
 ## Data / API
 
@@ -392,49 +530,67 @@ NOTHING`) at `status: 'claimed'`. Inserted → this run owns the send; conflict
 String`, `payload Json`, `model String?`, `diagnosisSource String`,
     `generatedAt @db.Timestamptz(6)`, `updatedAt @updatedAt`, plus refresh-claim
     fields `refreshState String @default("idle")`, `refreshClaimHash String?`,
-    `refreshClaimedAt DateTime? @db.Timestamptz(6)`; FK → `users`
+    `refreshClaimedAt DateTime? @db.Timestamptz(6)`, and (M7.5A) `lastRefreshAt
+DateTime? @db.Timestamptz(6)` — the last AI refresh ATTEMPT, for the per-user
+    cooldown; FK → `users`
     `onDelete: Cascade`, `@@map("recommendation_cache")`.
-  - **`ReminderPreference`** — `userId @id @db.Uuid`, `optIn Boolean
-@default(false)`, `cadence String @default("daily")`, `unsubscribeToken String
-@unique`, `updatedAt @updatedAt`; FK → `users` `onDelete: Cascade`,
-    `@@map("reminder_preferences")`.
-  - **`EmailDelivery`** — `userId @db.Uuid`, `deliveryDate @db.Date` (UTC),
-    `channel String`, `status String`, `providerMessageId String?`, `attempts Int
-@default(0)`, `error String?`, `createdAt`, `updatedAt @updatedAt`,
-    `@@id([userId, deliveryDate, channel])`, FK → `users` `onDelete: Cascade`,
-    `@@map("email_deliveries")`.
-- `User` gains back-relations (`recommendationCache`, `reminderPreference`,
-  `emailDeliveries`) in `example.prisma`.
+- New file `prisma/schema/notifications.prisma` (M7.5B):
+  - **`NotificationPreference`** — `userId @id`, `inAppEnabled Boolean
+@default(true)`, `emailOptIn Boolean @default(false)`, `cadence String
+@default("daily")`, `unsubscribeToken String @unique`, `createdAt`, `updatedAt`;
+    `@@map("notification_preferences")`.
+  - **`LearningNotification`** — `id uuid`, `userId`, `logicalKey`, `kind`,
+    `payload Json` (the `ReminderPlan`), `readAt?`, `createdAt`;
+    `@@unique([userId, logicalKey])`, `@@index([userId, createdAt])`,
+    `@@map("learning_notifications")`.
+  - **`NotificationDelivery`** — `userId`, `deliveryDate @db.Date`, `channel`,
+    `status`, `providerMessageId?`, `attempts Int @default(0)`, `claimedAt?`,
+    `lastError?` (a code), `createdAt`, `updatedAt`;
+    `@@id([userId, deliveryDate, channel])`, `@@map("notification_deliveries")`.
+    (Renamed from the sketch's `EmailDelivery` so Web Push can share it.)
+  - All `onDelete: Cascade` from `users`.
+- `User` gains back-relations (`recommendationCache`, `notificationPreference`,
+  `learningNotifications`, `notificationDeliveries`) in `example.prisma`.
 - **RLS:** all new tables stay user-scoped and get RLS **enabled, no policy, not
   forced**, following the existing `20261101170000_enable_rls_on_learning_tables`
   pattern; `pnpm check:rls` proves it in CI. (`attempts` already has RLS.)
 
 ### Routes / actions (Zod in, Zod out; session user id only, never from the body)
 
-| Method + path / action                 | Request                                  | Response                                                                           |
-| -------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| `saveAttempt` (extended)               | existing + `codeFeatures?: CodeFeatures` | `{ persisted }`                                                                    |
-| `saveCodeFeatures` (action)            | `{ attemptId, codeFeatures }`            | `{ saved: boolean }` (own attempt, set-if-null)                                    |
-| `listBackfillCandidates` (action)      | `{ limit?: number ≤ 10 }`                | `{ items: { attemptId, source }[] }` (own, `codeFeatures` null, ≤10)               |
-| `getRecommendation` (server fn)        | —                                        | `{ authenticated, available, recommendation \| null }`                             |
-| `refreshRecommendation` (action)       | —                                        | `{ recommendation }` (recompute; AI only if evidence changed + claim won + budget) |
-| `updateReminderPreference` (action)    | `{ optIn, cadence? }`                    | `{ preference }`                                                                   |
-| `GET /api/cron/recommendation-emails`  | `Authorization: Bearer CRON_SECRET`      | `{ claimed, accepted, failed, skipped }`                                           |
-| `GET /unsubscribe?token=…` (or action) | `{ token }`                              | sets `optIn=false`                                                                 |
+| Method + path / action                | Request                                  | Response                                                                           |
+| ------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
+| `saveAttempt` (extended)              | existing + `codeFeatures?: CodeFeatures` | `{ persisted }`                                                                    |
+| `saveCodeFeatures` (action)           | `{ attemptId, codeFeatures }`            | `{ saved: boolean }` (own attempt, set-if-null)                                    |
+| `listBackfillCandidates` (action)     | `{ limit?: number ≤ 10 }`                | `{ items: { attemptId, source }[] }` (own, `codeFeatures` null, ≤10)               |
+| `getRecommendation` (server fn)       | —                                        | `{ authenticated, available, recommendation \| null }`                             |
+| `refreshRecommendationAction`         | —                                        | `{ view, reason }` (reuse → cooldown → claim → one AI call → hash-guarded persist) |
+| `listNotificationsAction`             | —                                        | `{ authenticated, available, items (≤20), unreadCount }`                           |
+| `markNotificationReadAction`          | `{ id: uuid }`                           | `{ updated: boolean }` (own, unread only)                                          |
+| `markAllNotificationsReadAction`      | —                                        | `{ updated: number }`                                                              |
+| `getNotificationPreferencesAction`    | —                                        | `{ inAppEnabled, emailOptIn, emailConfigured }`                                    |
+| `updateNotificationPreferencesAction` | `{ inAppEnabled?, emailOptIn? }` strict  | `{ saved }`                                                                        |
+| `unsubscribeEmailAction`              | `{ token }`                              | `{ done: true }` (always; sets `emailOptIn=false` on a match)                      |
+| `POST /api/notifications/unsubscribe` | `?token=` (RFC 8058 one-click)           | `200 { ok: true }` (always)                                                        |
+| `GET /api/cron/learning-reminders`    | `Authorization: Bearer CRON_SECRET`      | `RunSummary` counts (no ids, no addresses)                                         |
 
 ### Env (add to `src/lib/env.ts` + `.env.example`, all optional-with-graceful-noop)
 
 - `OPENROUTER_API_KEY` — unset → AI disabled, deterministic fallback only.
-- `RESEND_API_KEY` — unset → email disabled, cron no-ops.
-- `REMINDER_FROM_EMAIL` — must be an address on a **verified Resend domain** for
-  real sends; unset → email disabled.
+- `OPENROUTER_MODEL` — optional override; must be a slug mapped in `OPENROUTER_SLUGS`
+  or it is ignored in favour of the verified free default. Empty → default.
+- `RESEND_API_KEY` — unset → email channel skipped (in-app still runs).
+- `REMINDER_FROM_EMAIL` — a plain address; unset → email skipped.
+- `RESEND_VERIFIED_DOMAIN` — the domain verified in Resend; the sender's domain
+  must equal it, else email is skipped. Together these three are the operator's
+  approval to send.
 - `CRON_SECRET` already exists.
 
 ### Analytics (PostHog typed taxonomy, `docs/rules/analytics.md`)
 
-- `recommendation_viewed`, `recommendation_refreshed` (`{ source: 'ai'|'fallback' }`),
-  `reminder_opt_in_changed` (`{ opt_in: boolean }`), `reminder_email_sent`
-  (server, `{ inactive: boolean }`). Ids/enums/booleans only.
+- **Not implemented in M7.5A/B.** The repo's typed taxonomy has no
+  recommendation/reminder events, and adding them is a taxonomy change. Proposed for
+  later: `recommendation_refreshed` (`{ source }`), `reminder_opt_in_changed`
+  (`{ channel, enabled }`), `notification_opened`. Ids/enums/booleans only.
 
 ## Edge cases
 
@@ -484,14 +640,17 @@ String`, `payload Json`, `model String?`, `diagnosisSource String`,
   resubmission and with no server-side Python. `saveCodeFeatures` writes only where
   null and only on the caller's own attempts.
 - **AC4** — GIVEN several attempts on a problem WHEN evidence is built THEN an
-  `AttemptSequence` of at most the latest 5 attempts (oldest→newest) is produced
-  with order, timestamps, outcomes, failed test ids, nullable features, and
-  observed `structuralChanges` between consecutive feature-bearing items.
+  `AttemptSequence` of at most the latest 5 attempts (oldest→newest, ties broken by
+  id, input order irrelevant) is produced with order, timestamps, outcomes, failed
+  test ids, the fingerprint or its `codeStatus`, and observed transitions between
+  **consecutive** fingerprinted attempts (a missing one is never bridged over).
 - **AC5** — GIVEN a learner who moved from nested loops to a dict/set across
-  attempts THEN `structuralChanges` records it as an observed fact
-  (`nested_loops_removed` / `dict_introduced`), and no field asserts correctness,
-  complexity, or mastery from AST alone; `observedStructure` and `inferredGaps` are
-  separate fields.
+  attempts THEN the transitions record it as an observed fact
+  (`nested_loops_removed` / `dict_introduced`) beside the outcome change, each
+  structural fact is classed `recurring` / `appeared_once` / `disappeared` /
+  `absent` / `no_evidence`, and no field asserts correctness, complexity, speed or
+  mastery from AST alone; `observed` and `inferred` are separate fields and M7.2
+  adds no inference of its own.
 - **AC6** — GIVEN any evidence (including empty, or all-null features) WHEN the
   deterministic engine runs THEN it returns a complete `Recommendation` with
   `focusConcepts`, a ranked list over the two static problems only, and
@@ -522,9 +681,9 @@ String`, `payload Json`, `model String?`, `diagnosisSource String`,
 - **AC13** — GIVEN two concurrent refreshes for the same learner and the same
   evidence THEN exactly one wins the durable claim and calls the model; the other
   makes no model call; a crashed claim expires after the TTL.
-- **AC14** — GIVEN reminders default off WHEN a learner opts in THEN
-  `reminder_preferences` is created/updated for that user only; the unsubscribe
-  token sets `optIn=false`. No per-user send hour or timezone is stored.
+- **AC14** — GIVEN email reminders default off (in-app defaults on) WHEN a learner opts in THEN
+  `notification_preferences` is created/updated for that user only; the unsubscribe
+  token sets `emailOptIn=false` and nothing else. No per-user send hour or timezone is stored.
 - **AC15** — GIVEN two concurrent cron runs for the same user and UTC date THEN
   exactly one claims the `(userId, deliveryDate, channel)` slot and sends; the
   other skips. An `accepted` row is never re-sent; a failed send is retried up to
@@ -542,9 +701,23 @@ String`, `payload Json`, `model String?`, `diagnosisSource String`,
 - **AC19** — GIVEN `REMINDER_FROM_EMAIL` not on a verified domain, or
   `RESEND_API_KEY` unset THEN no real send occurs and the cron no-ops cleanly.
 - **AC20** — Every M7 read/write (preferences, recommendation, deliveries,
-  features, backfill sources) is scoped by the session user id and can't be
-  redirected by the body; new tables have RLS enabled with no policy
+  features, backfill sources, notifications) is scoped by the session user id and
+  can't be redirected by the body; new tables have RLS enabled with no policy
   (`pnpm check:rls`).
+- **AC21** — GIVEN the daily scheduler runs for a learner with in-app enabled THEN
+  exactly one `learning_notifications` row exists for `(userId, 'daily:<date>')`,
+  however many times or concurrently it runs; no notification is created by a
+  submission, a failed test, or a page load.
+- **AC22** — GIVEN a signed-in learner THEN the header bell shows their unread
+  count; opening it lists their latest notifications with links to real practice
+  pages (or `/progress` for an unrenderable one); mark-read and mark-all-read touch
+  only their own unread rows. Signed-out visitors see no bell.
+- **AC23** — GIVEN preferences THEN in-app defaults on and email defaults off, each
+  switchable independently; the unsubscribe token turns email off only, the
+  visible unsubscribe link requires a confirming click, and the RFC 8058 endpoint
+  answers identically for valid and invalid tokens.
+- **AC24** — GIVEN a run that exhausts its budget THEN it reports `truncated`, and a
+  re-invocation the same UTC day skips finished learners and continues.
 
 ## Test plan
 
@@ -558,7 +731,7 @@ String`, `payload Json`, `model String?`, `diagnosisSource String`,
 - **Python extraction test:** `ast.parse` path in the worker program over fixture
   sources (no execution), asserting bounded output and the builtin allowlist.
 - **Action/ownership tests:** `saveCodeFeatures` set-if-null + own-attempt-only;
-  `listBackfillCandidates` scoping + ≤10 + own-source-only; `updateReminderPreference`
+  `listBackfillCandidates` scoping + ≤10 + own-source-only; `updateNotificationPreferencesAction`
   scoping (AC3, AC14, AC20).
 - **Concurrency tests:** refresh claim — two concurrent refreshes ⇒ one model call
   (AC13); delivery slot — two concurrent claims ⇒ one insert wins (AC15);
@@ -578,9 +751,22 @@ String`, `payload Json`, `model String?`, `diagnosisSource String`,
    back-relations in `example.prisma`.
 2. Let **CI generate and commit** the schema-diff migration from that diff
    (`docs/rules/migrations.md` — never hand-write a schema migration).
-3. Add the **RLS-enable** step for the three new tables following the existing
+3. Add the **RLS-enable** step for the four new tables following the existing
    `enable_rls_on_learning_tables` migration pattern; `pnpm check:rls` must pass.
-   (`attempts` already has RLS.)
+   (`attempts` already has RLS.) It is one hand-written migration, timestamped
+   AFTER the CI-generated create-table migration and committed in the same PR
+   (it cannot precede it: CI replays committed migrations before generating, and
+   `ALTER TABLE` on a missing table fails), containing only:
+   ```sql
+   ALTER TABLE "recommendation_cache" ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE "notification_preferences" ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE "learning_notifications" ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE "notification_deliveries" ENABLE ROW LEVEL SECURITY;
+   ```
+   Both are applied by one `prisma migrate deploy` run, create first; ADR-0004
+   records why that boundary is acceptable (empty tables, Data API off, CI blocks
+   the merge until RLS exists) and the event-trigger follow-up if it ever isn't.
+   **Do not merge** while `check:rls` is red.
 4. **Rollout order.** The migration is one nullable column (`ALTER TABLE "attempts"
 ADD COLUMN "codeFeatures" JSONB`), which changes no existing row. Apply it
    _before_ running or deploying this code where possible. If the code lands
@@ -609,19 +795,137 @@ implementation PR.
       extension, `saveCodeFeatures` + `listBackfillCandidates`, client backfill.
       Schema edited (`Attempt.codeFeatures`); migration is generated by CI, not yet
       generated or applied.
-- [ ] M7.2 evidence assembler + sequences (+ unit tests).
-- [ ] M7.3 deterministic engine + content-addressed `evidenceHash` (+ unit tests).
-- [ ] M7.4 `openrouter.ts` wrapper, model map entry, `recommend-ai.ts` with Zod +
-      evidence-claim validation, stale handling, and refresh claim (+ tests,
-      `ai-usage-check`).
-- [ ] M7.5 `/progress` card, `resend.ts` with idempotency key, cron route +
-      delivery ledger, preferences + unsubscribe, env + `.env.example` (+ dedup/
-      concurrency/cron tests).
-- [ ] Update `00-product.md`, `01-architecture.md`, status board.
+- [x] M7.2 evidence assembler + solution evolution + evidence fingerprint + server
+      loader (+ unit tests). Needs live-database verification of the loader.
+- [x] M7.3 deterministic engine (`src/lib/learning/recommend.ts`:
+      `rankRecommendations`) over the real two-problem catalog, reusing
+      `computeEvidenceHash` (+ unit tests). Pure, server-safe, no AI.
+- [x] M7.4 `openrouter.ts` wrapper (+ pure `openrouter-protocol.ts`), model map
+      entry (`nvidia/nemotron-3.5-super-vl:free`, verified free), `recommend-ai.ts`
+      with the compact PII-free context, strict Zod + evidence-claim validation via
+      `lookupMetric`, disallowed-claim detection, and deterministic fallback (+ 25
+      unit tests, all provider interactions mocked). The durable refresh claim and
+      recommendation-cache dedup are deferred to M7.5 (this ships one enrichment
+      attempt behind a clean `enrichWithAi`/`diagnoseRecommendation` interface).
+- [x] M7.5A `RecommendationCache` schema (prepared; migration + RLS-enable not yet
+      generated/applied), `getRecommendation` (never calls AI), authenticated
+      `refreshRecommendation` with reuse → cooldown → durable atomic claim →
+      hash-guarded persist, `/progress` recommendations card with explicit
+      "Refresh AI insight" (+ 20 cache-policy tests, in-memory store, provider mocked).
+- [x] M7.5B shared planner, in-app inbox + bell, preferences, Resend wrapper with
+      idempotency key, delivery ledger with bounded claims, unsubscribe (page +
+      RFC 8058), daily cron, ADR-0004 (+ unit tests on fakes, read-only browser
+      tests). Migrations not generated/applied; no real email sent.
+- [x] Update `01-architecture.md` (M7.5 tables and entry points).
+- [ ] Update `00-product.md` (v1 scope row for recommendations + reminders —
+      needs team agreement) and the status board.
+- [ ] Generate + apply the M7.5 migration and the RLS-enable migration, then run
+      the database-dependent verification below.
+
+## Verification status (M7.5)
+
+**Verified (unit tests on in-memory fakes / mocked fetch, read-only browser
+tests):** planner templates and copy; email config gate; email content, links and
+escaping; Resend request shape, idempotency header and every error mapping; query
+ownership; token shape; scheduler dedup across repeated and concurrent runs, claim
+TTL recovery, bounded attempts, rate-limit breaker, budget continuation, channel
+independence, no-plan handling; cache policy (M7.5A); zero OpenRouter imports on the
+scheduler path; signed-out bell absence, unsubscribe page states, one-click
+endpoint, and cron authorisation.
+
+**Not yet verified (needs the migrated database):** the Postgres behaviour of the
+`ON CONFLICT` inserts and conditional `UPDATE` claims under real concurrency;
+`check:rls` on the four new tables; the signed-in bell, preferences and
+recommendation card in a browser; a full cron run against real learners; Resend's
+idempotency replay window (needs a real send to a test inbox, with approval).
 
 ## Changelog
 
+- 2026-11-02 — M7.5B implemented: unified learning notifications (ADR-0004). One
+  deterministic reminder planner feeds both channels; persistent in-app
+  notifications with a header bell (unread count, list, mark read / all), default
+  on; opt-in daily email via Resend behind a three-variable sender/verified-domain
+  gate; independent per-channel preferences; 256-bit unsubscribe tokens with a
+  confirm-first page and an RFC 8058 one-click endpoint; a shared
+  `notification_deliveries` ledger (renamed from `email_deliveries`, `channel`
+  reserved for push) with atomic claims, a claim TTL, ≤ 3 attempts, an in-run retry,
+  a 429 circuit breaker and a provider idempotency key; one daily UTC cron that
+  never calls OpenRouter, skips finished learners and reports truncation. The M6/M7.2
+  loaders gained user-id variants (`loadLearningAnalytics`,
+  `loadRecommendationEvidence`) for the cron, which also removed the redundant
+  session lookups on `/progress`. Schema prepared; migrations not generated or
+  applied. Analytics events deferred.
+
+- 2026-11-02 — M7.5A implemented: `prisma/schema/recommendations.prisma`
+  (`RecommendationCache`, one row per learner, plus `lastRefreshAt` for the
+  cooldown) and the `User.recommendationCache` back-relation — schema only; the
+  create migration is left to CI and the RLS-enable migration must follow it. The
+  pure policy lives in `src/server/learning/recommendation-cache.ts`; the
+  Prisma store and session wiring in `src/server/learning/recommendation.ts`;
+  the action in `src/server/actions/recommendations.ts`. A cached AI diagnosis is
+  reused only while bound to the current evidence hash AND configured model, and
+  is overlaid onto the freshly computed deterministic ranking, never served with a
+  stored ranking. Refresh: reuse → AI disabled → 10-min per-user cooldown → durable
+  claim (conditional UPDATE, 60 s TTL self-heal) → one M7.4 call → persist guarded
+  by `evidenceHash`, so an older refresh can't overwrite newer evidence (its
+  stale claim is released). Plain reads persist the deterministic result with a
+  create-then-guarded-update that never overwrites a same-hash AI row. The
+  /progress card shows the recommended problem (a real catalog link), the M7.3
+  reason, focus concepts, and the diagnosis labelled "From your activity" or "AI
+  insight", with a disclaimer that the model sees activity patterns and code
+  structure, never source. OpenRouter usage is now attributed to
+  `provider: 'openrouter'` (new `AI_PROVIDERS` value reusing the OpenAI-compatible
+  extractor; pricing unchanged). Reminder preferences/Resend/cron stay M7.5B.
+
+- 2026-11-02 — M7.4 implemented: OpenRouter AI diagnosis as OPTIONAL enrichment of
+  M7.3 (which stays authoritative). New `src/server/ai/openrouter-protocol.ts`
+  (pure: request/response/failure classification, model resolution — unit-tested)
+  and `src/server/ai/openrouter.ts` (the only networked, `trackAiCall`-wrapped
+  file; typed `OpenRouterResult`, never throws for expected failures; one bounded
+  retry on a transient error; 20 s timeout; `max_tokens` ≤ 600; server-only key
+  never logged or returned). New `src/server/learning/recommend-ai.ts`: a
+  dependency-injected core (`enrichWithAi`) plus the production `diagnoseRecommendation`
+  (lazy provider binding). The model substitution — spec candidate
+  `qwen/qwen3.6-plus:free` does not exist upstream, so the verified free
+  `nvidia/nemotron-3.5-super-vl:free` is used — is recorded above; free models
+  price at a real $0 (not NULL), confirmed by `pnpm check:ai-models`. The context
+  sent to the model is bounded, versioned and PII-free (slugs, difficulties,
+  concept tags, M6 counts, observed AST pattern statuses, transition kinds, M6
+  inferred signal CODES, and the M7.3 ranking + reason codes — never source, names,
+  emails, tokens, attempt ids, or a full history). A diagnosis is accepted only if
+  it passes a strict Zod schema (≤280/≤160 chars), every claim's slug exists and
+  metric resolves via M7.3 `lookupMetric` (with any volunteered value matching the
+  evidence), every concept is a catalog tag, and no prose makes a deterministically
+  detectable mastery/complexity/speed claim; otherwise the deterministic M7.3 result
+  is kept and the reason reported. AI never changes ranking, focus concepts, the
+  evidence hash or the version — only the `diagnosis`. AI runs only on an explicit
+  enrichment call, never on submit, replay, page load or cron. Also fixed a latent
+  over-broad `no-restricted-imports` glob (`ai` → anchored `/ai`, `/ai/**`) so
+  feature code can import the sanctioned `@/server/ai/*` wrappers while the real
+  Vercel AI SDK stays banned.
+- 2026-11-02 — M7.3 implemented: `recommend.ts` (`rankRecommendations`), pure and
+  clock-free, reusing `computeEvidenceHash`. The sketch above was made concrete:
+  each `rankedProblems` entry also carries `evidenceRefs` (a `{ problemSlug, metric,
+value }[]` where every `metric` resolves against the evidence via the exported
+  `lookupMetric`, which M7.4 reuses to reject unfounded AI claims). Ranking is a
+  four-state hierarchy by learner state — `open_repeated_failures` (100) >
+  `in_progress` (80) > `not_attempted` (70) > `solved` (20) — so an open failure run
+  is top priority, unfinished work edges out starting new, new learning still beats
+  re-doing a solve, and attempt COUNT never drives the order. Two bounded within-tier
+  nudges (±4, never crossing a tier): a recurring nested-loop shape alongside
+  failures, and a solved-after-struggle problem as the better revision target. Stable
+  reason codes (`not_attempted` / `open_repeated_failures` / `in_progress` /
+  `solved_revision`); ties break by score, then difficulty (easier first), then slug.
+  Only `known` catalog problems are ranked (never an invented or retired one);
+  contradictory/mixed records fall back to neutral wording; an all-solved catalog
+  gives an honest completion + revision state, not a pretend new problem.
 - 2026-11-02 — created (Draft).
+- 2026-11-02 — M7.2 implemented: `solution-evolution`, `recommendation-evidence`,
+  `evidence-hash` and the `getRecommendationEvidence` loader. The contract sketch
+  above was replaced by the real one: `mastery` became `progress` (a status, not a
+  claim), the boolean `struggling` flag was dropped (a judgement), observed and
+  inferred became separate fields throughout, and the evidence carries M6's
+  signals rather than any new inference.
 - 2026-11-02 — M7.1 implemented (status → In progress): `ast` worker message and
   `code-features` contract, `Attempt.codeFeatures` (camelCase column), extended
   `saveAttempt`, `saveCodeFeatures` / `listBackfillCandidates`, browser backfill on
