@@ -444,3 +444,13 @@ calls `ast.parse` and walks the tree with an `ast.NodeVisitor`, and a test fails
 if it ever gains an `exec`/`eval`/`compile` call. Verified against real Pyodide in
 `e2e/trace-engine.spec.ts`, including a `run → ast → trace → run` sequence on one
 worker that leaves the run and trace results unchanged.
+
+## Judging in-place problems (no contract change)
+
+A problem whose function returns nothing and mutates its argument (Move Zeroes)
+is judged by `buildRunRequest` in `src/lib/trace/grading.ts`: it appends a harness
+function to the learner's source and uses it as the run entry, so the unchanged
+`run` program compares the _mutated argument_ with `expected`. The `run`/`trace`
+requests, the worker and every schema in this document are untouched; a `trace`
+still runs the learner's own function. See
+[`features/curated-problem-pack.md`](features/curated-problem-pack.md).

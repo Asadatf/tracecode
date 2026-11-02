@@ -8,9 +8,11 @@ import { analyzeCode, isEngineBooted, runCode, traceCode, warmUpEngine } from '@
 import { withCodeFeatures } from '@/lib/learning/attempt-features'
 import { problemMeta, type ProblemDefinition } from '@/lib/trace/problem'
 import { PROBLEMS } from '@/lib/trace/problems'
-import { teach, type TeachingPrompt } from '@/lib/trace/teach'
+import { optimizationPrompt, teach, type TeachingPrompt } from '@/lib/trace/teach'
+import { buildRunRequest } from '@/lib/trace/grading'
 import {
 	isContextualHintEligible,
+	findSolvedAttempt,
 	isOptimizationEligible,
 	recommendReplay,
 	type ReplayRecord
@@ -68,12 +70,36 @@ function allPassed(result: RunResult): boolean {
 	)
 }
 
+// Resolves the problem on the client from its slug (the catalog is already in
+// this bundle for the picker), so the server never serializes a problem's test
+// data — some official tests are large — into the page payload.
 export function PracticeWorkspace({
-	problem,
+	slug,
 	isAuthenticated = false
 }: {
-	problem: ProblemDefinition
+	slug: string
 	isAuthenticated?: boolean
+}) {
+	const problem = PROBLEMS[slug]
+	if (problem == null) return null
+	return <ProblemWorkspace problem={problem} isAuthenticated={isAuthenticated} />
+}
+
+// Long inputs (a 20 000-character string, a 10 000-element list) are clipped in
+// labels so a result row stays readable; the real input is what runs.
+const MAX_LABEL_CHARS = 120
+function clip(text: string): string {
+	return text.length > MAX_LABEL_CHARS
+		? `${text.slice(0, MAX_LABEL_CHARS)}… (${text.length} chars)`
+		: text
+}
+
+function ProblemWorkspace({
+	problem,
+	isAuthenticated
+}: {
+	problem: ProblemDefinition
+	isAuthenticated: boolean
 }) {
 	const router = useRouter()
 	const meta = problemMeta(problem)
@@ -98,11 +124,11 @@ export function PracticeWorkspace({
 	const busy = status.busy
 
 	function labelFor(args: Json[]): string {
-		return `${problem.entry}(${args.map((a) => JSON.stringify(a)).join(', ')})`
+		return clip(`${problem.entry}(${args.map((a) => JSON.stringify(a)).join(', ')})`)
 	}
 	function namedInput(args: Json[]): string {
-		return JSON.stringify(
-			Object.fromEntries(problem.params.map((p, i) => [p.name, args[i] ?? null]))
+		return clip(
+			JSON.stringify(Object.fromEntries(problem.params.map((p, i) => [p.name, args[i] ?? null])))
 		)
 	}
 
@@ -225,15 +251,7 @@ export function PracticeWorkspace({
 		}
 		const source = code
 		const result = await withEngine('Running tests…', (onStatus) =>
-			runCode(
-				{
-					code: source,
-					entry: problem.entry,
-					tests: problem.tests,
-					limits: { timeoutMs: RUN_TIMEOUT_MS }
-				},
-				{ onStatus }
-			)
+			runCode(buildRunRequest(problem, source, { timeoutMs: RUN_TIMEOUT_MS }), { onStatus })
 		)
 		if (result == null) return
 		setReplay(null)
@@ -322,6 +340,18 @@ export function PracticeWorkspace({
 			})
 		}
 	}
+
+	// Stage B. "Solved" is any attempt that passed every official test, so a later
+	// failing experiment never un-solves the problem; the first solving attempt is
+	// kept so the learner can always get back to it. The challenge is static
+	// guidance — nothing here claims anything about the solution's complexity.
+	const firstSolve = findSolvedAttempt(attemptsForFlow)
+	const solvedIndex = firstSolve != null ? attemptsForFlow.indexOf(firstSolve) : -1
+	const solvedAttempt = solvedIndex >= 0 ? attempts[solvedIndex] : undefined
+	const challenge =
+		solvedAttempt != null && isOptimizationEligible({ allTestsPassed: true })
+			? optimizationPrompt(problem)
+			: null
 
 	const showReplayNudge =
 		submitted != null &&
@@ -492,6 +522,38 @@ export function PracticeWorkspace({
 					/>
 				)}
 
+				{challenge != null && solvedAttempt != null && (
+					<section className={styles.coachPanel} data-testid="optimization-challenge">
+						<div className={styles.coachMeta}>
+							<span className={styles.coachTag}>Solved · optional challenge</span>
+						</div>
+						<p>
+							All {problem.tests.length} tests passed (
+							{new Date(solvedAttempt.createdAt).toLocaleTimeString()}). That solution stays saved
+							in your attempts, and trying something else never unsolves this problem.
+						</p>
+						<div style={{ marginBottom: 12 }}>
+							<button
+								type="button"
+								className={styles.btn}
+								onClick={() => loadAttempt(solvedAttempt.source)}
+								disabled={busy}
+							>
+								Restore my solved code
+							</button>
+						</div>
+						<p>{problem.optimization?.goal}</p>
+						<TeachingPanel
+							key={challenge.kind === 'diagnosis' ? challenge.id : challenge.kind}
+							prompt={challenge}
+							onReveal={(level) => {
+								const detail = hintRevealDetail(challenge, level)
+								if (detail != null) persistHint(detail)
+							}}
+						/>
+					</section>
+				)}
+
 				{attempts.length > 0 && (
 					<section className={cn(styles.panel, styles.coachPanel)} style={{ background: '#fff' }}>
 						<div className={styles.panelHead}>
@@ -635,6 +697,11 @@ function ResultsBody({
 						args={args}
 						busy={busy}
 						namedInput={namedInput}
+						resultLabel={
+							problem.grading?.mode === 'mutate-arg'
+								? `${problem.params[problem.grading.argIndex]?.name ?? 'argument'} after the call`
+								: 'Returned'
+						}
 						onReplay={() => onReplay({ id: test.testId, args })}
 					/>
 				)
@@ -648,12 +715,14 @@ function ResultRow({
 	args,
 	busy,
 	namedInput,
+	resultLabel,
 	onReplay
 }: {
 	test: TestResult
 	args: Json[]
 	busy: boolean
 	namedInput: (args: Json[]) => string
+	resultLabel: string
 	onReplay: () => void
 }) {
 	return (
@@ -667,7 +736,7 @@ function ResultRow({
 					<br />
 					{test.error != null
 						? `Error: ${test.error.type}: ${test.error.message}`
-						: `Returned: ${test.actual != null ? formatValue(test.actual) : '—'}`}
+						: `${resultLabel}: ${test.actual != null ? formatValue(test.actual) : '—'}`}
 				</div>
 			</div>
 			<div className={styles.testActions}>

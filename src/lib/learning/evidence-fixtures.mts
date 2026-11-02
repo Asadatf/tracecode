@@ -14,12 +14,15 @@ import {
 } from './recommendation-evidence.ts'
 import { computeEvidenceHash } from './evidence-hash.ts'
 import type { CodeFeatures } from '../trace/code-features.ts'
-import { PROBLEMS } from '../trace/problems.ts'
+import { containsDuplicate, twoSum } from '../trace/problems.ts'
 
 // Shared by the M7.2 tests. It drives the REAL M6 calculators over small synthetic
 // histories, so the evidence tests see genuine M6 output rather than stand-ins.
 
-export const CATALOG: CatalogEntry[] = catalogEntries(Object.values(PROBLEMS))
+// The original two-problem catalog, pinned: the M7.2/M7.3 tests assert exact
+// rankings and counts against it and must not shift as problems are added. The
+// full live catalog is exercised in catalog-integration.test.mts.
+export const CATALOG: CatalogEntry[] = catalogEntries([twoSum, containsDuplicate])
 
 // Structural fingerprints as the worker produces them for the shapes the tests need.
 export const NESTED: CodeFeatures = {

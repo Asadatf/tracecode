@@ -44,7 +44,7 @@ export default async function PracticePage({
 
 	return (
 		<div className={`${dmSans.variable} ${jetBrainsMono.variable}`}>
-			<PracticeWorkspace problem={problem} isAuthenticated={isAuthenticated} />
+			<PracticeWorkspace slug={slug} isAuthenticated={isAuthenticated} />
 			{isAuthenticated && <CodeFeatureBackfill />}
 		</div>
 	)

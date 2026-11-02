@@ -104,6 +104,7 @@ Update this table in the same PR that changes a status.
 | [`features/progress-page.md`](features/progress-page.md)                       | In progress                                    | Asad        |
 | [`features/learning-statistics.md`](features/learning-statistics.md)           | Draft                                          | Umair       |
 | [`features/learning-recommendations.md`](features/learning-recommendations.md) | In progress (M7.1 built; no teammate sign-off) | Umair       |
+| [`features/curated-problem-pack.md`](features/curated-problem-pack.md)         | In progress (no teammate sign-off)             | Umair       |
 | [ADR-0001](../decisions/0001-in-browser-python-execution.md)                   | Proposed                                       | Team        |
 | [ADR-0002](../decisions/0002-self-host-pyodide.md)                             | Proposed                                       | Team        |
 | [ADR-0003](../decisions/0003-browser-ast-and-cached-recommendations.md)        | Accepted (Umair; no teammate sign-off)         | Team        |

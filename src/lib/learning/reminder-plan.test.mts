@@ -16,11 +16,14 @@ import { PROBLEMS } from '../trace/problems.ts'
 
 // M7.5B — the shared reminder planner: pure, deterministic, evidence-grounded.
 
-const CATALOG: CatalogProblem[] = Object.values(PROBLEMS).map((p) => ({
-	slug: p.slug,
-	title: p.title,
-	conceptTags: p.conceptTags
-}))
+// The original two-problem catalog, pinned (see evidence-fixtures.mts).
+const CATALOG: CatalogProblem[] = [PROBLEMS['two-sum']!, PROBLEMS['contains-duplicate']!].map(
+	(p) => ({
+		slug: p.slug,
+		title: p.title,
+		conceptTags: p.conceptTags
+	})
+)
 const DAY = 24 * 60 * 60 * 1000
 
 function planFor(specs: Spec[], now: Date, catalog = CATALOG) {

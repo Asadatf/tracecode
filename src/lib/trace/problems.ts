@@ -1,7 +1,11 @@
 import { type ProblemDefinition } from './problem'
+import { validAnagram } from './catalog/valid-anagram'
+import { moveZeroes } from './catalog/move-zeroes'
+import { binarySearch } from './catalog/binary-search'
+import { validParentheses } from './catalog/valid-parentheses'
 
-// Demo-slice problem set. Just Two Sum for now; the structure takes more without
-// change. Ported from the prototype's tracecode-problems.json, with named test
+// The curated problem set. Two Sum and Contains Duplicate live here; the four
+// later problems are one file each under ./catalog. Ported from the prototype's tracecode-problems.json, with named test
 // inputs ({nums, target}) rewritten as POSITIONAL args in `params` order.
 export const twoSum = {
 	slug: 'two-sum',
@@ -77,5 +81,9 @@ export const containsDuplicate = {
 
 export const PROBLEMS: Record<string, ProblemDefinition> = {
 	[twoSum.slug]: twoSum,
-	[containsDuplicate.slug]: containsDuplicate
+	[containsDuplicate.slug]: containsDuplicate,
+	[validAnagram.slug]: validAnagram,
+	[moveZeroes.slug]: moveZeroes,
+	[binarySearch.slug]: binarySearch,
+	[validParentheses.slug]: validParentheses
 }
