@@ -168,18 +168,20 @@
 	background: var(--accent-hover);
 }
 
-.sideSection {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-.floatCard {
-	padding: 22px 22px 24px;
-	border-radius: 20px;
+/* One floating card in a single dark-green theme: one gradient runs behind
+   both sections, so the topics and the next-practice parts read as one surface. */
+.mergedCard {
+	overflow: hidden;
+	border-radius: 22px;
 	background:
 		radial-gradient(
 			circle at 100% 0%,
 			color-mix(in srgb, var(--accent) 30%, transparent),
+			transparent 16rem
+		),
+		radial-gradient(
+			circle at 0% 100%,
+			color-mix(in srgb, var(--accent) 18%, transparent),
 			transparent 14rem
 		),
 		color-mix(in srgb, var(--accent) 34%, #0f1412);
@@ -188,40 +190,122 @@
 		0 2px 6px rgba(15, 20, 18, 0.18),
 		0 28px 56px -8px rgba(15, 20, 18, 0.4);
 }
-.floatCard .cardTitle {
+.topicsPart {
+	padding: 22px 22px 8px;
+}
+.mergedCard .cardTitle {
 	color: #fff;
 }
-.floatCard .topicCount {
+.mergedCard .topicCount {
 	color: rgba(255, 255, 255, 0.72);
 }
-.floatCard .bar {
+.mergedCard .bar {
 	background: rgba(255, 255, 255, 0.16);
 }
-.floatCard .barFill {
+.mergedCard .barFill {
 	background: #58d7a2;
 }
 
-.floatLight {
-	border-radius: 20px;
-	background: var(--surface);
-	box-shadow:
-		0 2px 6px rgba(15, 20, 18, 0.08),
-		0 24px 48px -10px rgba(15, 20, 18, 0.24);
+.nextPart {
+	padding: 18px 22px 22px;
 }
-.nextWidget {
-	padding: 22px;
+.nextPart .note {
+	color: rgba(255, 255, 255, 0.7);
 }
-.nextHead {
-	margin-bottom: 16px;
+.insight {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 18px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.07);
 }
-.nextHead .cardTitle {
-	margin-bottom: 4px;
+.insightHead {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
 }
-.nextHead p {
+.insightHead svg {
+	color: #58d7a2;
+}
+.insightText {
 	margin: 0;
-	color: var(--text-muted);
-	font-size: 14px;
-	line-height: 1.5;
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 15px;
+	line-height: 1.55;
+}
+.upNext {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.upNextLabel {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+.upNextTitle {
+	color: #fff;
+	font-size: 20px;
+	letter-spacing: -0.02em;
+}
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.chips > * {
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+.insightFoot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+.insightFoot a {
+	background: #58d7a2;
+	color: #0b231a;
+}
+.insightFoot a:hover {
+	background: #7be4b8;
+}
+.basis {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 13px;
+}
+.refresh {
+	display: grid;
+	flex: none;
+	width: 32px;
+	height: 32px;
+	margin-left: auto;
+	place-items: center;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.1);
+	color: #58d7a2;
+	cursor: pointer;
+}
+.refresh:hover {
+	background: rgba(255, 255, 255, 0.18);
+}
+.refresh:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+.refreshStatus {
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 13px;
 }
 
 .topicList {
@@ -291,11 +375,6 @@
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
 	.float {
 		animation: drift 7s ease-in-out infinite alternate;
-	}
-}
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-	.floatLight.float {
-		animation-delay: -3.5s;
 	}
 }
 @keyframes drift {

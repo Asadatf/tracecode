@@ -109,17 +109,22 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   the first consumer; no dashboard-specific markup lives in the shell.
 - **AC18** — GIVEN the sidebar WHEN expanded THEN it is 232px wide (collapsed
   68px), set by one CSS token so it can be tuned.
-- **AC19** — GIVEN a learner with progress THEN "What to practise next" shows as
-  a second floating widget in the right column under By topic (same drift,
-  offset in time): the heading and subheading, then one "From your activity"
-  card (summary, "Next step: …" with a Start/Continue/Open button on the same
-  line, the recorded-runs note, Refresh AI insight), then the Focus concepts
-  chips after the card. When the engine's summary is "You solved <slug> after
-  some earlier unsuccessful attempts", the slug is shown as "recent problems
-  based on <topic and topic>" (at most two topics); any other summary, including
-  an AI one, shows unchanged. Data and the refresh action are the existing M7.5
-  ones. `/progress` keeps its existing card. If the column is taller than the
-  window it scrolls inside itself with no visible scrollbar.
+- **AC19** — GIVEN a learner with progress THEN the right column is one
+  floating card (same drift) in one dark-green theme, with a single gradient
+  behind both parts so it reads as one surface: the "Coverage by topic" section
+  on top and the "What to practise next" section below it. The lower section has no visible heading (an
+  `sr-only` "What to practise next" keeps the region labelled) and shows one card with a lightbulb and
+  "Your learning insight", a one-line summary, "UP NEXT", the problem title and
+  its topic chips, a Start/Continue/Open problem button with "Based on your
+  activity" beside it (AI summaries: "AI insight · based on your activity"),
+  and a "Refresh AI insight" link under the card. When the engine's summary is
+  "You solved <slug> after some earlier unsuccessful attempts", it reads
+  "You've solved <topic and topic> problems after earlier attempts. Ready for a
+  new challenge?" (at most two topics); any other summary, including an AI one,
+  shows unchanged. Data and the refresh action are the existing M7.5 ones;
+  a refresh updates the whole section. `/progress` keeps its own card. If the
+  column is taller than the window it scrolls inside itself with no visible
+  scrollbar.
 - **AC20** — GIVEN an avatar (account button, and wherever one is shown) THEN a
   shared `Avatar` renders a photo when an image URL is supplied and falls back
   to initials otherwise. No avatar image is stored today, so initials show until

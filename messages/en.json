@@ -387,6 +387,18 @@
 		},
 		"topics": {
 			"heading": "Coverage by topic"
+		},
+		"next": {
+			"heading": "What to practise next",
+			"insight": "Your learning insight",
+			"upNext": "Up next",
+			"start": "Start problem",
+			"continue": "Continue problem",
+			"open": "Open problem",
+			"basedOnActivity": "Based on your activity",
+			"aiBasedOnActivity": "AI insight · based on your activity",
+			"refresh": "Refresh AI insight",
+			"empty": "Nothing to suggest yet."
 		}
 	},
 	"ApplicationNav": {

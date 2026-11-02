@@ -59,13 +59,15 @@ export default async function DashboardPage() {
 				</div>
 				{view == null ? null : (
 					<aside className={styles.side}>
-						<TopicPanel topics={view.topics} />
-						{recommendation.authenticated && recommendation.available ? (
-							<PracticeNextWidget
-								recommendation={recommendation.recommendation}
-								canRefresh={isRecommendationAiEnabled()}
-							/>
-						) : null}
+						<div className={`${styles.mergedCard} ${styles.float}`}>
+							<TopicPanel topics={view.topics} />
+							{recommendation.authenticated && recommendation.available ? (
+								<PracticeNextWidget
+									recommendation={recommendation.recommendation}
+									canRefresh={isRecommendationAiEnabled()}
+								/>
+							) : null}
+						</div>
 					</aside>
 				)}
 			</div>

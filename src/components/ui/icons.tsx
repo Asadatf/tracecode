@@ -19,6 +19,7 @@
 // import path if you stay on phosphor.
 import {
 	ArrowRight,
+	ArrowsClockwise,
 	ArrowSquareOut,
 	Bell,
 	Calendar,
@@ -39,6 +40,7 @@ import {
 	FunnelSimple,
 	Gear,
 	Info,
+	Lightbulb,
 	List,
 	Lock,
 	MagnifyingGlass,
@@ -121,11 +123,13 @@ export const EyeIcon = (props: IconProps) => <Glyph source={Eye} {...props} />
 export const EyeOffIcon = (props: IconProps) => <Glyph source={EyeSlash} {...props} />
 export const FilterIcon = (props: IconProps) => <Glyph source={FunnelSimple} {...props} />
 export const InfoIcon = (props: IconProps) => <Glyph source={Info} {...props} />
+export const LightbulbIcon = (props: IconProps) => <Glyph source={Lightbulb} {...props} />
 export const LockIcon = (props: IconProps) => <Glyph source={Lock} {...props} />
 export const MenuIcon = (props: IconProps) => <Glyph source={List} {...props} />
 export const MinusIcon = (props: IconProps) => <Glyph source={Minus} {...props} />
 export const MoreIcon = (props: IconProps) => <Glyph source={DotsThreeVertical} {...props} />
 export const PlusIcon = (props: IconProps) => <Glyph source={Plus} {...props} />
+export const RefreshIcon = (props: IconProps) => <Glyph source={ArrowsClockwise} {...props} />
 export const SearchIcon = (props: IconProps) => <Glyph source={MagnifyingGlass} {...props} />
 export const SettingsIcon = (props: IconProps) => <Glyph source={Gear} {...props} />
 export const SidebarIcon = (props: IconProps) => <Glyph source={SidebarSimple} {...props} />
