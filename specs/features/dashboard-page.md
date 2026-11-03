@@ -52,8 +52,9 @@ touched by this change.
   THEN the sidebar collapses to an icon-only rail (icons stay, labels become
   visually hidden but remain the accessible name, plus a tooltip on hover and
   focus) and expands again. The toggle has `aria-expanded` and an accessible
-  name. The choice persists per browser (`localStorage`, failure-safe); with
-  storage unavailable it defaults to expanded.
+  name. The choice persists per browser in a cookie that the server reads, so the
+  first paint is already the right width (no expanded-then-collapsed flash on a
+  page load or between pages); with cookies blocked it defaults to expanded.
 - **AC5** — GIVEN the summary strip WHEN rendered THEN it shows Solved (`n of
 total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   is invented.
@@ -109,6 +110,13 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   lives outside the dashboard route and takes the current nav item as a prop,
   so later pages follow the dashboard's theme by adopting it. The dashboard is
   the first consumer; no dashboard-specific markup lives in the shell.
+- **AC17a** — GIVEN a signed-in learner WHEN they open `/practice/<slug>` THEN the
+  existing workspace renders unchanged inside the shell (sidebar only: no search box, no bell, no right widget, no sidebar item
+  highlighted; the sidebar starts collapsed to the icon rail whatever was saved,
+  and toggling it there is not remembered; the content starts near the top and
+  is left-aligned), without the workspace's
+  own top strip (brand, problem picker, Progress link), which the shell replaces. A guest on Two Sum keeps
+  the standalone page, because the shell is account-only.
 - **AC18** — GIVEN the sidebar WHEN expanded THEN it is 232px wide (collapsed
   68px), set by one CSS token so it can be tuned. The sidebar (and the mobile
   drawer) use the same dark landing-hero green as the right-hand card, with its
@@ -151,7 +159,7 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 ## Edge cases
 
 - Empty / first-time: AC13. No fabricated runs, bars or counts.
-- Errors: loader failure → AC14; localStorage throws → default expanded.
+- Errors: loader failure → AC14; cookies blocked → default expanded.
 - Unauthenticated or another user's data: AC1; loaders read the session, never
   a browser-supplied user id.
 - Long titles and topic names wrap or truncate with a `title`, no overflow.

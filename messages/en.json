@@ -434,5 +434,20 @@
 			"saved": "Saved.",
 			"failed": "Couldn't save. Try again."
 		}
+	},
+	"ProblemsPage": {
+		"metaTitle": "Problems — TraceCode",
+		"eyebrow": "Learning workspace",
+		"heading": "Problems",
+		"listHeading": "All problems",
+		"tally": "{solved} of {total} problems solved",
+		"calendar": {
+			"previous": "Previous month",
+			"next": "Next month",
+			"todaysProblem": "Today’s problem",
+			"dayLabel": "{date}: {title}",
+			"dayHeading": "Day {day}",
+			"timeLeft": "{time} left"
+		}
 	}
 }
