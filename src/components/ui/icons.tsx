@@ -18,8 +18,11 @@
 // `/ssr` build takes its props directly and renders in both. Keep this
 // import path if you stay on phosphor.
 import {
+	ArrowCounterClockwise,
 	ArrowRight,
 	ArrowsClockwise,
+	ArrowsIn,
+	ArrowsOut,
 	ArrowSquareOut,
 	Bell,
 	Calendar,
@@ -45,13 +48,18 @@ import {
 	Lock,
 	MagnifyingGlass,
 	Minus,
+	Pause,
 	PencilSimple,
+	Play,
 	Plus,
 	SidebarSimple,
 	SignOut,
 	Sliders,
 	SquaresFour,
+	TextIndent,
+	Timer,
 	Trash,
+	Question,
 	User,
 	Warning,
 	X
@@ -122,6 +130,14 @@ export const ExternalLinkIcon = (props: IconProps) => <Glyph source={ArrowSquare
 export const EyeIcon = (props: IconProps) => <Glyph source={Eye} {...props} />
 export const EyeOffIcon = (props: IconProps) => <Glyph source={EyeSlash} {...props} />
 export const FilterIcon = (props: IconProps) => <Glyph source={FunnelSimple} {...props} />
+export const ExpandIcon = (props: IconProps) => <Glyph source={ArrowsOut} {...props} />
+export const FormatIcon = (props: IconProps) => <Glyph source={TextIndent} {...props} />
+export const HelpIcon = (props: IconProps) => <Glyph source={Question} {...props} />
+export const PauseIcon = (props: IconProps) => <Glyph source={Pause} {...props} />
+export const PlayIcon = (props: IconProps) => <Glyph source={Play} {...props} />
+export const ResetIcon = (props: IconProps) => <Glyph source={ArrowCounterClockwise} {...props} />
+export const ShrinkIcon = (props: IconProps) => <Glyph source={ArrowsIn} {...props} />
+export const TimerIcon = (props: IconProps) => <Glyph source={Timer} {...props} />
 export const InfoIcon = (props: IconProps) => <Glyph source={Info} {...props} />
 export const LightbulbIcon = (props: IconProps) => <Glyph source={Lightbulb} {...props} />
 export const LockIcon = (props: IconProps) => <Glyph source={Lock} {...props} />

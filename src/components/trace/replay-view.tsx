@@ -21,12 +21,21 @@ export function ReplayView({
 	trace,
 	meta,
 	label,
-	kind
+	kind,
+	part = 'all',
+	step: controlledStep,
+	onStepChange
 }: {
 	trace: Trace
 	meta: ProblemMeta
 	label: string
 	kind: 'official' | 'custom'
+	// 'all' is the original single panel. 'pane' is the same content sized to
+	// fill a workspace pane. 'trace' and 'variables' show the two halves apart;
+	// a parent that shows both owns the step so they stay in sync.
+	part?: 'all' | 'trace' | 'variables' | 'pane'
+	step?: number
+	onStepChange?: (step: number) => void
 }) {
 	const views = useMemo(() => deriveView(trace, meta), [trace, meta])
 	const history = useMemo(() => explainTrace(trace, meta), [trace, meta])
@@ -39,7 +48,9 @@ export function ReplayView({
 	}, [meta])
 
 	const total = trace.steps.length
-	const [step, setStep] = useState(0)
+	const [ownStep, setOwnStep] = useState(0)
+	const step = controlledStep ?? ownStep
+	const setStep = onStepChange ?? setOwnStep
 	const [showSteps, setShowSteps] = useState(false)
 	const codeRef = useRef<HTMLDivElement>(null)
 
@@ -86,6 +97,193 @@ export function ReplayView({
 		setStep(Math.max(0, Math.min(total - 1, next)))
 	}
 
+	const compactHead = (
+		<div className={styles.replayHead}>
+			<div className={styles.replayHeadingActions}>
+				{trace.truncated && (
+					<span className={styles.truncNote}>Truncated · first {total} steps</span>
+				)}
+				<span className={styles.pill}>
+					Step {index + 1} of {total}
+				</span>
+				<button
+					type="button"
+					className={styles.btn}
+					onClick={() => setShowSteps((s) => !s)}
+					aria-expanded={showSteps}
+				>
+					All steps {showSteps ? '↑' : '↓'}
+				</button>
+			</div>
+		</div>
+	)
+
+	const traceBlock = (
+		<div className={styles.traceCode} ref={codeRef}>
+			{trace.source.map((line, i) => {
+				const on = current.line === i + 1
+				return (
+					<div
+						key={i}
+						data-active-line={on ? 'true' : undefined}
+						className={cn(styles.traceLine, on && styles.traceLineOn)}
+					>
+						<span className={styles.ln}>{i + 1}</span>
+						<span
+							className={styles.traceSource}
+							dangerouslySetInnerHTML={{ __html: highlight(line, tokenClasses) }}
+						/>
+						{on && <span className={styles.inlineNote}>{explanation.body}</span>}
+					</div>
+				)
+			})}
+		</div>
+	)
+
+	const stateBlock = (
+		<div className={styles.state}>
+			{arrayVar != null && (
+				<>
+					<h3>Current input</h3>
+					<ArrayView cells={cells} pointers={arrayPointers} />
+				</>
+			)}
+
+			<h3>Live variables</h3>
+			<div>
+				{Object.entries(current.locals).length === 0 ? (
+					<span className={styles.description}>No local variables yet.</span>
+				) : (
+					Object.entries(current.locals).map(([name, value]) => (
+						<span
+							key={name}
+							className={cn(styles.local, view.changed.includes(name) && styles.localChanged)}
+						>
+							{name} = {formatValue(value)}
+						</span>
+					))
+				)}
+			</div>
+
+			{view.loops.length > 0 && (
+				<div className={styles.traceLoopPanel}>
+					<h3>Loop position</h3>
+					{view.loops.map((loop, i) => {
+						const v = loop.variable != null ? current.locals[loop.variable] : undefined
+						return (
+							<div key={i} className={styles.traceLoopItem}>
+								<code>for {loop.variable ?? '…'}</code>
+								<span>
+									{v != null
+										? `${loop.variable} = ${formatValue(v)}`
+										: `iteration ${loop.iteration}`}
+								</span>
+								<small>line {loop.line}</small>
+							</div>
+						)
+					})}
+				</div>
+			)}
+
+			<div className={styles.divider} />
+			<h3>What&apos;s happening</h3>
+			<p className={styles.description}>{explanation.body}</p>
+		</div>
+	)
+
+	const stepsBlock = (
+		<div className={styles.stepsInline}>
+			<div className={styles.stepsInlineHead}>
+				<div>
+					<strong>Execution history</strong>
+					<p>Every captured Python event. Select any step to jump there.</p>
+				</div>
+				<span className={styles.description}>
+					{total} steps · {kind === 'custom' ? 'Custom input' : 'Test replay'}
+				</span>
+			</div>
+			<ol className={styles.stepsList}>
+				{history.map((entry) => (
+					<li key={entry.index}>
+						<button
+							type="button"
+							className={cn(styles.stepSummary, entry.index === index && styles.stepSelected)}
+							onClick={() => go(entry.index)}
+						>
+							<span className={styles.summaryIndex}>{entry.index + 1}</span>
+							<span className={styles.summaryContent}>
+								<strong>
+									Line {entry.line}
+									{entry.event === 'return'
+										? ' · Return'
+										: entry.event === 'exception'
+											? ' · Exception'
+											: ''}
+								</strong>
+								<span>{entry.body}</span>
+							</span>
+						</button>
+					</li>
+				))}
+			</ol>
+		</div>
+	)
+
+	const bottomBlock = (
+		<div className={styles.replayBottom}>
+			<span className={styles.description}>{context}</span>
+			<div className={styles.replayNav}>
+				<button
+					type="button"
+					className={styles.btn}
+					onClick={() => go(index - 1)}
+					disabled={index === 0}
+				>
+					← Previous
+				</button>
+				<button
+					type="button"
+					className={cn(styles.btn, styles.btnDark)}
+					onClick={() => go(index + 1)}
+					disabled={index === total - 1}
+				>
+					Next step →
+				</button>
+			</div>
+		</div>
+	)
+
+	// The workspace's Replay tab: traced code and the variables side by side,
+	// filling the pane instead of using the fixed panel heights.
+	if (part === 'pane') {
+		return (
+			<div className={cn(styles.replay, styles.replayFill)}>
+				{compactHead}
+				{showSteps ? (
+					stepsBlock
+				) : (
+					<div className={styles.replayGrid}>
+						{traceBlock}
+						{stateBlock}
+					</div>
+				)}
+				{bottomBlock}
+			</div>
+		)
+	}
+	if (part === 'variables') {
+		return <div className={cn(styles.replay, styles.replayFill)}>{stateBlock}</div>
+	}
+	if (part === 'trace') {
+		return (
+			<div className={cn(styles.replay, styles.replayFill)}>
+				{compactHead}
+				{showSteps ? stepsBlock : traceBlock}
+				{bottomBlock}
+			</div>
+		)
+	}
+
 	return (
 		<div className={styles.replay}>
 			<div className={styles.replayHead}>
@@ -114,74 +312,8 @@ export function ReplayView({
 			</div>
 
 			<div className={styles.replayGrid}>
-				<div className={styles.traceCode} ref={codeRef}>
-					{trace.source.map((line, i) => {
-						const on = current.line === i + 1
-						return (
-							<div
-								key={i}
-								data-active-line={on ? 'true' : undefined}
-								className={cn(styles.traceLine, on && styles.traceLineOn)}
-							>
-								<span className={styles.ln}>{i + 1}</span>
-								<span
-									className={styles.traceSource}
-									dangerouslySetInnerHTML={{ __html: highlight(line, tokenClasses) }}
-								/>
-								{on && <span className={styles.inlineNote}>{explanation.body}</span>}
-							</div>
-						)
-					})}
-				</div>
-
-				<div className={styles.state}>
-					{arrayVar != null && (
-						<>
-							<h3>Current input</h3>
-							<ArrayView cells={cells} pointers={arrayPointers} />
-						</>
-					)}
-
-					<h3>Live variables</h3>
-					<div>
-						{Object.entries(current.locals).length === 0 ? (
-							<span className={styles.description}>No local variables yet.</span>
-						) : (
-							Object.entries(current.locals).map(([name, value]) => (
-								<span
-									key={name}
-									className={cn(styles.local, view.changed.includes(name) && styles.localChanged)}
-								>
-									{name} = {formatValue(value)}
-								</span>
-							))
-						)}
-					</div>
-
-					{view.loops.length > 0 && (
-						<div className={styles.traceLoopPanel}>
-							<h3>Loop position</h3>
-							{view.loops.map((loop, i) => {
-								const v = loop.variable != null ? current.locals[loop.variable] : undefined
-								return (
-									<div key={i} className={styles.traceLoopItem}>
-										<code>for {loop.variable ?? '…'}</code>
-										<span>
-											{v != null
-												? `${loop.variable} = ${formatValue(v)}`
-												: `iteration ${loop.iteration}`}
-										</span>
-										<small>line {loop.line}</small>
-									</div>
-								)
-							})}
-						</div>
-					)}
-
-					<div className={styles.divider} />
-					<h3>What&apos;s happening</h3>
-					<p className={styles.description}>{explanation.body}</p>
-				</div>
+				{traceBlock}
+				{stateBlock}
 			</div>
 
 			{showSteps && (

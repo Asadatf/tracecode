@@ -21,6 +21,21 @@
 	font-size: 14px;
 	min-height: 100vh;
 }
+:global([data-in-shell]) .page {
+	/* Inside the app shell the shell owns the height and the background. */
+	min-height: 0;
+	background: transparent;
+}
+/* The shell supplies the brand and navigation, so the page's own top strip is hidden there. */
+:global([data-in-shell]) .top {
+	display: none;
+}
+/* Left-aligned, flush with the shell's content edge rather than centred. */
+:global([data-in-shell]) .shell {
+	margin: 0;
+	padding-left: 0;
+	padding-right: 0;
+}
 .page button {
 	cursor: pointer;
 	font: inherit;
@@ -918,5 +933,132 @@
 		height: auto;
 		max-height: none;
 		overflow: visible;
+	}
+}
+
+/* The workspace layout (specs/features/practice-workspace-layout.md): a full-height
+   page with a toolbar above the resizable panes. Replay pieces drop their fixed
+   heights when they live in a pane (ReplayView part="trace" | "variables"). */
+.workspacePage {
+	display: flex;
+	flex-direction: column;
+	height: 100dvh;
+	min-height: 0;
+	padding: 0 clamp(10px, 1.2vw, 18px) 12px;
+	box-sizing: border-box;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 14px;
+}
+:global([data-in-shell]) .workspacePage {
+	height: calc(100dvh - 32px);
+	padding: 0;
+	background: transparent;
+}
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	flex: none;
+	gap: 10px 14px;
+	padding: 10px 0;
+}
+.problemTitle {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+.problemTitle h1 {
+	margin: 0;
+	font-size: 22px;
+	letter-spacing: -0.03em;
+}
+.toolbarSpacer {
+	flex: 1;
+}
+.toolbar .stages {
+	flex-wrap: nowrap;
+}
+.toolbar .stage {
+	white-space: nowrap;
+}
+.replayFill {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+}
+.replayFill .replayHead {
+	padding: 8px 12px;
+}
+.replayFill .replayGrid {
+	flex: 1;
+	min-height: 0;
+	grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
+	gap: 0;
+}
+.replayFill .replayGrid .state {
+	overflow-y: auto;
+	border-left: 1px solid var(--line);
+}
+.replayFill .traceCode {
+	flex: 1;
+	min-height: 0;
+	height: auto;
+	border-radius: 0;
+}
+.replayFill .state {
+	height: auto;
+	overflow: visible;
+	border: 0;
+	border-radius: 0;
+}
+.replayFill .stepsInline {
+	flex: 1;
+	min-height: 0;
+	margin: 0;
+	overflow: auto;
+	border: 0;
+	border-radius: 0;
+}
+.replayFill .stepsList {
+	grid-template-columns: 1fr;
+	max-height: none;
+	overflow: visible;
+}
+.replayFill .replayBottom {
+	margin-top: 0;
+	padding: 8px 12px;
+}
+:global([data-workspace]) .editorWrap {
+	height: 100%;
+}
+@media (max-width: 767px) {
+	.workspacePage {
+		height: auto;
+		min-height: 100dvh;
+	}
+	:global([data-in-shell]) .workspacePage {
+		height: calc(100dvh - 76px);
+		min-height: 0;
+	}
+	.toolbar .stages {
+		display: none;
+	}
+	.replayFill .replayGrid {
+		grid-template-columns: 1fr;
+	}
+	.replayFill .replayGrid .state {
+		border-left: 0;
+		border-top: 1px solid var(--line);
+	}
+	/* The guest top strip wraps on a phone instead of overflowing its fixed height. */
+	.workspacePage .top {
+		height: auto;
+		padding-block: 10px;
 	}
 }

@@ -41,7 +41,7 @@ export function SidebarNav({
 	onNavigate
 }: {
 	groups: NavGroup[]
-	current: NavKey
+	current?: NavKey
 	// Adds a Sign out entry at the end of the last group.
 	signOutLabel: string
 	onNavigate?: () => void

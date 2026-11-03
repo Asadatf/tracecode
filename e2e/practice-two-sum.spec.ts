@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from '@playwright/test'
+import { test, expect, type Page, type Locator } from '@playwright/test'
 
 // Set a controlled React textarea reliably — fill() does not clear it. Uses the
 // native value setter + a bubbling input event so React's onChange fires with
@@ -30,6 +30,25 @@ const FIXED = `def two_sum(nums, target):
                 return [i, j]
     return []`
 
+// The first-visit tour covers the bottom right of the workspace; mark it seen.
+test.beforeEach(async ({ page }) => {
+	await page.addInitScript(() => {
+		try {
+			window.localStorage.setItem('tc-practice-tour-v1', '1')
+		} catch {
+			// storage unavailable: the tour just shows
+		}
+	})
+})
+
+// Typing before React attaches to the editor would be overwritten on hydration.
+async function hydrated(page: Page) {
+	await page.waitForFunction(() => {
+		const el = document.querySelector('textarea')
+		return el != null && Object.keys(el).some((key) => key.startsWith('__reactProps'))
+	})
+}
+
 test('a learner runs the buggy Two Sum, replays the failure, fixes it, and passes', async ({
 	page
 }) => {
@@ -38,17 +57,20 @@ test('a learner runs the buggy Two Sum, replays the failure, fixes it, and passe
 	await page.goto('/practice/two-sum')
 	await expect(page.getByRole('heading', { level: 1, name: 'Two Sum' })).toBeVisible()
 
+	await hydrated(page)
 	const editor = page.getByLabel('Python code editor')
 	await setEditor(editor, BUGGY)
 	await page.getByRole('button', { name: 'Run code' }).click()
 
 	// One passing, two failing — the self-pairing bug returns [0, 0].
-	await expect(page.getByText('1 / 3 passed').first()).toBeVisible({ timeout: 120_000 })
+	await expect(page.getByText('1 / 3 passed').filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
 	await expect(page.getByText('Returned: [0, 0]').first()).toBeVisible()
 
 	// Replay a failing test (t2 is the second result row).
 	await page.getByRole('button', { name: 'Replay', exact: true }).nth(1).click()
-	await expect(page.getByText('Watch your code, one step at a time')).toBeVisible()
+	await expect(page.getByText(/Step \d+ of \d+/)).toBeVisible()
 
 	// Open the step list: the bug is visible — both pointers on index 0, returns [0, 0].
 	await page.getByRole('button', { name: /All steps/ }).click()
@@ -58,5 +80,7 @@ test('a learner runs the buggy Two Sum, replays the failure, fixes it, and passe
 	// Fix the inner loop and rerun — all official tests pass.
 	await setEditor(editor, FIXED)
 	await page.getByRole('button', { name: 'Run code' }).click()
-	await expect(page.getByText('3 / 3 passed').first()).toBeVisible({ timeout: 120_000 })
+	await expect(page.getByText('3 / 3 passed').filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
 })

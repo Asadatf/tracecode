@@ -391,6 +391,17 @@
 	color: #fff;
 }
 
+/* Bare shell (Practice): no search or bell, so there is no desktop top bar and
+   the content starts near the top. The mobile menu button stays. */
+@media (min-width: 1024px) {
+	.content[data-bare='true'] .topbar {
+		display: none;
+	}
+	.content[data-bare='true'] .main {
+		padding-top: 12px;
+	}
+}
+
 /* Search */
 .search {
 	position: relative;
