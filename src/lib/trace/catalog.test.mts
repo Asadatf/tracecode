@@ -7,19 +7,40 @@ import { ORACLES } from './oracles.mts'
 import { buildRunRequest } from './grading'
 import { pythonAvailable, runInPython, runInPyodide } from './engine-python.mts'
 
-const NEW_SLUGS = ['valid-anagram', 'move-zeroes', 'binary-search', 'valid-parentheses'] as const
+const NEW_SLUGS = [
+	'valid-anagram',
+	'move-zeroes',
+	'binary-search',
+	'valid-parentheses',
+	// Problem pack 2 (specs/features/problem-pack-classics.md)
+	'best-time-to-buy-and-sell-stock',
+	'valid-palindrome',
+	'maximum-subarray',
+	'merge-sorted-array',
+	'majority-element',
+	'climbing-stairs'
+] as const
+// Every problem with reference solutions, including Two Sum and Contains
+// Duplicate (added for the Solutions tab).
+const SOLVED_SLUGS = Object.keys(REFERENCE_SOLUTIONS)
 const RUN_LIMITS = { timeoutMs: 5000 }
 const havePython = pythonAvailable()
 
-test('catalog: six problems, unique slugs, every definition valid', () => {
+test('catalog: twelve problems, unique slugs, every definition valid', () => {
 	const problems = Object.values(PROBLEMS)
-	assert.equal(problems.length, 6)
+	assert.equal(problems.length, 12)
 	assert.deepEqual(Object.keys(PROBLEMS).sort(), [
+		'best-time-to-buy-and-sell-stock',
 		'binary-search',
+		'climbing-stairs',
 		'contains-duplicate',
+		'majority-element',
+		'maximum-subarray',
+		'merge-sorted-array',
 		'move-zeroes',
 		'two-sum',
 		'valid-anagram',
+		'valid-palindrome',
 		'valid-parentheses'
 	])
 	for (const [key, problem] of Object.entries(PROBLEMS)) {
@@ -43,7 +64,7 @@ test('catalog: six problems, unique slugs, every definition valid', () => {
 test('new problems carry difficulty, tags, strategies and full hint ladders', () => {
 	for (const slug of NEW_SLUGS) {
 		const p = PROBLEMS[slug]!
-		assert.equal(p.difficulty, 'easy')
+		assert.ok(p.difficulty === 'easy' || p.difficulty === 'medium', `${slug}: difficulty`)
 		assert.ok(p.knownStrategies != null && p.knownStrategies.length >= 2, `${slug}: strategies`)
 		assert.ok(
 			p.correctnessHints?.every((h) => h.length > 20),
@@ -98,6 +119,52 @@ test('every official input stays inside the problem’s stated constraints', () 
 		assert.ok(s.length >= 1 && s.length <= 10_000, `${t.id} length`)
 		assert.match(s, /^[()[\]{}]+$/)
 	}
+	for (const t of PROBLEMS['best-time-to-buy-and-sell-stock']!.tests) {
+		const prices = t.args[0] as number[]
+		assert.ok(prices.length >= 1 && prices.length <= 100_000, `${t.id} length`)
+		assert.ok(
+			prices.every((x) => Number.isInteger(x) && x >= 0 && x <= 10_000),
+			`${t.id} range`
+		)
+	}
+	for (const t of PROBLEMS['valid-palindrome']!.tests) {
+		const s = t.args[0] as string
+		assert.ok(s.length >= 1 && s.length <= 200_000, `${t.id} length`)
+		assert.match(s, /^[\x20-\x7e]+$/, `${t.id}: printable ASCII`)
+	}
+	for (const t of PROBLEMS['maximum-subarray']!.tests) {
+		const nums = t.args[0] as number[]
+		assert.ok(nums.length >= 1 && nums.length <= 100_000, `${t.id} length`)
+		assert.ok(
+			nums.every((x) => Number.isInteger(x) && x >= -10_000 && x <= 10_000),
+			`${t.id}`
+		)
+	}
+	for (const t of PROBLEMS['merge-sorted-array']!.tests) {
+		const [nums1, m, nums2, n] = t.args as [number[], number, number[], number]
+		assert.equal(nums1.length, m + n, `${t.id}: nums1 has room for both`)
+		assert.equal(nums2.length, n, `${t.id}: n is nums2's length`)
+		assert.ok(
+			nums1.slice(m).every((x) => x === 0),
+			`${t.id}: placeholders are 0`
+		)
+		const sorted = (list: number[]) => list.every((x, i) => i === 0 || list[i - 1]! <= x)
+		assert.ok(sorted(nums1.slice(0, m)) && sorted(nums2), `${t.id}: inputs sorted`)
+		assert.ok(
+			[...nums1, ...nums2].every((x) => Math.abs(x) <= 1e9),
+			`${t.id} range`
+		)
+	}
+	for (const t of PROBLEMS['majority-element']!.tests) {
+		const nums = t.args[0] as number[]
+		assert.ok(nums.length >= 1 && nums.length <= 50_000, `${t.id} length`)
+		const count = nums.filter((x) => x === t.expected).length
+		assert.ok(count * 2 > nums.length, `${t.id}: a majority exists`)
+	}
+	for (const t of PROBLEMS['climbing-stairs']!.tests) {
+		const n = t.args[0] as number
+		assert.ok(Number.isInteger(n) && n >= 1 && n <= 45, `${t.id} range`)
+	}
 })
 
 test('every expected value agrees with the independent oracle', () => {
@@ -110,7 +177,7 @@ test('every expected value agrees with the independent oracle', () => {
 
 test('suites mix outcomes and exercise their required categories', () => {
 	const verdicts = (slug: string) => PROBLEMS[slug]!.tests.map((t) => t.expected)
-	for (const slug of ['valid-anagram', 'valid-parentheses']) {
+	for (const slug of ['valid-anagram', 'valid-parentheses', 'valid-palindrome']) {
 		assert.ok(verdicts(slug).includes(true) && verdicts(slug).includes(false), slug)
 	}
 	const search = PROBLEMS['binary-search']!.tests
@@ -151,7 +218,7 @@ test(
 		skip: !havePython && 'python3 not available'
 	},
 	() => {
-		for (const slug of NEW_SLUGS) {
+		for (const slug of SOLVED_SLUGS) {
 			const problem = PROBLEMS[slug]!
 			assert.ok(REFERENCE_SOLUTIONS[slug]!.some((s) => s.kind === 'straightforward'))
 			assert.ok(REFERENCE_SOLUTIONS[slug]!.some((s) => s.kind === 'optimized'))
@@ -172,7 +239,7 @@ test('reference solutions pass through the real Pyodide runtime too', async () =
 	await runInPyodide(
 		buildRunRequest(warm, REFERENCE_SOLUTIONS[NEW_SLUGS[0]!]![0]!.source, RUN_LIMITS)
 	)
-	for (const slug of NEW_SLUGS) {
+	for (const slug of SOLVED_SLUGS) {
 		const problem = PROBLEMS[slug]!
 		for (const solution of REFERENCE_SOLUTIONS[slug]!) {
 			const started = Date.now()

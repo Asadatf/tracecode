@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { REFERENCE_SOLUTIONS, type Growth } from './reference-solutions'
+import { COMPARISON_ARGS, REFERENCE_SOLUTIONS, type Growth } from './reference-solutions'
+import { PROBLEMS } from './problems'
 import { PYTHON, pythonAvailable } from './engine-python.mts'
 import { seededRandom } from './catalog/test-data'
 
@@ -48,12 +49,9 @@ for size_args in req['inputs']:
 print(json.dumps(out))
 `
 
-const ENTRY: Record<string, string> = {
-	'valid-anagram': 'is_anagram',
-	'move-zeroes': 'move_zeroes',
-	'binary-search': 'search',
-	'valid-parentheses': 'is_valid'
-}
+const ENTRY: Record<string, string> = Object.fromEntries(
+	Object.values(PROBLEMS).map((problem) => [problem.slug, problem.entry])
+)
 
 // The worst case each problem's solutions are measured on, at size n.
 function worstCase(slug: string, n: number): unknown[] {
@@ -69,6 +67,32 @@ function worstCase(slug: string, n: number): unknown[] {
 		case 'binary-search':
 			// Absent target above everything: a scan reads all n, a halving search ~log n.
 			return [Array.from({ length: n }, (_, i) => i), n + 1]
+		case 'two-sum':
+			// The only pair is the last two values: every pair is tried first.
+			return [Array.from({ length: n }, (_, i) => i), 2 * n - 3]
+		case 'contains-duplicate':
+			// All distinct: nothing ends the search early.
+			return [Array.from({ length: n }, (_, i) => i)]
+		case 'best-time-to-buy-and-sell-stock':
+			return [Array.from({ length: n }, () => Math.floor(random() * 10_001))]
+		case 'valid-palindrome': {
+			const half = Array.from({ length: n / 2 }, (_, i) => 'abc123'[i % 6]).join('')
+			return [half + [...half].reverse().join('')]
+		}
+		case 'maximum-subarray':
+			return [Array.from({ length: n }, () => Math.floor(random() * 20_001) - 10_000)]
+		case 'merge-sorted-array': {
+			const half = n / 2
+			const evens = Array.from({ length: half }, (_, i) => i * 2)
+			const odds = Array.from({ length: half }, (_, i) => i * 2 + 1)
+			return [[...evens, ...Array.from({ length: half }, () => 0)], half, odds, half]
+		}
+		case 'majority-element':
+			// Just over half are the majority; the rest are all different, so a
+			// dictionary of counts grows with n.
+			return [Array.from({ length: n + 1 }, (_, i) => (i % 2 === 0 ? -1 : i))]
+		case 'climbing-stairs':
+			return [n]
 		default:
 			// All openers then all closers: deepest nesting, longest pending stack.
 			return ['('.repeat(n / 2) + ')'.repeat(n / 2)]
@@ -90,6 +114,14 @@ function measure(slug: string, source: string, sizes: number[]) {
 }
 
 const SIZES = [1000, 2000, 4000]
+// Problems with a quadratic straightforward variant, measured at smaller sizes
+// so the line-event tracer stays fast; the growth ratios are the same.
+const SIZES_FOR: Record<string, number[]> = {
+	'two-sum': [300, 600, 1200],
+	'contains-duplicate': [300, 600, 1200],
+	'best-time-to-buy-and-sell-stock': [300, 600, 1200],
+	'maximum-subarray': [300, 600, 1200]
+}
 
 function assertTime(growth: Growth, lines: number[], label: string) {
 	const [a, b, c] = lines as [number, number, number]
@@ -121,7 +153,7 @@ for (const [slug, solutions] of Object.entries(REFERENCE_SOLUTIONS)) {
 				skip: !pythonAvailable() && 'python3 not available'
 			},
 			() => {
-				const results = measure(slug, solution.source, SIZES)
+				const results = measure(slug, solution.source, SIZES_FOR[slug] ?? SIZES)
 				if (solution.timeGrowth != null)
 					assertTime(
 						solution.timeGrowth,
@@ -150,5 +182,27 @@ test('every problem documents a straightforward and an optimized variant with st
 			slug
 		)
 		for (const s of solutions) assert.ok(s.time !== '' && s.space !== '')
+	}
+})
+
+// specs/features/solutions-tab.md, AC10: every problem a learner can open has a
+// straightforward and an optimised passing solution, each with an explanation,
+// and a comparison input shaped like its tests.
+test('every registry problem has explained solutions of both kinds and a comparison input', () => {
+	for (const problem of Object.values(PROBLEMS)) {
+		const solutions = REFERENCE_SOLUTIONS[problem.slug] ?? []
+		for (const kind of ['straightforward', 'optimized'] as const) {
+			assert.ok(
+				solutions.some((s) => s.kind === kind && s.passes),
+				`${problem.slug}: a passing ${kind} solution`
+			)
+		}
+		for (const s of solutions) {
+			assert.ok(s.explanation.length >= 60, `${problem.slug}/${s.name}: explanation`)
+			assert.ok(s.source.includes(`def ${problem.entry}(`), `${problem.slug}/${s.name}: entry`)
+		}
+		const args = COMPARISON_ARGS[problem.slug]
+		assert.ok(args != null, `${problem.slug}: comparison input`)
+		assert.equal(args.length, problem.params.length, `${problem.slug}: comparison arity`)
 	}
 })
