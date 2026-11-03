@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import { startOAuthAction } from '@/server/actions/oauth'
 import { PROVIDER_NAME, type OAuthProvider } from '@/lib/auth/oauth'
+import { GitHubIcon, GoogleIcon } from '@/components/ui/icons'
 import styles from './auth.module.css'
 
 // "Continue with Google / GitHub" above the email form
@@ -36,6 +37,7 @@ export async function OAuthButtons({
 					<input type="hidden" name="provider" value={provider} />
 					{next != null && <input type="hidden" name="next" value={next} />}
 					<button type="submit" className={styles.oauthButton}>
+						{provider === 'google' ? <GoogleIcon size={20} /> : <GitHubIcon size={20} />}
 						{t('continueWith', { provider: PROVIDER_NAME[provider] })}
 					</button>
 				</form>
