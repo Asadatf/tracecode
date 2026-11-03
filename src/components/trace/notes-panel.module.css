@@ -1,0 +1,44 @@
+/* Notes per problem (specs/features/problem-notes.md), in the workspace's
+   palette from practice.module.css. */
+.panel {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+}
+.panel h2 {
+	margin: 0;
+	font-size: 16px;
+}
+.label {
+	color: #1b2a22;
+	font-size: 13px;
+	font-weight: 700;
+}
+.box {
+	box-sizing: border-box;
+	align-self: stretch;
+	min-height: 220px;
+	padding: 12px 14px;
+	border: 1px solid #bfccc2;
+	border-radius: 11px;
+	background: #fff;
+	color: #1b2a22;
+	font: 13px/1.6 var(--sans, system-ui);
+	resize: vertical;
+}
+.box:focus-visible {
+	outline: 2px solid #2f8f63;
+	outline-offset: 1px;
+}
+.foot {
+	display: flex;
+	align-self: stretch;
+	justify-content: space-between;
+	gap: 12px;
+	color: #647384;
+	font-size: 12px;
+}
+.foot .counter {
+	font-variant-numeric: tabular-nums;
+}

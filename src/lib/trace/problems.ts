@@ -3,9 +3,15 @@ import { validAnagram } from './catalog/valid-anagram'
 import { moveZeroes } from './catalog/move-zeroes'
 import { binarySearch } from './catalog/binary-search'
 import { validParentheses } from './catalog/valid-parentheses'
+import { bestTimeToBuyAndSellStock } from './catalog/best-time-to-buy-and-sell-stock'
+import { validPalindrome } from './catalog/valid-palindrome'
+import { maximumSubarray } from './catalog/maximum-subarray'
+import { mergeSortedArray } from './catalog/merge-sorted-array'
+import { majorityElement } from './catalog/majority-element'
+import { climbingStairs } from './catalog/climbing-stairs'
 
-// The curated problem set. Two Sum and Contains Duplicate live here; the four
-// later problems are one file each under ./catalog. Ported from the prototype's tracecode-problems.json, with named test
+// The curated problem set. Two Sum and Contains Duplicate live here; the later
+// problems (the curated pack and problem pack 2) are one file each under ./catalog. Ported from the prototype's tracecode-problems.json, with named test
 // inputs ({nums, target}) rewritten as POSITIONAL args in `params` order.
 export const twoSum = {
 	slug: 'two-sum',
@@ -85,5 +91,12 @@ export const PROBLEMS: Record<string, ProblemDefinition> = {
 	[validAnagram.slug]: validAnagram,
 	[moveZeroes.slug]: moveZeroes,
 	[binarySearch.slug]: binarySearch,
-	[validParentheses.slug]: validParentheses
+	[validParentheses.slug]: validParentheses,
+	// specs/features/problem-pack-classics.md
+	[bestTimeToBuyAndSellStock.slug]: bestTimeToBuyAndSellStock,
+	[validPalindrome.slug]: validPalindrome,
+	[maximumSubarray.slug]: maximumSubarray,
+	[mergeSortedArray.slug]: mergeSortedArray,
+	[majorityElement.slug]: majorityElement,
+	[climbingStairs.slug]: climbingStairs
 }

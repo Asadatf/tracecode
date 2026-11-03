@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
@@ -33,19 +33,52 @@ import { hintRevealDetail } from '@/lib/learning/hint-event'
 import { replayInspectedEvent } from '@/lib/learning/replay-writes'
 import { FormatIcon, HelpIcon, PlayIcon, ResetIcon } from '@/components/ui/icons'
 import { formatPython } from '@/lib/trace/format-python'
+import {
+	DRAFT_DEBOUNCE_MS,
+	browserStorage,
+	clearDraft,
+	readDraft,
+	writeDraft
+} from '@/lib/trace/editor-drafts'
+import { detectPlatform, matchShortcut, shortcutKeys, type Platform } from '@/lib/trace/shortcuts'
+import { COMPARISON_ARGS, type ReferenceSolution } from '@/lib/trace/reference-solutions'
+import {
+	comparisonTarget,
+	shownSolutions,
+	solutionsAccess,
+	type StepCount
+} from '@/lib/trace/solutions'
 import { toast } from '@/lib/toast'
 import type { LayoutState } from '@/lib/trace/workspace-layout'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
+import { SolutionsPanel } from './solutions-panel'
+import { AttemptCompare } from './attempt-compare'
+import { NotesPanel } from './notes-panel'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
 import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
 import { WorkspaceTour } from './workspace/workspace-tour'
+import { ShortcutsDialog } from './workspace/shortcuts-dialog'
 import styles from './practice.module.css'
 import wsStyles from './workspace/workspace.module.css'
 
 const RUN_TIMEOUT_MS = 5000
+
+// The platform decides which shortcut keys tooltips name. Unknown on the
+// server, so the server snapshot is 'other' and the browser swaps in the real
+// one after hydration (no mismatch).
+const noSubscription = () => () => {}
+const clientPlatform = (): Platform => detectPlatform(navigator.userAgent)
+const serverPlatform = (): Platform => 'other'
+
+function isTextField(target: EventTarget | null): boolean {
+	return (
+		target instanceof HTMLElement &&
+		(target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+	)
+}
 const STAGES = ['01  Write', '02  Run', '03  Explore', '04  Improve']
 
 interface LocalAttempt {
@@ -67,7 +100,7 @@ interface Outcome {
 	errored: boolean
 }
 interface ReplayState {
-	kind: 'official' | 'custom'
+	kind: 'official' | 'custom' | 'solution'
 	label: string
 	source: string
 	trace: Trace
@@ -86,19 +119,26 @@ function allPassed(result: RunResult): boolean {
 export function PracticeWorkspace({
 	slug,
 	isAuthenticated = false,
-	initialLayout
+	initialLayout,
+	initialNote = null
 }: {
 	slug: string
 	isAuthenticated?: boolean
 	initialLayout: LayoutState
+	// The signed-in learner's saved note (specs/features/problem-notes.md, AC3).
+	initialNote?: string | null
 }) {
 	const problem = PROBLEMS[slug]
 	if (problem == null) return null
+	// Keyed by problem, so switching problems starts from that problem's own
+	// code and draft, never the previous one's state.
 	return (
 		<ProblemWorkspace
+			key={problem.slug}
 			problem={problem}
 			isAuthenticated={isAuthenticated}
 			initialLayout={initialLayout}
+			initialNote={initialNote}
 		/>
 	)
 }
@@ -106,7 +146,9 @@ export function PracticeWorkspace({
 const LEFT_TABS: readonly TabItem[] = [
 	{ id: 'description', label: 'Description' },
 	{ id: 'hints', label: 'Hints' },
-	{ id: 'history', label: 'History' }
+	{ id: 'history', label: 'History' },
+	{ id: 'solutions', label: 'Solutions' },
+	{ id: 'notes', label: 'Notes' }
 ]
 const RESULT_TABS: readonly TabItem[] = [
 	{ id: 'tests', label: 'Test results' },
@@ -143,15 +185,28 @@ function clip(text: string): string {
 function ProblemWorkspace({
 	problem,
 	isAuthenticated,
-	initialLayout
+	initialLayout,
+	initialNote
 }: {
 	problem: ProblemDefinition
 	isAuthenticated: boolean
 	initialLayout: LayoutState
+	initialNote: string | null
 }) {
 	const router = useRouter()
 	const meta = problemMeta(problem)
-	const [code, setCode] = useState(problem.starter)
+	// specs/features/editor-drafts.md. The editor shows the learner's own edits
+	// once they make one; before that, the draft saved in this browser; before
+	// that, the starter. The draft is read as external state, so the server (which
+	// can't see browser storage) renders the starter and the browser swaps the
+	// draft in after hydration, with no mismatch.
+	const storedDraft = useSyncExternalStore(
+		noSubscription,
+		() => readDraft(browserStorage(), problem.slug)?.code ?? null,
+		() => null
+	)
+	const [edited, setCode] = useState<string | null>(null)
+	const code = edited ?? storedDraft ?? problem.starter
 	const [submitted, setSubmitted] = useState<{ source: string; result: RunResult } | null>(null)
 	const [attempts, setAttempts] = useState<LocalAttempt[]>([])
 	const [replayRecords, setReplayRecords] = useState<ReplayRecord[]>([])
@@ -163,6 +218,37 @@ function ProblemWorkspace({
 	const [replayStep, setReplayStep] = useState(0)
 	const [tourSignal, setTourSignal] = useState(0)
 	const [cursor, setCursor] = useState({ line: 1, column: 1 })
+	// The editor is showing a saved draft the learner hasn't touched yet (AC2).
+	const restoredDraft = edited == null && storedDraft != null
+	const [shortcutsOpen, setShortcutsOpen] = useState(false)
+	// specs/features/solutions-tab.md, AC3: a stuck learner chose to reveal them.
+	const [solutionsRevealed, setSolutionsRevealed] = useState(false)
+	const platform = useSyncExternalStore(noSubscription, clientPlatform, serverPlatform)
+
+	// Save the draft shortly after typing stops (AC1, AC5). Nothing is written
+	// until the learner edits, so opening a problem never touches storage.
+	useEffect(() => {
+		if (edited == null) return
+		const timer = setTimeout(
+			() => writeDraft(browserStorage(), problem.slug, edited, problem.starter),
+			DRAFT_DEBOUNCE_MS
+		)
+		return () => clearTimeout(timer)
+	}, [edited, problem.slug, problem.starter])
+
+	// ...and immediately when the page is hidden or the workspace unmounts, so the
+	// last half-second of typing is never lost to the debounce.
+	const flushDraft = useEffectEvent(() => {
+		if (edited != null) writeDraft(browserStorage(), problem.slug, edited, problem.starter)
+	})
+	useEffect(() => {
+		const onHide = () => flushDraft()
+		window.addEventListener('pagehide', onHide)
+		return () => {
+			window.removeEventListener('pagehide', onHide)
+			flushDraft()
+		}
+	}, [])
 
 	// Start the Python download as the page opens (fail-and-replay AC1), so the
 	// first Run doesn't wait on it. Fire-and-forget: a failed warm-up just
@@ -322,6 +408,12 @@ function ProblemWorkspace({
 		toast({ description: 'Indentation fixed.', variant: 'success' })
 	}
 
+	// Reset code: back to the starter, and the draft is gone (editor-drafts AC3).
+	function resetCode() {
+		setCode(problem.starter)
+		clearDraft(browserStorage(), problem.slug)
+	}
+
 	async function runTests() {
 		if (code.trim() === '') {
 			setNotice('Write some code before running the tests.')
@@ -387,6 +479,87 @@ function ProblemWorkspace({
 		const attempt = attemptIndex >= 0 ? attempts[attemptIndex] : attempts.at(-1)
 		void persistReplay(attempt, test.id, tr?.passed === true)
 	}
+
+	// specs/features/solutions-tab.md, AC6: trace a reference solution on the
+	// problem's first example and show it in the replay pane.
+	async function watchSolution(solution: ReferenceSolution) {
+		const args = problem.examples[0]?.args ?? problem.tests[0]?.args ?? []
+		const result = await withEngine('Replaying…', (onStatus) =>
+			traceCode(
+				{
+					code: solution.source,
+					entry: problem.entry,
+					input: { args },
+					limits: { maxSteps: DEFAULT_LIMITS.maxSteps, timeoutMs: RUN_TIMEOUT_MS }
+				},
+				{ onStatus }
+			)
+		)
+		if (result == null) return
+		if (result.status !== 'completed' || result.trace == null) {
+			setNotice(`Could not replay ${solution.name} (${result.status}).`)
+			return
+		}
+		setReplay({
+			kind: 'solution',
+			label: `${solution.name} · ${labelFor(args)}`,
+			source: solution.source,
+			trace: result.trace,
+			outcome: null
+		})
+		setReplayStep(0)
+		setResultsTab('replay')
+	}
+
+	// AC7, AC8: how many steps a source takes on the comparison input, or null
+	// when it can't be traced (AC9).
+	async function measureSteps(source: string): Promise<StepCount | null> {
+		const args = COMPARISON_ARGS[problem.slug]
+		if (args == null) return null
+		const result = await withEngine('Comparing…', (onStatus) =>
+			traceCode(
+				{
+					code: source,
+					entry: problem.entry,
+					input: { args },
+					limits: { maxSteps: DEFAULT_LIMITS.maxSteps, timeoutMs: RUN_TIMEOUT_MS }
+				},
+				{ onStatus }
+			)
+		)
+		if (result == null || result.status !== 'completed' || result.trace == null) return null
+		return { steps: result.trace.steps.length, truncated: result.trace.truncated }
+	}
+
+	// specs/features/workspace-shortcuts.md. One page-level listener; the event
+	// handler always sees the current code and busy state.
+	const onShortcut = useEffectEvent((event: KeyboardEvent) => {
+		// Another dialog (the tour, the shortcuts list) owns the keyboard (edge case).
+		if (document.querySelector('dialog[open], [role="dialog"]') != null) return
+		const action = matchShortcut(
+			{
+				key: event.key,
+				ctrlKey: event.ctrlKey,
+				metaKey: event.metaKey,
+				shiftKey: event.shiftKey,
+				altKey: event.altKey,
+				inTextField: isTextField(event.target)
+			},
+			platform
+		)
+		if (action == null) return
+		event.preventDefault()
+		if (action === 'help') setShortcutsOpen(true)
+		// A run already in progress ignores the shortcut, like the disabled button (AC2).
+		else if (busyRef.current) return
+		else if (action === 'run') void runTests()
+		else formatCode()
+	})
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => onShortcut(event)
+		window.addEventListener('keydown', onKeyDown)
+		return () => window.removeEventListener('keydown', onKeyDown)
+	}, [])
 
 	// Teaching, tied to observed evidence + the learning-flow gates.
 	const attemptsForFlow = attempts.map((a) => ({ passed: allPassed(a.result), source: a.source }))
@@ -467,6 +640,14 @@ function ProblemWorkspace({
 				: latestAttempt.synced === true
 					? 'Saved'
 					: 'Last run not saved yet'
+
+	const failedRuns = attempts.filter((a) => !allPassed(a.result)).length
+	const access = solutionsAccess({
+		solved: solvedAttempt != null,
+		failedRuns,
+		revealed: solutionsRevealed
+	})
+	const latestPassing = attempts.findLast((a) => allPassed(a.result))
 
 	const hintsReady = teaching != null || challenge != null
 	const leftTabs = LEFT_TABS.map((tab) => ({ ...tab, dot: tab.id === 'hints' && hintsReady }))
@@ -687,6 +868,19 @@ function ProblemWorkspace({
 											? 'Signed in · saved to your account'
 											: 'This session only · sign in to save'}
 									</p>
+									<AttemptCompare
+										attempts={attempts.map((attempt, index) => ({
+											label: `#${index + 1} · ${
+												attempt.result.status === 'completed'
+													? `${attempt.result.tests.filter((t) => t.passed).length} / ${attempt.result.tests.length} passed`
+													: attempt.result.status
+											} · ${new Date(attempt.createdAt).toLocaleTimeString()}`,
+											source: attempt.source,
+											passed: allPassed(attempt.result)
+										}))}
+										busy={busy}
+										onLoad={loadAttempt}
+									/>
 									<div className={styles.progressList} style={{ padding: 0 }}>
 										{attempts
 											.slice()
@@ -743,6 +937,40 @@ function ProblemWorkspace({
 								</>
 							)}
 						</div>
+
+						<div
+							role="tabpanel"
+							id={panelId('left', 'solutions')}
+							aria-labelledby={tabId('left', 'solutions')}
+							hidden={leftTab !== 'solutions'}
+							className={wsStyles.pad}
+						>
+							<SolutionsPanel
+								access={access}
+								failedRuns={failedRuns}
+								solutions={shownSolutions(problem.slug)}
+								optimised={comparisonTarget(problem.slug)}
+								passedSource={latestPassing?.source ?? null}
+								busy={busy}
+								onReveal={() => setSolutionsRevealed(true)}
+								onWatch={watchSolution}
+								measure={measureSteps}
+							/>
+						</div>
+
+						<div
+							role="tabpanel"
+							id={panelId('left', 'notes')}
+							aria-labelledby={tabId('left', 'notes')}
+							hidden={leftTab !== 'notes'}
+							className={wsStyles.pad}
+						>
+							<NotesPanel
+								slug={problem.slug}
+								signedIn={isAuthenticated}
+								initialNote={initialNote}
+							/>
+						</div>
 					</>
 				}
 				codeHead={
@@ -757,7 +985,8 @@ function ProblemWorkspace({
 							type="button"
 							className={wsStyles.codeIcon}
 							aria-label="Format code"
-							title="Format code (fix indentation)"
+							aria-keyshortcuts="Shift+Alt+F"
+							title={`Format code: fix indentation (${shortcutKeys('format', platform)})`}
 							onClick={formatCode}
 							disabled={busy}
 						>
@@ -768,7 +997,7 @@ function ProblemWorkspace({
 							className={wsStyles.codeIcon}
 							aria-label="Reset code"
 							title="Reset code"
-							onClick={() => setCode(problem.starter)}
+							onClick={resetCode}
 							disabled={busy}
 						>
 							<ResetIcon size={16} />
@@ -778,7 +1007,8 @@ function ProblemWorkspace({
 							id="tour-run"
 							className={cn(wsStyles.codeIcon, wsStyles.codeRun)}
 							aria-label="Run code"
-							title="Run code"
+							aria-keyshortcuts="Control+Enter Meta+Enter"
+							title={`Run code (${shortcutKeys('run', platform)})`}
 							onClick={runTests}
 							disabled={busy}
 						>
@@ -797,7 +1027,10 @@ function ProblemWorkspace({
 				}
 				codeFoot={
 					<div className={wsStyles.editorStatus}>
-						<span>{saveState}</span>
+						<span>
+							{restoredDraft ? 'Restored your last edit · ' : ''}
+							{saveState}
+						</span>
 						<span aria-label={`Line ${cursor.line}, column ${cursor.column}`}>
 							Ln {cursor.line}, Col {cursor.column}
 						</span>
@@ -873,6 +1106,11 @@ function ProblemWorkspace({
 				}
 			/>
 			<WorkspaceTour openSignal={tourSignal} />
+			<ShortcutsDialog
+				open={shortcutsOpen}
+				platform={platform}
+				onClose={() => setShortcutsOpen(false)}
+			/>
 		</div>
 	)
 }

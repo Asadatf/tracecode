@@ -1,0 +1,138 @@
+/* Solutions tab (specs/features/solutions-tab.md). Colours follow the
+   workspace's own palette in practice.module.css. */
+.panel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.locked {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 10px;
+}
+.locked h2 {
+	margin: 0;
+	font-size: 16px;
+}
+.card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 16px 18px;
+	border: 1px solid #dce8de;
+	border-radius: 13px;
+	background: #fff;
+}
+.cardHead {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+.cardHead h3 {
+	margin: 0;
+	font-size: 15px;
+}
+.kind {
+	padding: 4px 9px;
+	border-radius: 22px;
+	background: #eef1ed;
+	color: #536a5a;
+	font-size: 11px;
+	font-weight: 700;
+}
+.kindBest {
+	background: #e4f0e6;
+	color: #1e6b4b;
+}
+.meta {
+	margin: 0;
+	color: #647384;
+	font-size: 12px;
+}
+.meta b {
+	color: #1b2a22;
+	font-family: var(--mono, ui-monospace, monospace);
+	font-weight: 600;
+}
+.explanation {
+	margin: 0;
+	color: #3d5045;
+	font-size: 13px;
+	line-height: 1.55;
+}
+.code {
+	align-self: stretch;
+	overflow-x: auto;
+	padding: 10px 14px 10px 0;
+	border-radius: 9px;
+	background: #171d24;
+	color: #dce5ef;
+	font: 12.5px/22px var(--mono, ui-monospace, monospace);
+}
+.codeLine {
+	display: flex;
+	white-space: pre;
+}
+.codeLn {
+	flex: none;
+	width: 36px;
+	padding-right: 12px;
+	color: #647384;
+	text-align: right;
+	user-select: none;
+}
+.compare {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 16px 18px;
+	border: 1px solid #dce8de;
+	border-radius: 13px;
+	background: #f4f9f4;
+}
+.compare h3 {
+	margin: 0;
+	font-size: 15px;
+}
+.bars {
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+	gap: 8px;
+}
+/* Label and count on one line, the bar full width under them, so it stays
+   readable in the narrow challenge pane. */
+.barRow {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 4px 10px;
+	align-items: center;
+	font-size: 12px;
+}
+.barRow .track {
+	grid-column: 1 / -1;
+	grid-row: 2;
+}
+.track {
+	height: 10px;
+	overflow: hidden;
+	border-radius: 3px;
+	background: #e3e9e4;
+}
+.fill {
+	display: block;
+	height: 100%;
+	background: #d08a2c;
+}
+.fillGood {
+	background: #2f8f63;
+}
+.count {
+	font-family: var(--mono, ui-monospace, monospace);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}

@@ -23,6 +23,7 @@ model User {
 	replaySessions  ReplaySession[]
 	learningEvents  LearningEvent[]
 	problemProgress ProblemProgress[]
+	problemNotes    ProblemNote[]
 
 	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
 	recommendationCache RecommendationCache?

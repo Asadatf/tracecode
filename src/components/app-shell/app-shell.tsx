@@ -39,6 +39,7 @@ export async function AppShell({
 			items: [
 				{ key: 'overview', href: '/dashboard', label: t('nav.overview') },
 				{ key: 'problems', href: '/problems', label: t('nav.problems') },
+				{ key: 'plans', href: '/plans', label: t('nav.plans') },
 				{ key: 'progress', href: '/progress', label: t('nav.progress') }
 			]
 		},

@@ -24,6 +24,14 @@ async function trace(slug: string, source: string, args: Parameters<typeof trace
 
 const itemsOf = (value: Value | undefined) => listItems(value)?.length ?? 0
 
+// A traced return value as plain JSON, for comparing with a test's `expected`
+// (Two Sum returns a list of indexes; the later problems return scalars).
+function plain(value: Value | undefined): unknown {
+	const items = listItems(value)
+	if (items != null) return items.map(plain)
+	return value?.kind === 'bool' ? value.value : (value as { value?: unknown } | undefined)?.value
+}
+
 test('every reference solution produces a valid, bounded trace on a mid-size official input', async () => {
 	for (const slug of Object.keys(REFERENCE_SOLUTIONS)) {
 		const problem = PROBLEMS[slug]!
@@ -49,9 +57,7 @@ test('every reference solution produces a valid, bounded trace on a mid-size off
 			assert.equal(deriveView(t, problemMeta(problem)).length, t.steps.length)
 			if (problem.grading?.mode !== 'mutate-arg') {
 				assert.deepEqual(
-					result.actual?.kind === 'bool'
-						? result.actual.value
-						: (result.actual as { value?: number })?.value,
+					plain(result.actual),
 					test.expected,
 					`${slug}/${sol.name}: traced result equals the official expected`
 				)

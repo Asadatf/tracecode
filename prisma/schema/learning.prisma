@@ -98,3 +98,18 @@ model ProblemProgress {
 	@@id([userId, problemSlug])
 	@@map("problem_progress")
 }
+
+// A learner's own note on a problem (specs/features/problem-notes.md): plain
+// text, at most 2 000 characters, one per learner per problem. An empty note is
+// deleted rather than stored.
+model ProblemNote {
+	userId      String   @db.Uuid
+	problemSlug String
+	body        String
+	updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@id([userId, problemSlug])
+	@@map("problem_notes")
+}

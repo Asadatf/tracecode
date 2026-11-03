@@ -331,6 +331,10 @@
 			"line": "Line",
 			"variables": "Variables",
 			"step": "Step"
+		},
+		"oauth": {
+			"continueWith": "Continue with {provider}",
+			"or": "or"
 		}
 	},
 	"AppShell": {
@@ -347,6 +351,7 @@
 		"nav": {
 			"overview": "Overview",
 			"problems": "Problems",
+			"plans": "Study plans",
 			"progress": "Progress",
 			"settings": "Settings"
 		},
@@ -449,5 +454,20 @@
 			"dayHeading": "Day {day}",
 			"timeLeft": "{time} left"
 		}
+	},
+	"PlansPage": {
+		"metaTitle": "Study plans — TraceCode",
+		"eyebrow": "Learning workspace",
+		"heading": "Study plans",
+		"intro": "Short paths through one topic at a time, in the order that builds on itself.",
+		"problemCount": "{count, plural, one {# problem} other {# problems}}",
+		"progress": "{solved} of {total} solved",
+		"start": "Start",
+		"continue": "Continue",
+		"completed": "Completed",
+		"open": "View plan",
+		"unavailable": "Your progress can’t be loaded right now, so statuses are hidden.",
+		"back": "All study plans",
+		"listHeading": "Problems in this plan"
 	}
 }

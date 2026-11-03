@@ -9,15 +9,19 @@ import { validateAiDiagnosis } from '../../server/learning/recommend-ai.ts'
 import { HASHMAP, NESTED, SET_BASED, at, att, buildFor, type Spec } from './evidence-fixtures.mts'
 import { computeEvidenceHash } from './evidence-hash.ts'
 
-// The full six-problem catalog through M6 statistics, M7.2 evidence, M7.3 ranking,
+// The full catalog through M6 statistics, M7.2 evidence, M7.3 ranking,
 // the M7.4 slug guard and the M7.5B reminder planner. Everything here is
-// catalog-driven (Object.values(PROBLEMS)); these tests prove the four added
-// problems need no changes anywhere downstream. (The older M7 tests pin the
+// catalog-driven (Object.values(PROBLEMS)); these tests prove added problems
+// (the curated pack, then problem pack 2) need no changes anywhere downstream. (The older M7 tests pin the
 // original two-problem catalog — see evidence-fixtures.mts.)
 
 const FULL = catalogEntries(Object.values(PROBLEMS))
 const ALL_SLUGS = Object.keys(PROBLEMS).sort()
-const NEW_SLUGS = ['binary-search', 'move-zeroes', 'valid-anagram', 'valid-parentheses']
+// Every problem after the original two.
+const NEW_SLUGS = ALL_SLUGS.filter((slug) => slug !== 'two-sum' && slug !== 'contains-duplicate')
+const CATALOG_SIZE = Object.keys(PROBLEMS).length
+const tagged = (tag: string) =>
+	Object.values(PROBLEMS).filter((p) => p.conceptTags.includes(tag)).length
 
 // An attempt on a new problem, sized to that problem's real test count.
 function attempt(
@@ -37,7 +41,7 @@ function attempt(
 }
 
 test('catalog entries: every problem has a difficulty and concept tags the evidence recognizes', () => {
-	assert.equal(FULL.length, 6)
+	assert.equal(FULL.length, CATALOG_SIZE)
 	const { evidence } = buildFor([], { catalog: FULL })
 	assert.deepEqual(
 		evidence.problems.map((p) => p.slug),
@@ -68,7 +72,7 @@ test('a brand-new learner: a deterministic, existing, not-yet-started problem is
 	assert.deepEqual(first.rankedProblems.map((p) => p.slug).sort(), ALL_SLUGS)
 	assert.ok(first.rankedProblems.every((p) => PROBLEMS[p.slug] != null))
 	assert.ok(first.rankedProblems.every((p) => p.reasonCode === 'not_attempted'))
-	assert.ok(first.rankedProblems.length === 6 && first.rankedProblems[0] != null)
+	assert.ok(first.rankedProblems.length === CATALOG_SIZE && first.rankedProblems[0] != null)
 })
 
 test('equal-score ties break by difficulty then slug — identically on every run', () => {
@@ -79,8 +83,12 @@ test('equal-score ties break by difficulty then slug — identically on every ru
 			.join()
 	)
 	assert.equal(new Set(orders).size, 1)
-	// All six are easy and untouched, so the order is purely alphabetical by slug.
-	assert.deepEqual(orders[0]!.split(','), ALL_SLUGS)
+	// All untouched, so the order is by difficulty (easy first), then by slug.
+	const rank = { easy: 0, medium: 1, hard: 2 } as const
+	const expected = [...ALL_SLUGS].sort(
+		(a, b) => rank[PROBLEMS[a]!.difficulty] - rank[PROBLEMS[b]!.difficulty] || a.localeCompare(b)
+	)
+	assert.deepEqual(orders[0]!.split(','), expected)
 })
 
 test('attempts on the new problems: failures open a run, a solve closes it, solved is never re-recommended while others remain', () => {
@@ -104,7 +112,7 @@ test('attempts on the new problems: failures open a run, a solve closes it, solv
 	assert.equal(top.slug, 'valid-anagram')
 	const solvedRank = rec.rankedProblems.findIndex((p) => p.slug === 'binary-search')
 	const untouched = rec.rankedProblems.filter((p) => p.reasonCode === 'not_attempted')
-	assert.equal(untouched.length, 4)
+	assert.equal(untouched.length, CATALOG_SIZE - 2)
 	assert.ok(untouched.every((p) => rec.rankedProblems.indexOf(p) < solvedRank))
 })
 
@@ -214,13 +222,13 @@ test('M6 statistics and the progress view count the new problems', () => {
 		],
 		recentAttempts: []
 	} as never)
-	assert.equal(view.summary.total, 6)
+	assert.equal(view.summary.total, CATALOG_SIZE)
 	assert.equal(view.summary.solved, 1)
 	assert.deepEqual(
 		view.topics.filter((t) => ['Strings', 'Stacks'].includes(t.topic)),
 		[
-			{ topic: 'Strings', solved: 1, attempted: 1, total: 2 },
-			{ topic: 'Stacks', solved: 1, attempted: 1, total: 1 }
+			{ topic: 'Strings', solved: 1, attempted: 1, total: tagged('strings') },
+			{ topic: 'Stacks', solved: 1, attempted: 1, total: tagged('stacks') }
 		]
 	)
 })

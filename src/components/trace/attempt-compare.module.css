@@ -1,0 +1,87 @@
+/* Compare attempts (specs/features/compare-attempts.md), in the workspace's
+   palette from practice.module.css. */
+.compare {
+	margin-bottom: 14px;
+	padding: 12px 14px;
+	border: 1px solid #dce8de;
+	border-radius: 13px;
+	background: #f4f9f4;
+}
+.compare summary {
+	color: #1e6b4b;
+	font-size: 13px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.pickers {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 12px 0;
+}
+.picker {
+	display: flex;
+	flex: 1 1 12rem;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	color: #536a5a;
+	font-size: 12px;
+	font-weight: 700;
+}
+.picker select {
+	min-width: 0;
+	padding: 7px 9px;
+	border: 1px solid #bfccc2;
+	border-radius: 9px;
+	background: #fff;
+	color: #1b2a22;
+	font: 12px var(--sans, system-ui);
+}
+.diff {
+	overflow-x: auto;
+	padding: 8px 0;
+	border-radius: 9px;
+	background: #171d24;
+	color: #dce5ef;
+	font: 12.5px/22px var(--mono, ui-monospace, monospace);
+}
+.row {
+	display: flex;
+	white-space: pre;
+}
+.added {
+	background: rgba(88, 215, 162, 0.16);
+}
+.removed {
+	background: rgba(255, 120, 100, 0.16);
+}
+.num {
+	flex: none;
+	width: 30px;
+	padding-right: 6px;
+	color: #647384;
+	text-align: right;
+	user-select: none;
+}
+.sign {
+	flex: none;
+	width: 18px;
+	text-align: center;
+	user-select: none;
+}
+.added .sign {
+	color: #58d7a2;
+}
+.removed .sign {
+	color: #ff9a85;
+}
+.text {
+	padding-right: 12px;
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+}
