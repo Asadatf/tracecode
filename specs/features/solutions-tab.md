@@ -1,6 +1,6 @@
 # Feature: Solutions tab
 
-Status: Agreed (Asad, 2026-11-03; for Umair to review in the PR)
+Status: In progress (built 2026-11-03; for Umair to review in the PR)
 Owner: Asad
 Related: `specs/features/curated-problem-pack.md`, `specs/features/practice-workspace-layout.md`,
 `specs/02-trace-contract.md`, `src/lib/trace/reference-solutions.ts`

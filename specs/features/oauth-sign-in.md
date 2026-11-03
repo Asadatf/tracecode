@@ -1,6 +1,6 @@
 # Feature: Sign in with Google and GitHub
 
-Status: Agreed by Asad (2026-11-03); needs Umair's agreement, as sign-in is his area (`auth-access.md`)
+Status: In progress (built 2026-11-03, hidden behind flags); needs Umair's agreement, as sign-in is his area (`auth-access.md`)
 Owner: Asad
 Related: `specs/features/auth-access.md`, `docs/rules/auth.md`
 

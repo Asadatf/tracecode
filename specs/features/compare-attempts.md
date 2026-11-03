@@ -1,6 +1,6 @@
 # Feature: Compare attempts
 
-Status: Agreed (Asad, 2026-11-03; for Umair to review in the PR)
+Status: In progress (built 2026-11-03; for Umair to review in the PR)
 Owner: Asad
 Related: `specs/features/practice-workspace-layout.md`, `specs/features/fail-and-replay.md`
 

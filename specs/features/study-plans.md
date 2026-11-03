@@ -1,6 +1,6 @@
 # Feature: Study plans
 
-Status: Agreed (Asad, 2026-11-03; for Umair to review in the PR)
+Status: In progress (built 2026-11-03; for Umair to review in the PR)
 Owner: Asad
 Related: `specs/features/problems-page.md`, `specs/features/learning-recommendations.md`,
 `specs/features/problem-pack-classics.md`

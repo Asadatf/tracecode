@@ -108,14 +108,14 @@ Update this table in the same PR that changes a status.
 | [`features/learning-statistics.md`](features/learning-statistics.md)             | Draft                                          | Umair       |
 | [`features/learning-recommendations.md`](features/learning-recommendations.md)   | In progress (M7.1 built; no teammate sign-off) | Umair       |
 | [`features/curated-problem-pack.md`](features/curated-problem-pack.md)           | In progress (no teammate sign-off)             | Umair       |
-| [`features/editor-drafts.md`](features/editor-drafts.md)                         | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/workspace-shortcuts.md`](features/workspace-shortcuts.md)             | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/solutions-tab.md`](features/solutions-tab.md)                         | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/compare-attempts.md`](features/compare-attempts.md)                   | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/problem-notes.md`](features/problem-notes.md)                         | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/study-plans.md`](features/study-plans.md)                             | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/problem-pack-classics.md`](features/problem-pack-classics.md)         | Agreed (Asad; Umair to review)                 | Asad        |
-| [`features/oauth-sign-in.md`](features/oauth-sign-in.md)                         | Agreed (Asad; needs Umair)                     | Asad        |
+| [`features/editor-drafts.md`](features/editor-drafts.md)                         | In progress (built; Umair to review)           | Asad        |
+| [`features/workspace-shortcuts.md`](features/workspace-shortcuts.md)             | In progress (built; Umair to review)           | Asad        |
+| [`features/solutions-tab.md`](features/solutions-tab.md)                         | In progress (built; Umair to review)           | Asad        |
+| [`features/compare-attempts.md`](features/compare-attempts.md)                   | In progress (built; Umair to review)           | Asad        |
+| [`features/problem-notes.md`](features/problem-notes.md)                         | In progress (built; Umair to review)           | Asad        |
+| [`features/study-plans.md`](features/study-plans.md)                             | In progress (built; Umair to review)           | Asad        |
+| [`features/problem-pack-classics.md`](features/problem-pack-classics.md)         | In progress (built; Umair to review)           | Asad        |
+| [`features/oauth-sign-in.md`](features/oauth-sign-in.md)                         | In progress (built; needs Umair)               | Asad        |
 | [ADR-0001](../decisions/0001-in-browser-python-execution.md)                     | Proposed                                       | Team        |
 | [ADR-0002](../decisions/0002-self-host-pyodide.md)                               | Proposed                                       | Team        |
 | [ADR-0003](../decisions/0003-browser-ast-and-cached-recommendations.md)          | Accepted (Umair; no teammate sign-off)         | Team        |

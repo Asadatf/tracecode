@@ -1,6 +1,6 @@
 # Feature: Problem pack 2 (classic beginner problems)
 
-Status: Agreed (Asad, 2026-11-03; for Umair to review in the PR)
+Status: In progress (built 2026-11-03; for Umair to review in the PR)
 Owner: Asad
 Related: `specs/features/curated-problem-pack.md` (the format these follow),
 `specs/00-product.md` (v1 scope: 10–15 problems)
