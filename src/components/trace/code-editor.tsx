@@ -102,7 +102,8 @@ export function CodeEditor({
 			onChange(value.slice(0, start) + '    ' + value.slice(end))
 			requestAnimationFrame(() => textarea.setSelectionRange(start + 4, start + 4))
 		}
-		if (event.key === 'Enter') {
+		// Ctrl/Cmd+Enter is the Run shortcut (workspace-shortcuts AC1), not a new line.
+		if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey) {
 			event.preventDefault()
 			const start = textarea.selectionStart
 			const lineStart = value.lastIndexOf('\n', start - 1) + 1
