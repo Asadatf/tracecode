@@ -28,7 +28,9 @@ async function runCode(page: Page, source: string, expectedLine: string | RegExp
 	await hydrated(page)
 	await setEditor(page.getByLabel('Python code editor'), source)
 	await page.getByRole('button', { name: 'Run code' }).click()
-	await expect(page.getByText(expectedLine).first()).toBeVisible({ timeout: 120_000 })
+	await expect(page.getByText(expectedLine).filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
 }
 
 const ROUTES = [
@@ -52,6 +54,17 @@ for (const [slug, title] of ROUTES) {
 	})
 }
 
+// The first-visit tour covers the bottom right of the workspace; mark it seen.
+test.beforeEach(async ({ page }) => {
+	await page.addInitScript(() => {
+		try {
+			window.localStorage.setItem('tc-practice-tour-v1', '1')
+		} catch {
+			// storage unavailable: the tour just shows
+		}
+	})
+})
+
 test('unknown practice slug is a 404', async ({ page }) => {
 	const response = await page.goto('/practice/not-a-problem')
 	expect(response?.status()).toBe(404)
@@ -69,6 +82,7 @@ test('Valid Anagram: a passing solution unlocks the optional challenge, hints re
 	await runCode(page, ANAGRAM_SORT, '18 / 18 passed')
 
 	const challenge = page.getByTestId('optimization-challenge')
+	await page.getByRole('tab', { name: 'Hints' }).click()
 	await expect(challenge).toBeVisible()
 	await expect(challenge).toContainText('As an optional exercise')
 	// No verdict on the learner's solution, and no hint until asked for.
@@ -114,6 +128,7 @@ test('Move Zeroes: returning a new list fails; in-place passes; the solve surviv
 	// Extra-array baseline, written back in place, is accepted.
 	await runCode(page, MZ_EXTRA_WRITEBACK, '19 / 19 passed')
 	const challenge = page.getByTestId('optimization-challenge')
+	await page.getByRole('tab', { name: 'Hints' }).click()
 	await expect(challenge).toBeVisible()
 
 	// Try the optimization, but break it: the problem stays solved.
@@ -153,6 +168,7 @@ test('Binary Search: linear and binary both pass; replay shows left/mid/right', 
 	test.setTimeout(240_000)
 	await openAsLearner(page, '/practice/binary-search')
 	await runCode(page, BS_LINEAR, '25 / 25 passed')
+	await page.getByRole('tab', { name: 'Hints' }).click()
 	await expect(page.getByTestId('optimization-challenge')).toBeVisible()
 	await runCode(page, BS_BINARY, '25 / 25 passed')
 
@@ -181,5 +197,6 @@ test('Valid Parentheses: a counting shortcut fails; the stack passes and unlocks
 	await expect(page.getByText('0 / 26 passed')).toHaveCount(0)
 	await expect(page.getByTestId('optimization-challenge')).toHaveCount(0)
 	await runCode(page, VP_STACK, '26 / 26 passed')
+	await page.getByRole('tab', { name: 'Hints' }).click()
 	await expect(page.getByTestId('optimization-challenge')).toBeVisible()
 })

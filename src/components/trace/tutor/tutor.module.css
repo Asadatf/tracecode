@@ -1,0 +1,269 @@
+/* The AI Tutor preview panel, in the dashboard widget theme: near-black green,
+   faint concentric rings, light-green accents. The surface itself (background,
+   rings, glow) is on the pane in workspace.module.css; this file is the content.
+   Nothing here animates. */
+
+.panel {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	color: #fff;
+}
+.header {
+	display: flex;
+	align-items: center;
+	flex: none;
+	gap: 8px;
+	height: 44px;
+	padding: 0 8px 0 12px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.mark {
+	display: grid;
+	width: 26px;
+	height: 26px;
+	place-items: center;
+	border-radius: 8px;
+	background: #58d7a2;
+	color: #0b231a;
+}
+.title {
+	margin: 0;
+	font-size: 15px;
+	letter-spacing: -0.02em;
+}
+.title:focus-visible {
+	outline: 3px solid rgba(88, 215, 162, 0.5);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+.badge {
+	padding: 2px 9px;
+	border: 1px solid rgba(240, 198, 117, 0.45);
+	border-radius: 999px;
+	background: rgba(240, 198, 117, 0.12);
+	color: #f0c675;
+	font-size: 11.5px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+.grow {
+	flex: 1;
+}
+.iconButton {
+	display: grid;
+	flex: none;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: rgba(255, 255, 255, 0.78);
+	cursor: pointer;
+}
+.iconButton:hover {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+}
+.iconButton:focus-visible,
+.chip:focus-visible,
+.send:focus-visible,
+.input:focus-visible,
+.conversation:focus-visible {
+	outline: 3px solid rgba(88, 215, 162, 0.5);
+	outline-offset: 2px;
+}
+.context {
+	display: flex;
+	flex-wrap: wrap;
+	flex: none;
+	align-items: center;
+	gap: 4px 8px;
+	padding: 10px 14px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.04);
+	font-size: 13px;
+}
+.contextLabel {
+	color: rgba(255, 255, 255, 0.6);
+}
+.contextPill {
+	padding: 1px 9px;
+	border-radius: 999px;
+	background: rgba(88, 215, 162, 0.16);
+	color: #58d7a2;
+	font-size: 12px;
+	font-weight: 600;
+}
+.contextRun {
+	flex-basis: 100%;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 12px;
+}
+.notice {
+	flex: none;
+	margin: 12px 14px 0;
+	padding: 10px 12px;
+	border: 1px solid rgba(240, 198, 117, 0.35);
+	border-radius: 10px;
+	background: rgba(240, 198, 117, 0.1);
+	color: #f3dca8;
+	font-size: 12.5px;
+	line-height: 1.5;
+}
+.conversation {
+	flex: 1 1 0;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 14px;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+.conversation:focus-visible {
+	outline-offset: -3px;
+}
+.empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 28px 12px;
+	text-align: center;
+}
+.emptyIcon {
+	display: grid;
+	width: 44px;
+	height: 44px;
+	margin-bottom: 4px;
+	place-items: center;
+	border-radius: 14px;
+	background: rgba(88, 215, 162, 0.14);
+	color: #58d7a2;
+	box-shadow: 0 0 18px rgba(88, 215, 162, 0.18);
+}
+.empty h3 {
+	margin: 0;
+	font-size: 15px;
+}
+.empty p {
+	max-width: 30ch;
+	margin: 0;
+	color: rgba(255, 255, 255, 0.72);
+	font-size: 13px;
+	line-height: 1.55;
+}
+.messages {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.message {
+	align-self: flex-start;
+	max-width: 92%;
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.06);
+}
+.messageUser {
+	align-self: flex-end;
+	border-color: rgba(88, 215, 162, 0.35);
+	background: rgba(88, 215, 162, 0.14);
+}
+.messageRole {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+.message p {
+	margin: 2px 0 0;
+	font-size: 13.5px;
+	line-height: 1.5;
+}
+.composer {
+	display: flex;
+	flex-direction: column;
+	flex: none;
+	gap: 10px;
+	padding: 12px 14px 14px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.chip {
+	padding: 6px 11px;
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.06);
+	color: #fff;
+	font: 600 12.5px var(--sans, system-ui);
+	cursor: pointer;
+}
+.chip:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.14);
+}
+.chip:disabled {
+	border-color: rgba(255, 255, 255, 0.12);
+	background: transparent;
+	color: rgba(255, 255, 255, 0.42);
+	cursor: not-allowed;
+}
+.form {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+}
+.input {
+	flex: 1;
+	min-width: 0;
+	padding: 9px 11px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 10px;
+	background: rgba(255, 255, 255, 0.07);
+	color: #fff;
+	font: 13.5px/1.45 var(--sans, system-ui);
+	resize: none;
+}
+.input::placeholder {
+	color: rgba(255, 255, 255, 0.5);
+}
+.input:disabled {
+	border-color: rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.03);
+	cursor: not-allowed;
+}
+.send {
+	display: grid;
+	flex: none;
+	width: 38px;
+	height: 38px;
+	place-items: center;
+	border: 0;
+	border-radius: 10px;
+	background: #58d7a2;
+	color: #0b231a;
+	cursor: pointer;
+}
+.send:disabled {
+	background: rgba(255, 255, 255, 0.12);
+	color: rgba(255, 255, 255, 0.4);
+	cursor: not-allowed;
+}
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}

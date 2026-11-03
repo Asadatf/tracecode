@@ -31,10 +31,20 @@ import { saveAttempt, recordReplaySession, recordLearningEvent } from '@/server/
 import { resolveAttemptDbId } from '@/lib/learning/replay-link'
 import { hintRevealDetail } from '@/lib/learning/hint-event'
 import { replayInspectedEvent } from '@/lib/learning/replay-writes'
+import { FormatIcon, HelpIcon, PlayIcon, ResetIcon, SparkleIcon } from '@/components/ui/icons'
+import { formatPython } from '@/lib/trace/format-python'
+import { toast } from '@/lib/toast'
+import type { LayoutState } from '@/lib/trace/workspace-layout'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
+import { TutorPanel } from './tutor/tutor-panel'
+import { Stopwatch } from './workspace/stopwatch'
+import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
+import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
+import { WorkspaceTour } from './workspace/workspace-tour'
 import styles from './practice.module.css'
+import wsStyles from './workspace/workspace.module.css'
 
 const RUN_TIMEOUT_MS = 5000
 const STAGES = ['01  Write', '02  Run', '03  Explore', '04  Improve']
@@ -76,14 +86,54 @@ function allPassed(result: RunResult): boolean {
 // data — some official tests are large — into the page payload.
 export function PracticeWorkspace({
 	slug,
-	isAuthenticated = false
+	isAuthenticated = false,
+	initialLayout
 }: {
 	slug: string
 	isAuthenticated?: boolean
+	initialLayout: LayoutState
 }) {
 	const problem = PROBLEMS[slug]
 	if (problem == null) return null
-	return <ProblemWorkspace problem={problem} isAuthenticated={isAuthenticated} />
+	return (
+		<ProblemWorkspace
+			problem={problem}
+			isAuthenticated={isAuthenticated}
+			initialLayout={initialLayout}
+		/>
+	)
+}
+
+const LEFT_TABS: readonly TabItem[] = [
+	{ id: 'description', label: 'Description' },
+	{ id: 'hints', label: 'Hints' },
+	{ id: 'history', label: 'History' }
+]
+const RESULT_TABS: readonly TabItem[] = [
+	{ id: 'tests', label: 'Test results' },
+	{ id: 'replay', label: 'Replay' }
+]
+const LABELS: WorkspaceLabels = {
+	collapseChallenge: 'Collapse challenge pane',
+	expandChallenge: 'Expand challenge pane',
+	collapseResults: 'Collapse results pane',
+	collapseCode: 'Collapse code pane',
+	expandCode: 'Expand code pane',
+	expandResults: 'Expand results pane',
+	maximizeChallenge: 'Maximize challenge pane',
+	maximizeCode: 'Maximize code pane',
+	maximizeResults: 'Maximize results pane',
+	restore: 'Restore layout',
+	resizeVertical: 'Resize challenge and code panes',
+	resizeHorizontal: 'Resize code and results panes',
+	views: 'Practice views',
+	viewProblem: 'Problem',
+	viewCode: 'Code',
+	viewResults: 'Results',
+	challenge: 'Challenge',
+	results: 'Results',
+	tutor: 'AI Tutor',
+	resizeTutor: 'Resize code and AI Tutor panes'
 }
 
 // Long inputs (a 20 000-character string, a 10 000-element list) are clipped in
@@ -97,10 +147,12 @@ function clip(text: string): string {
 
 function ProblemWorkspace({
 	problem,
-	isAuthenticated
+	isAuthenticated,
+	initialLayout
 }: {
 	problem: ProblemDefinition
 	isAuthenticated: boolean
+	initialLayout: LayoutState
 }) {
 	const router = useRouter()
 	const meta = problemMeta(problem)
@@ -111,6 +163,14 @@ function ProblemWorkspace({
 	const [replay, setReplay] = useState<ReplayState | null>(null)
 	const [status, setStatus] = useState<{ busy: boolean; label: string }>({ busy: false, label: '' })
 	const [notice, setNotice] = useState('')
+	const [leftTab, setLeftTab] = useState('description')
+	const [resultsTab, setResultsTab] = useState('tests')
+	const [replayStep, setReplayStep] = useState(0)
+	const [tourSignal, setTourSignal] = useState(0)
+	const [cursor, setCursor] = useState({ line: 1, column: 1 })
+	// The AI Tutor preview is closed on every visit; opening it never touches the
+	// editor, the results or the replay, which all live in this component.
+	const [tutorOpen, setTutorOpen] = useState(false)
 
 	// Start the Python download as the page opens (fail-and-replay AC1), so the
 	// first Run doesn't wait on it. Fire-and-forget: a failed warm-up just
@@ -118,8 +178,10 @@ function ProblemWorkspace({
 	useEffect(() => {
 		void warmUpEngine()
 	}, [])
-	const editorPanelRef = useRef<HTMLElement>(null)
+	const editorPanelRef = useRef<HTMLDivElement>(null)
 	const busyRef = useRef(false)
+	// Local attempt ids only need to be unique within this page's session.
+	const attemptCounter = useRef(0)
 	const tokenRef = useRef(0)
 
 	const busy = status.busy
@@ -245,6 +307,35 @@ function ProblemWorkspace({
 		editorPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
+	function closeTutor() {
+		setTutorOpen(false)
+		// Hand focus back to the button that opens it.
+		requestAnimationFrame(() => document.getElementById('tutor-toggle')?.focus())
+	}
+
+	// Format fixes indentation only, and always says what it did: a button that
+	// silently does nothing reads as broken.
+	function formatCode() {
+		const result = formatPython(code)
+		if (result.status === 'error') {
+			toast({
+				title: "Couldn't format yet",
+				description:
+					result.reason === 'missing-indent'
+						? `Line ${result.line} needs to be indented under the line above it.`
+						: `Line ${result.line} is indented to a level no open block uses. Fix that line by hand first.`,
+				variant: 'destructive'
+			})
+			return
+		}
+		if (result.status === 'unchanged') {
+			toast({ description: 'Indentation already looks right.' })
+			return
+		}
+		setCode(result.text)
+		toast({ description: 'Indentation fixed.', variant: 'success' })
+	}
+
 	async function runTests() {
 		if (code.trim() === '') {
 			setNotice('Write some code before running the tests.')
@@ -256,14 +347,16 @@ function ProblemWorkspace({
 		)
 		if (result == null) return
 		setReplay(null)
+		setResultsTab('tests')
 		setSubmitted({ source, result })
-		const localId = `a${Date.now()}`
+		attemptCounter.current += 1
+		const localId = `a${attemptCounter.current}`
 		const saving = persistAttempt(localId, source, result)
 		setAttempts((prev) => [
 			...prev,
 			{ id: localId, createdAt: new Date().toISOString(), source, result, saving }
 		])
-		if (result.status === 'timeout') setNotice('Execution timed out — check for an infinite loop.')
+		if (result.status === 'timeout') setNotice('Execution timed out. Check for an infinite loop.')
 		if (result.status === 'engine_error')
 			setNotice(result.error?.message ?? 'The engine could not run this code.')
 	}
@@ -302,6 +395,8 @@ function ProblemWorkspace({
 			trace: result.trace,
 			outcome
 		})
+		setReplayStep(0)
+		setResultsTab('replay')
 		setReplayRecords((prev) => [...prev, { attemptIndex, testPassed: tr?.passed === true }])
 		const attempt = attemptIndex >= 0 ? attempts[attemptIndex] : attempts.at(-1)
 		void persistReplay(attempt, test.id, tr?.passed === true)
@@ -368,8 +463,40 @@ function ProblemWorkspace({
 		...attempts.map((a) => a.result.tests.filter((t) => t.passed).length)
 	)
 
+	const busyOrStatus = busy ? status.label : 'Ready'
+	const statusText =
+		busy || submitted == null || submitted.result.status !== 'completed'
+			? busyOrStatus
+			: `${submitted.result.tests.filter((t) => t.passed).length} / ${submitted.result.tests.length} passed`
+
+	// What the status bar says about saving. Only runs are saved (the editor
+	// itself never is), so this describes the latest run against the editor.
+	const latestAttempt = attempts.at(-1)
+	const saveState = !isAuthenticated
+		? 'This session only · sign in to save'
+		: latestAttempt == null
+			? 'Not run yet'
+			: code !== latestAttempt.source
+				? 'Edited since last run'
+				: latestAttempt.synced === true
+					? 'Saved'
+					: 'Last run not saved yet'
+
+	const hintsReady = teaching != null || challenge != null
+	const leftTabs = LEFT_TABS.map((tab) => ({ ...tab, dot: tab.id === 'hints' && hintsReady }))
+	const resultTabs = RESULT_TABS.map((tab) => ({
+		...tab,
+		dot: tab.id === 'replay' && showReplayNudge
+	}))
+	const resultSummary =
+		submitted == null
+			? 'Not run yet'
+			: submitted.result.status === 'completed'
+				? `${submitted.result.tests.filter((t) => t.passed).length} / ${submitted.result.tests.length} passed`
+				: submitted.result.status
+
 	return (
-		<div className={styles.page}>
+		<div className={cn(styles.page, styles.workspacePage)} data-workspace>
 			<header className={styles.top}>
 				<Link className={styles.brand} href="/">
 					<span className={styles.mark}>⌁</span> tracecode<span className={styles.dot}>.</span>
@@ -387,112 +514,363 @@ function ProblemWorkspace({
 							</option>
 						))}
 					</select>
-					<Link className={styles.topLink} href="/progress">
-						Progress
+					<Link className={styles.topLink} href="/dashboard">
+						Overview
 					</Link>
 				</div>
 			</header>
 
-			<div className={styles.shell}>
-				<div className={styles.head}>
-					<div>
-						<div className={styles.eyebrow}>Practice / {problem.conceptTags.join(' · ')}</div>
-						<h1 className={styles.h1}>
-							{problem.title}
-							<span className={styles.dot}>.</span>
-						</h1>
-						<p className={styles.subtitle}>
-							A small problem. A powerful way to understand your code.
-						</p>
-					</div>
-					<div className={styles.stages}>
-						{STAGES.map((label, i) => (
-							<div key={label} className={cn(styles.stage, i === stageIndex && styles.stageActive)}>
-								{label}
-							</div>
-						))}
-					</div>
+			<div className={styles.toolbar}>
+				<div className={styles.stages} role="list" aria-label="Learning journey">
+					{STAGES.map((label, i) => (
+						<div
+							key={label}
+							role="listitem"
+							aria-current={i === stageIndex ? 'step' : undefined}
+							className={cn(styles.stage, i === stageIndex && styles.stageActive)}
+						>
+							{label}
+						</div>
+					))}
 				</div>
+				<span className={styles.toolbarSpacer} />
+				<button
+					id="tutor-toggle"
+					type="button"
+					className={cn(styles.btn, tutorOpen && styles.btnActive)}
+					aria-pressed={tutorOpen}
+					aria-expanded={tutorOpen}
+					aria-controls="pane-tutor"
+					onClick={() => (tutorOpen ? closeTutor() : setTutorOpen(true))}
+				>
+					<SparkleIcon size={16} /> AI Tutor
+				</button>
+				<Stopwatch
+					labels={{
+						timer: 'Stopwatch',
+						start: 'Start stopwatch',
+						pause: 'Pause stopwatch',
+						reset: 'Reset stopwatch'
+					}}
+				/>
+				<button
+					type="button"
+					className={wsStyles.helpButton}
+					aria-label="Show the workspace tour"
+					onClick={() => setTourSignal((n) => n + 1)}
+				>
+					<HelpIcon size={18} />
+				</button>
+			</div>
 
-				<div className={styles.workspace}>
-					<section className={styles.panel}>
-						<div className={styles.panelHead}>
-							<strong>◫&nbsp; The challenge</strong>
-							<span className={styles.pill}>
-								{problem.difficulty} · {problem.conceptTags[0]}
-							</span>
-						</div>
-						<div className={styles.problem}>
-							{problem.statement.map((para, i) => (
-								<p key={i}>{para}</p>
-							))}
-							<div className={styles.divider} />
-							<strong className={styles.exampleLabel}>Think through an example</strong>
-							{problem.examples.map((ex, i) => (
-								<div key={i} className={styles.example}>
-									<small>Example {String(i + 1).padStart(2, '0')}</small>
-									<code>
-										{problem.params
-											.map((p, j) => `${p.name} = ${JSON.stringify(ex.args[j])}\n`)
-											.join('')}
-										output = {JSON.stringify(ex.output)}
-									</code>
+			<WorkspaceLayout
+				initial={initialLayout}
+				labels={LABELS}
+				resultsDot={submitted != null}
+				tutorOpen={tutorOpen}
+				renderTutor={({ mode, maximized, toggleMaximize }) => (
+					<TutorPanel
+						context={{
+							problemTitle: problem.title,
+							difficulty: problem.difficulty,
+							runSummary: submitted == null ? null : resultSummary
+						}}
+						mode={mode}
+						open={tutorOpen}
+						maximized={maximized}
+						onToggleMaximize={toggleMaximize}
+						onClose={closeTutor}
+					/>
+				)}
+				leftHead={
+					<TabList
+						id="tour-left-tabs"
+						prefix="left"
+						label="Challenge tabs"
+						tabs={leftTabs}
+						active={leftTab}
+						onChange={setLeftTab}
+					/>
+				}
+				leftBody={
+					<>
+						<div
+							role="tabpanel"
+							id={panelId('left', 'description')}
+							aria-labelledby={tabId('left', 'description')}
+							hidden={leftTab !== 'description'}
+						>
+							<div className={styles.problem}>
+								<div className={styles.problemTitle}>
+									<h1>{problem.title}</h1>
+									<span className={styles.pill}>{problem.difficulty}</span>
 								</div>
-							))}
-						</div>
-					</section>
-
-					<div className={styles.right}>
-						<section ref={editorPanelRef} className={styles.editorPanel}>
-							<div className={styles.editorTop}>
-								<div className={styles.file}>
-									<span className={styles.py}>Py</span> {problem.entry}.py
+								<p>
+									{problem.conceptTags.map((tag) => (
+										<span key={tag} className={styles.pill} style={{ marginRight: 6 }}>
+											{tag}
+										</span>
+									))}
+								</p>
+								{problem.statement.map((para, i) => (
+									<p key={i}>{para}</p>
+								))}
+								<div className={styles.divider} />
+								<strong className={styles.exampleLabel}>Think through an example</strong>
+								{problem.examples.map((ex, i) => (
+									<div key={i} className={styles.example}>
+										<small>Example {String(i + 1).padStart(2, '0')}</small>
+										<code>
+											{problem.params
+												.map((p, j) => `${p.name} = ${JSON.stringify(ex.args[j])}\n`)
+												.join('')}
+											output = {JSON.stringify(ex.output)}
+										</code>
+									</div>
+								))}
+								<div className={styles.foot}>
+									First-load internet access is required for the Pyodide runtime. Python executes
+									locally in a browser Web Worker; worker timeout and trace length are bounded. This
+									is not a hardened security sandbox.
 								</div>
-								<span className={styles.live}>
-									{busy ? status.label : 'Python runs in your browser'}
-								</span>
 							</div>
-							<CodeEditor value={code} onChange={setCode} />
-							<div className={styles.editorFooter}>
-								<span className={styles.mutedDark}>Python 3 · runs locally in a Web Worker</span>
-								<div className={styles.footerActions}>
-									<button
-										type="button"
-										className={styles.btn}
-										onClick={() => setCode(problem.starter)}
-										disabled={busy}
-									>
-										Reset
-									</button>
-									<button
-										type="button"
-										className={cn(styles.btn, styles.btnRun)}
-										onClick={runTests}
-										disabled={busy}
-									>
-										▶ Run code
-									</button>
-								</div>
-							</div>
-						</section>
+						</div>
 
-						<section className={cn(styles.panel, styles.resultsPanel)}>
+						<div
+							role="tabpanel"
+							id={panelId('left', 'hints')}
+							aria-labelledby={tabId('left', 'hints')}
+							hidden={leftTab !== 'hints'}
+							className={wsStyles.pad}
+						>
+							{teaching != null && (
+								<TeachingPanel
+									key={teaching.kind === 'diagnosis' ? teaching.id : teaching.kind}
+									prompt={teaching}
+									onReveal={(level) => {
+										const detail = hintRevealDetail(teaching, level)
+										if (detail != null) persistHint(detail)
+									}}
+								/>
+							)}
+							{challenge != null && solvedAttempt != null && (
+								<section className={styles.coachPanel} data-testid="optimization-challenge">
+									<div className={styles.coachMeta}>
+										<span className={styles.coachTag}>Solved · optional challenge</span>
+									</div>
+									<p>
+										All {problem.tests.length} tests passed (
+										{new Date(solvedAttempt.createdAt).toLocaleTimeString()}). That solution stays
+										saved in your attempts, and trying something else never unsolves this problem.
+									</p>
+									<div style={{ marginBottom: 12 }}>
+										<button
+											type="button"
+											className={styles.btn}
+											onClick={() => loadAttempt(solvedAttempt.source)}
+											disabled={busy}
+										>
+											Restore my solved code
+										</button>
+									</div>
+									<p>{problem.optimization?.goal}</p>
+									<TeachingPanel
+										key={challenge.kind === 'diagnosis' ? challenge.id : challenge.kind}
+										prompt={challenge}
+										onReveal={(level) => {
+											const detail = hintRevealDetail(challenge, level)
+											if (detail != null) persistHint(detail)
+										}}
+									/>
+								</section>
+							)}
+							{!hintsReady && (
+								<p className={styles.description}>
+									Hints unlock after you replay a failing test, so they point at what your code
+									actually did. Run your code first.
+								</p>
+							)}
+						</div>
+
+						<div
+							role="tabpanel"
+							id={panelId('left', 'history')}
+							aria-labelledby={tabId('left', 'history')}
+							hidden={leftTab !== 'history'}
+							className={wsStyles.pad}
+						>
+							{attempts.length === 0 ? (
+								<p className={styles.description}>
+									No attempts yet. Each run is listed here with its result, and you can load its
+									code back into the editor.
+								</p>
+							) : (
+								<>
+									<div className={styles.progressGrid} style={{ padding: 0, marginBottom: 12 }}>
+										<div className={styles.progressMetric}>
+											<strong>{attempts.length}</strong>
+											<span>Attempts</span>
+										</div>
+										<div className={styles.progressMetric}>
+											<strong>
+												{bestPassed} / {problem.tests.length}
+											</strong>
+											<span>Best tests passed</span>
+										</div>
+										<div className={styles.progressMetric}>
+											<strong>{replayRecords.length}</strong>
+											<span>Replays</span>
+										</div>
+									</div>
+									<p className={styles.description} style={{ marginBottom: 8 }}>
+										{isAuthenticated
+											? 'Signed in · saved to your account'
+											: 'This session only · sign in to save'}
+									</p>
+									<div className={styles.progressList} style={{ padding: 0 }}>
+										{attempts
+											.slice()
+											.reverse()
+											.map((attempt, idxFromEnd) => {
+												const index = attempts.length - 1 - idxFromEnd
+												const passedCount = attempt.result.tests.filter((t) => t.passed).length
+												const firstFail = attempt.result.tests.find((t) => !t.passed)
+												const failArgs =
+													firstFail != null
+														? problem.tests.find((t) => t.id === firstFail.testId)?.args
+														: undefined
+												return (
+													<div key={attempt.id} className={styles.progressItem}>
+														<span>
+															<strong>
+																{attempt.result.status === 'completed'
+																	? `${passedCount} / ${attempt.result.tests.length} passed`
+																	: attempt.result.status}
+															</strong>{' '}
+															<small>{new Date(attempt.createdAt).toLocaleTimeString()}</small>
+															{attempt.synced === true ? <small> · synced</small> : null}
+														</span>
+														<span className={styles.testActions}>
+															<button
+																type="button"
+																className={styles.btn}
+																onClick={() => loadAttempt(attempt.source)}
+																disabled={busy}
+															>
+																Load code
+															</button>
+															{firstFail != null && failArgs != null && (
+																<button
+																	type="button"
+																	className={styles.btn}
+																	onClick={() =>
+																		replayOfficial(
+																			{ id: firstFail.testId, args: failArgs },
+																			attempt.source,
+																			index
+																		)
+																	}
+																	disabled={busy}
+																>
+																	Replay failure
+																</button>
+															)}
+														</span>
+													</div>
+												)
+											})}
+									</div>
+								</>
+							)}
+						</div>
+					</>
+				}
+				codeHead={
+					<>
+						<div className={wsStyles.fileChip}>
+							<span className={styles.py}>Py</span> {problem.entry}.py
+						</div>
+						<span className={wsStyles.status} role="status" aria-live="polite">
+							<b>{statusText}</b>
+						</span>
+						<button
+							type="button"
+							className={wsStyles.codeIcon}
+							aria-label="Format code"
+							title="Format code (fix indentation)"
+							onClick={formatCode}
+							disabled={busy}
+						>
+							<FormatIcon size={16} />
+						</button>
+						<button
+							type="button"
+							className={wsStyles.codeIcon}
+							aria-label="Reset code"
+							title="Reset code"
+							onClick={() => setCode(problem.starter)}
+							disabled={busy}
+						>
+							<ResetIcon size={16} />
+						</button>
+						<button
+							type="button"
+							id="tour-run"
+							className={cn(wsStyles.codeIcon, wsStyles.codeRun)}
+							aria-label="Run code"
+							title="Run code"
+							onClick={runTests}
+							disabled={busy}
+						>
+							<PlayIcon size={16} />
+						</button>
+					</>
+				}
+				codeBody={
+					<div ref={editorPanelRef} style={{ height: '100%' }}>
+						<CodeEditor
+							value={code}
+							onChange={setCode}
+							onCursorChange={(line, column) => setCursor({ line, column })}
+						/>
+					</div>
+				}
+				codeFoot={
+					<div className={wsStyles.editorStatus}>
+						<span>{saveState}</span>
+						<span aria-label={`Line ${cursor.line}, column ${cursor.column}`}>
+							Ln {cursor.line}, Col {cursor.column}
+						</span>
+					</div>
+				}
+				resultsHead={
+					<>
+						<TabList
+							id="tour-results-tabs"
+							prefix="results"
+							label="Results tabs"
+							tabs={resultTabs}
+							active={resultsTab}
+							onChange={setResultsTab}
+						/>
+						<span className={wsStyles.summary}>{resultSummary}</span>
+					</>
+				}
+				resultsBody={
+					<>
+						<div
+							role="tabpanel"
+							id={panelId('results', 'tests')}
+							aria-labelledby={tabId('results', 'tests')}
+							hidden={resultsTab !== 'tests'}
+						>
+							{notice !== '' && <p className={styles.warn}>{notice}</p>}
 							{showReplayNudge && (
 								<div className={styles.replayNudge}>
 									Your answer did not pass all tests. <strong>Replay a failing test</strong> to see
 									what your code actually did before changing it.
 								</div>
 							)}
-							<div className={styles.panelHead}>
-								<strong>Test results</strong>
-								<span className={styles.resultSummary}>
-									{submitted == null
-										? 'Not run yet'
-										: submitted.result.status === 'completed'
-											? `${submitted.result.tests.filter((t) => t.passed).length} / ${submitted.result.tests.length} passed`
-											: submitted.result.status}
-								</span>
-							</div>
 							{submitted == null ? (
 								<div className={styles.empty}>
 									Run your solution to see real Python test results.
@@ -506,147 +884,35 @@ function ProblemWorkspace({
 									onReplay={(t) => replayOfficial(t, submitted.source, attempts.length - 1)}
 								/>
 							)}
-						</section>
-					</div>
-				</div>
-
-				{notice !== '' && <p className={styles.warn}>{notice}</p>}
-
-				{teaching != null && (
-					<TeachingPanel
-						key={teaching.kind === 'diagnosis' ? teaching.id : teaching.kind}
-						prompt={teaching}
-						onReveal={(level) => {
-							const detail = hintRevealDetail(teaching, level)
-							if (detail != null) persistHint(detail)
-						}}
-					/>
-				)}
-
-				{challenge != null && solvedAttempt != null && (
-					<section className={styles.coachPanel} data-testid="optimization-challenge">
-						<div className={styles.coachMeta}>
-							<span className={styles.coachTag}>Solved · optional challenge</span>
 						</div>
-						<p>
-							All {problem.tests.length} tests passed (
-							{new Date(solvedAttempt.createdAt).toLocaleTimeString()}). That solution stays saved
-							in your attempts, and trying something else never unsolves this problem.
-						</p>
-						<div style={{ marginBottom: 12 }}>
-							<button
-								type="button"
-								className={styles.btn}
-								onClick={() => loadAttempt(solvedAttempt.source)}
-								disabled={busy}
-							>
-								Restore my solved code
-							</button>
+						<div
+							role="tabpanel"
+							id={panelId('results', 'replay')}
+							aria-labelledby={tabId('results', 'replay')}
+							hidden={resultsTab !== 'replay'}
+							style={{ height: '100%' }}
+						>
+							{replay == null ? (
+								<div className={styles.empty}>
+									Replay a test to step through it line by line and watch its variables. Pick Replay
+									on any result.
+								</div>
+							) : (
+								<ReplayView
+									part="pane"
+									step={replayStep}
+									onStepChange={setReplayStep}
+									trace={replay.trace}
+									meta={meta}
+									label={replay.label}
+									kind={replay.kind}
+								/>
+							)}
 						</div>
-						<p>{problem.optimization?.goal}</p>
-						<TeachingPanel
-							key={challenge.kind === 'diagnosis' ? challenge.id : challenge.kind}
-							prompt={challenge}
-							onReveal={(level) => {
-								const detail = hintRevealDetail(challenge, level)
-								if (detail != null) persistHint(detail)
-							}}
-						/>
-					</section>
-				)}
-
-				{attempts.length > 0 && (
-					<section className={cn(styles.panel, styles.coachPanel)} style={{ background: '#fff' }}>
-						<div className={styles.panelHead}>
-							<strong>Your attempts</strong>
-							<span className={styles.pill}>
-								{isAuthenticated
-									? 'Signed in · saved to your account'
-									: 'This session only · sign in to save'}
-							</span>
-						</div>
-						<div className={styles.progressGrid}>
-							<div className={styles.progressMetric}>
-								<strong>{attempts.length}</strong>
-								<span>Attempts</span>
-							</div>
-							<div className={styles.progressMetric}>
-								<strong>
-									{bestPassed} / {problem.tests.length}
-								</strong>
-								<span>Best tests passed</span>
-							</div>
-							<div className={styles.progressMetric}>
-								<strong>{replayRecords.length}</strong>
-								<span>Replays</span>
-							</div>
-						</div>
-						<div className={styles.progressList}>
-							{attempts
-								.slice()
-								.reverse()
-								.map((attempt, idxFromEnd) => {
-									const index = attempts.length - 1 - idxFromEnd
-									const passedCount = attempt.result.tests.filter((t) => t.passed).length
-									const firstFail = attempt.result.tests.find((t) => !t.passed)
-									const failArgs =
-										firstFail != null
-											? problem.tests.find((t) => t.id === firstFail.testId)?.args
-											: undefined
-									return (
-										<div key={attempt.id} className={styles.progressItem}>
-											<span>
-												<strong>
-													{attempt.result.status === 'completed'
-														? `${passedCount} / ${attempt.result.tests.length} passed`
-														: attempt.result.status}
-												</strong>{' '}
-												<small>{new Date(attempt.createdAt).toLocaleTimeString()}</small>
-												{attempt.synced === true ? <small> · synced</small> : null}
-											</span>
-											<span className={styles.testActions}>
-												<button
-													type="button"
-													className={styles.btn}
-													onClick={() => loadAttempt(attempt.source)}
-													disabled={busy}
-												>
-													Load code
-												</button>
-												{firstFail != null && failArgs != null && (
-													<button
-														type="button"
-														className={styles.btn}
-														onClick={() =>
-															replayOfficial(
-																{ id: firstFail.testId, args: failArgs },
-																attempt.source,
-																index
-															)
-														}
-														disabled={busy}
-													>
-														Replay failure
-													</button>
-												)}
-											</span>
-										</div>
-									)
-								})}
-						</div>
-					</section>
-				)}
-
-				{replay != null && (
-					<ReplayView trace={replay.trace} meta={meta} label={replay.label} kind={replay.kind} />
-				)}
-
-				<div className={styles.foot}>
-					First-load internet access is required for the Pyodide runtime. Python executes locally in
-					a browser Web Worker; worker timeout and trace length are bounded. This is not a hardened
-					security sandbox.
-				</div>
-			</div>
+					</>
+				}
+			/>
+			<WorkspaceTour openSignal={tourSignal} />
 		</div>
 	)
 }
@@ -737,7 +1003,7 @@ function ResultRow({
 					<br />
 					{test.error != null
 						? `Error: ${test.error.type}: ${test.error.message}`
-						: `${resultLabel}: ${test.actual != null ? formatValue(test.actual) : '—'}`}
+						: `${resultLabel}: ${test.actual != null ? formatValue(test.actual) : '-'}`}
 				</div>
 			</div>
 			<div className={styles.testActions}>

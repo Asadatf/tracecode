@@ -25,7 +25,9 @@ const view = buildProgressView(problems, {
 			attempts: 3,
 			bestTestsPassed: 3,
 			testsTotal: 3,
-			firstSolvedAt: '2026-11-01T16:12:00.000Z'
+			firstSolvedAt: '2026-11-01T16:12:00.000Z',
+			latestSolvedAt: '2026-11-01T16:18:00.000Z',
+			lastAttemptAt: '2026-11-01T16:20:00.000Z'
 		},
 		{
 			problemSlug: 'retired',
@@ -70,8 +72,22 @@ test('AC5: every registry problem in order, with status, best result, runs and s
 		status: 'solved',
 		best: { passed: 3, total: 3 },
 		runs: 3,
-		solvedAt: '2026-11-01T16:12:00.000Z'
+		solvedAt: '2026-11-01T16:12:00.000Z',
+		latestSolvedAt: '2026-11-01T16:18:00.000Z',
+		lastAttemptAt: '2026-11-01T16:20:00.000Z'
 	})
+	// A problem with no attempts has no last attempt.
+	assert.equal(
+		buildProgressView(problems, {
+			authenticated: true,
+			available: true,
+			progress: [],
+			recentAttempts: [],
+			replaysInspected: 0,
+			hintsRevealed: 0
+		}).problems[0]?.lastAttemptAt,
+		null
+	)
 	assert.equal(view.problems.find((row) => row.slug === 'contains-duplicate')?.status, 'attempted')
 })
 
@@ -85,11 +101,11 @@ test('AC6: recent runs keep their order, use titles, and fall back to the slug',
 	)
 })
 
-test('AC7: solved/total per topic, capitalised, in first-seen registry order', () => {
+test('AC7: solved/attempted/total per topic, capitalised, in first-seen registry order', () => {
 	assert.deepEqual(view.topics, [
-		{ topic: 'Arrays', solved: 1, total: 2 },
-		{ topic: 'Loops', solved: 1, total: 1 },
-		{ topic: 'Hashing', solved: 0, total: 1 }
+		{ topic: 'Arrays', solved: 1, attempted: 2, total: 2 },
+		{ topic: 'Loops', solved: 1, attempted: 1, total: 1 },
+		{ topic: 'Hashing', solved: 0, attempted: 1, total: 1 }
 	])
 })
 

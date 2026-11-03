@@ -16,9 +16,13 @@
 	order: 1;
 }
 .side {
-	order: 2;
+	/* On a phone the widget comes after the two cards. */
+	order: 5;
 }
-.recent {
+.yours {
+	order: 3;
+}
+.explore {
 	order: 4;
 }
 
@@ -45,14 +49,18 @@
 .summary {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 12px;
+	gap: 18px;
 	margin: 0;
 }
 .stat {
 	padding: 16px 18px;
-	border: 1px solid var(--border);
+	border: 1px solid #bfccc2;
 	border-radius: 16px;
-	background: var(--surface);
+	/* The green glow sits behind the card, in the page background only. */
+	background: #f6f7f5;
+	box-shadow:
+		0 0 12px rgba(8, 122, 86, 0.11),
+		0 8px 14px -12px rgba(15, 20, 18, 0.2);
 }
 .stat dt {
 	color: var(--text-muted);
@@ -74,9 +82,116 @@
 
 .card {
 	padding: 20px;
-	border: 1px solid var(--border);
+	border: 1px solid #bfccc2;
 	border-radius: 18px;
-	background: var(--surface);
+	/* The green glow sits behind the card, in the page background only. */
+	background: #f6f7f5;
+	box-shadow:
+		0 0 12px rgba(8, 122, 86, 0.11),
+		0 8px 14px -12px rgba(15, 20, 18, 0.2);
+}
+.cardHead {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+.cardHead .cardTitle {
+	margin: 0;
+}
+.moreLink {
+	color: var(--accent-hover);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	white-space: nowrap;
+}
+.moreLink:hover {
+	text-decoration: underline;
+}
+.rows {
+	--row-h: 66px;
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	padding: 11px 0;
+	border-top: 1px solid var(--border);
+}
+.row:first-child {
+	border-top: 0;
+	padding-top: 2px;
+}
+.row:last-child {
+	padding-bottom: 2px;
+}
+.rowMain {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+}
+.rowTitle {
+	overflow: hidden;
+	color: var(--text);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+a.rowTitle:hover {
+	color: var(--accent);
+	text-decoration: underline;
+}
+.rowMeta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2px 10px;
+	color: var(--text-muted);
+	font-size: 12.5px;
+}
+.statusPill {
+	padding: 1px 9px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--text) 7%, transparent);
+	color: var(--text);
+	font-size: 12px;
+	font-weight: 600;
+}
+.rowAction {
+	flex: none;
+	padding: 7px 14px;
+	border: 1px solid var(--accent);
+	border-radius: 9px;
+	color: var(--accent-hover);
+	font-size: 13px;
+	font-weight: 700;
+	text-decoration: none;
+}
+.rowAction:hover {
+	background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.warn {
+	display: inline-flex;
+	align-items: center;
+	flex: none;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--warning) 14%, transparent);
+	color: var(--warning);
+	font: 600 13px var(--font-mono);
+	white-space: nowrap;
 }
 .cardTitle {
 	margin: 0 0 14px;
@@ -97,7 +212,7 @@
 }
 .table th {
 	padding: 12px 16px;
-	background: var(--surface-subtle);
+	background: #eef0ed;
 	color: var(--text-muted);
 	font-weight: 600;
 	text-align: left;
@@ -168,69 +283,223 @@
 	background: var(--accent-hover);
 }
 
-.sideSection {
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-.floatCard {
-	padding: 22px 22px 24px;
-	border-radius: 20px;
+/* One floating card in a single dark-green theme: one gradient runs behind
+   both sections, so the topics and the next-practice parts read as one surface. */
+.mergedCard {
+	position: relative;
+	overflow: hidden;
+	border-radius: 22px;
 	background:
 		radial-gradient(
 			circle at 100% 0%,
-			color-mix(in srgb, var(--accent) 30%, transparent),
-			transparent 14rem
+			color-mix(in srgb, #39a67e 16%, transparent),
+			transparent 15rem
 		),
-		color-mix(in srgb, var(--accent) 34%, #0f1412);
+		radial-gradient(
+			circle at 0% 100%,
+			color-mix(in srgb, #39a67e 9%, transparent),
+			transparent 13rem
+		),
+		#101714;
 	color: #fff;
+	/* A soft green glow behind the card, then the drop shadow. */
 	box-shadow:
-		0 2px 6px rgba(15, 20, 18, 0.18),
-		0 28px 56px -8px rgba(15, 20, 18, 0.4);
+		0 0 0 1px rgba(88, 215, 162, 0.16),
+		0 0 36px 0 rgba(88, 215, 162, 0.24),
+		0 24px 48px -12px rgba(15, 20, 18, 0.4);
 }
-.floatCard .cardTitle {
+/* Concentric guide rings, the same motif as the landing hero. */
+.mergedCard::before,
+.mergedCard::after {
+	position: absolute;
+	z-index: 0;
+	border: 1px solid rgba(57, 166, 126, 0.24);
+	border-radius: 50%;
+	background: repeating-radial-gradient(
+		circle,
+		transparent 0,
+		transparent 34px,
+		rgba(57, 166, 126, 0.2) 35px,
+		transparent 36px
+	);
+	content: '';
+	pointer-events: none;
+}
+.mergedCard::before {
+	top: -150px;
+	right: -150px;
+	width: 380px;
+	height: 380px;
+}
+.mergedCard::after {
+	bottom: -170px;
+	left: -170px;
+	width: 380px;
+	height: 380px;
+}
+.topicsPart,
+.nextPart {
+	position: relative;
+	z-index: 1;
+}
+.topicsPart {
+	padding: 22px 22px 8px;
+}
+.mergedCard .cardTitle {
 	color: #fff;
 }
-.floatCard .topicCount {
+.mergedCard .topicCount {
 	color: rgba(255, 255, 255, 0.72);
 }
-.floatCard .bar {
+.mergedCard .bar {
 	background: rgba(255, 255, 255, 0.16);
 }
-.floatCard .barFill {
+.mergedCard .barFill {
 	background: #58d7a2;
 }
 
-.floatLight {
-	border-radius: 20px;
-	background: var(--surface);
-	box-shadow:
-		0 2px 6px rgba(15, 20, 18, 0.08),
-		0 24px 48px -10px rgba(15, 20, 18, 0.24);
+.nextPart {
+	padding: 18px 22px 22px;
 }
-.nextWidget {
-	padding: 22px;
+.nextPart .note {
+	color: rgba(255, 255, 255, 0.7);
 }
-.nextHead {
-	margin-bottom: 16px;
+.insight {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 18px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 16px;
+	background: rgba(255, 255, 255, 0.07);
 }
-.nextHead .cardTitle {
-	margin-bottom: 4px;
+.insightHead {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
 }
-.nextHead p {
+.insightHead svg {
+	color: #58d7a2;
+}
+.insightText {
 	margin: 0;
-	color: var(--text-muted);
-	font-size: 14px;
-	line-height: 1.5;
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 15px;
+	line-height: 1.55;
+}
+.upNext {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.upNextLabel {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+.upNextTitle {
+	color: #fff;
+	font-size: 20px;
+	letter-spacing: -0.02em;
+}
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.chips > * {
+	border: 1px solid rgba(255, 255, 255, 0.16);
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+.aiTag {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(88, 215, 162, 0.16);
+	color: #58d7a2;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+}
+.insightFoot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+.insightFoot a {
+	background: #58d7a2;
+	color: #0b231a;
+}
+.insightFoot a:hover {
+	background: #7be4b8;
+}
+.refresh {
+	display: grid;
+	flex: none;
+	width: 32px;
+	height: 32px;
+	margin-left: auto;
+	place-items: center;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.1);
+	color: #58d7a2;
+	cursor: pointer;
+}
+.refresh:hover {
+	background: rgba(255, 255, 255, 0.18);
+}
+.refresh:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.topicsHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.topicsHead .cardTitle {
+	margin: 0;
+}
+.topicsTally {
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font: 700 14px var(--font-mono);
 }
 
 .topicList {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+	max-height: clamp(120px, calc(100dvh - 560px), 320px);
 	margin: 0;
-	padding: 0;
+	padding: 0 10px 0 0;
 	list-style: none;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+.topicList::-webkit-scrollbar {
+	width: 6px;
+}
+.topicList::-webkit-scrollbar-thumb {
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.28);
+}
+.topicList::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.45);
 }
 .topicRow {
 	display: flex;
@@ -272,15 +541,20 @@
 		min-width: 0;
 		padding: 4px 0 28px 4px;
 	}
+	/* No clipping box around the card: a scroll container here would cut the
+	   glow and shadow into a visible rectangle. The topics list shrinks with
+	   the window instead (see .topicList), and only very short windows scroll. */
 	.side {
 		position: sticky;
-		top: 0;
+		top: 24px;
 		display: flex;
 		flex-direction: column;
 		gap: 22px;
-		padding: 4px 8px 28px 0;
-		/* Taller than the window → wheel-scroll inside, no visible bar. */
-		max-height: calc(100dvh - 96px);
+	}
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+	.side {
+		max-height: calc(100dvh - 120px);
 		overflow-y: auto;
 		scrollbar-width: none;
 	}
@@ -288,30 +562,271 @@
 		display: none;
 	}
 }
+/* Hover, desktop only. The lift plays once when the cursor arrives (staying
+   on the card or leaving does not replay it, and it ends where it began, so
+   nothing jumps). The glow and rings ease to a brighter
+   state while hovered and ease back on leave. */
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
 	.float {
-		animation: drift 7s ease-in-out infinite alternate;
+		transition: box-shadow 700ms ease;
+	}
+	.float::before,
+	.float::after {
+		transition: transform 1100ms cubic-bezier(0.22, 0.7, 0.2, 1);
+	}
+	.float:hover {
+		animation: lift 1100ms cubic-bezier(0.37, 0, 0.2, 1);
+		box-shadow:
+			0 0 0 1px rgba(88, 215, 162, 0.26),
+			0 0 54px 4px rgba(88, 215, 162, 0.34),
+			0 28px 56px -12px rgba(15, 20, 18, 0.42);
+	}
+	.float:hover::before {
+		transform: translate(-14px, 14px) scale(1.04);
+	}
+	.float:hover::after {
+		transform: translate(14px, -14px) scale(1.04);
 	}
 }
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-	.floatLight.float {
-		animation-delay: -3.5s;
+@keyframes lift {
+	0%,
+	100% {
+		transform: translateY(0) scale(1);
+	}
+	45% {
+		transform: translateY(-6px) scale(1.006);
 	}
 }
-@keyframes drift {
-	from {
-		transform: translateY(0);
-	}
-	to {
-		transform: translateY(-6px);
-	}
-}
-
 @media (max-width: 520px) {
+	/* Three compact metrics across, not three tall blocks. */
 	.summary {
-		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+	.stat {
+		padding: 12px;
+	}
+	.stat dd {
+		font-size: 22px;
+	}
+	.stat dd span {
+		display: block;
+		font-size: 12px;
 	}
 	.card {
 		padding: 16px;
+	}
+}
+
+/* Your problems: the row button opens the detail modal. */
+.rowButton {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.rowButton:hover .rowTitle {
+	color: var(--accent);
+	text-decoration: underline;
+}
+.linkButton {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--accent-hover);
+	font: inherit;
+	font-weight: 600;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+/* Problem detail modal: a native <dialog>, so focus is trapped, Escape closes it
+   and focus returns to the row that opened it. A sheet on desktop, full screen on
+   a phone; the body scrolls, the header and footer stay put. */
+.modal {
+	/* Compact: sized by its facts, scrolling only if a short window needs it. */
+	width: min(560px, calc(100vw - 32px));
+	max-height: min(86dvh, 640px);
+	margin: auto;
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: 0 24px 60px rgba(15, 20, 18, 0.35);
+}
+.modal[open] {
+	display: flex;
+	flex-direction: column;
+}
+.modal::backdrop {
+	background: rgba(15, 20, 18, 0.5);
+}
+.modalHead {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--border);
+}
+.modalTitleBlock {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	min-width: 0;
+}
+.modalTitle {
+	margin: 0;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: -0.03em;
+}
+.modalClose {
+	display: grid;
+	flex: none;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+.modalClose:hover {
+	background: var(--surface-hover);
+	color: var(--text);
+}
+.modalBody {
+	flex: 1 1 auto;
+	min-height: 0;
+	padding: 18px 20px;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+}
+.modalFoot {
+	display: flex;
+	flex: none;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 14px 20px;
+	border-top: 1px solid var(--border);
+}
+.facts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 14px 18px;
+	margin: 0 0 18px;
+}
+.facts dt {
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+.facts dd {
+	margin: 2px 0 0;
+	font-size: 15px;
+	font-weight: 600;
+}
+@media (prefers-reduced-motion: no-preference) {
+	.modal[open] {
+		animation: modal-in 140ms ease-out;
+	}
+	.modal[open]::backdrop {
+		animation: modal-fade 140ms ease-out;
+	}
+}
+@keyframes modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+@keyframes modal-fade {
+	from {
+		opacity: 0;
+	}
+}
+@media (max-width: 640px) {
+	.modal {
+		width: 100vw;
+		max-width: none;
+		height: 100dvh;
+		max-height: none;
+		border: 0;
+		border-radius: 0;
+	}
+	.modalHead,
+	.modalBody,
+	.modalFoot {
+		padding-inline: 16px;
+	}
+	.modalFoot {
+		padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+	}
+}
+
+/* Difficulty: green easy, yellow medium, red hard (a word as well as a colour). */
+.diff {
+	flex: none;
+	padding: 2px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.diffEasy {
+	background: color-mix(in srgb, var(--success) 14%, transparent);
+	color: var(--success);
+}
+.diffMedium {
+	background: rgba(228, 155, 48, 0.2);
+	color: #a56a10;
+}
+.diffHard {
+	background: var(--danger-soft);
+	color: var(--danger);
+}
+.rowEnd {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Both problem cards show five rows, then scroll. */
+.rowsScroll {
+	max-height: calc(5 * var(--row-h));
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--text) 25%, transparent) transparent;
+}
+.rowsScroll .row {
+	box-sizing: border-box;
+	min-height: var(--row-h);
+}
+.rowsScroll .row:first-child,
+.rowsScroll .row:last-child {
+	padding-block: 11px;
+}
+
+@media (max-width: 520px) {
+	/* Phone rows wrap onto more lines, so each gets more height (still five visible). */
+	.rows {
+		--row-h: 86px;
 	}
 }

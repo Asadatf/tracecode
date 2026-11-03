@@ -3,13 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/cn'
-import {
-	BellIcon,
-	CodeIcon,
-	ExternalLinkIcon,
-	SlidersIcon,
-	SpinnerIcon
-} from '@/components/ui/icons'
+import { BellIcon, CodeIcon, ExternalLinkIcon, SlidersIcon } from '@/components/ui/icons'
+import { DEMO_NOTIFICATIONS, DEMO_NOTIFICATIONS_ENABLED } from '@/lib/notifications/demo'
 import { relativeTime } from '@/lib/notifications/relative-time'
 import type { NotificationView } from '@/lib/notifications/queries'
 import {
@@ -49,6 +44,9 @@ type Panel =
 	| { state: 'error' }
 	| { state: 'ready'; items: NotificationView[] }
 
+const demo = DEMO_NOTIFICATIONS_ENABLED ? DEMO_NOTIFICATIONS : []
+const demoUnread = demo.filter((item) => !item.read).length
+
 export function NotificationBell({
 	initialUnread,
 	labels
@@ -56,7 +54,9 @@ export function NotificationBell({
 	initialUnread: number | null
 	labels: BellLabels
 }) {
-	const [unread, setUnread] = useState(initialUnread)
+	const [unread, setUnread] = useState(
+		initialUnread == null ? initialUnread : initialUnread + demoUnread
+	)
 	const [panel, setPanel] = useState<Panel>({ state: 'closed' })
 	const [filter, setFilter] = useState<Filter>('all')
 	const [pending, startTransition] = useTransition()
@@ -90,8 +90,8 @@ export function NotificationBell({
 				setPanel({ state: 'error' })
 				return
 			}
-			setUnread(result.data.unreadCount)
-			setPanel({ state: 'ready', items: result.data.items })
+			setUnread(result.data.unreadCount + demoUnread)
+			setPanel({ state: 'ready', items: [...demo, ...result.data.items] })
 		})
 	}
 
@@ -110,6 +110,7 @@ export function NotificationBell({
 				: current
 		)
 		setUnread((count) => (count == null ? count : Math.max(0, count - 1)))
+		if (id.startsWith('demo-')) return
 		startTransition(async () => {
 			await markNotificationReadAction({ id })
 		})
@@ -138,6 +139,7 @@ export function NotificationBell({
 				onClick={toggle}
 				aria-expanded={open}
 				aria-haspopup="dialog"
+				data-unread={hasUnread ? 'true' : undefined}
 				aria-label={hasUnread ? `${labels.open} (${unread} ${labels.unread})` : labels.open}
 				className="text-text-muted hover:text-text hover:bg-surface-hover relative grid size-9 place-items-center rounded-sm"
 			>
@@ -224,10 +226,29 @@ export function NotificationBell({
 					</div>
 
 					{panel.state === 'loading' ? (
-						<p className="text-text-muted m-0 flex items-center gap-2 py-6 text-sm" role="status">
-							<SpinnerIcon className="size-4" />
-							{labels.loading}
-						</p>
+						<ul
+							className="m-0 flex list-none flex-col gap-3 p-0"
+							role="status"
+							aria-label={labels.loading}
+						>
+							{[0, 1].map((row) => (
+								<li
+									key={row}
+									aria-hidden="true"
+									className="border-border bg-surface flex animate-pulse flex-col gap-3 rounded-2xl border p-4"
+								>
+									<div className="flex items-start gap-3.5">
+										<span className="bg-surface-hover size-11 shrink-0 rounded-xl" />
+										<div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+											<span className="bg-surface-hover h-4 w-2/5 rounded" />
+											<span className="bg-surface-hover h-3 w-full rounded" />
+											<span className="bg-surface-hover h-3 w-3/4 rounded" />
+										</div>
+									</div>
+									<span className="bg-surface-hover h-8 w-28 rounded-full" />
+								</li>
+							))}
+						</ul>
 					) : panel.state === 'error' ? (
 						<p className="text-warning m-0 py-6 text-sm" role="status">
 							{labels.error}

@@ -1,11 +1,13 @@
 import { Suspense, type ReactNode } from 'react'
+import { cookies } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
-import { AccountMenu } from '@/components/account-menu'
+import { StreakSlot } from '@/components/streak/streak-slot'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 import { topicLabel } from '@/lib/home/problem-rows'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { ProblemSearch } from './problem-search'
 import { ShellFrame } from './shell-frame'
+import { SIDEBAR_COLLAPSED, SIDEBAR_COOKIE } from './sidebar-state'
 import styles from './app-shell.module.css'
 import type { NavGroup, NavKey } from './sidebar-nav'
 
@@ -15,23 +17,29 @@ import type { NavGroup, NavKey } from './sidebar-nav'
 // (specs/features/dashboard-page.md AC17); nothing page-specific lives here.
 // The slim problem list is built here so the client never receives test data.
 export async function AppShell({
-	account,
 	current,
+	bare = false,
+	startCollapsed,
 	children
 }: {
-	account: { email: string | null }
-	current: NavKey
+	// The highlighted sidebar item; omit it on a page that has none (Practice).
+	current?: NavKey
+	// Hide the search box and the bell (the Practice page): the sidebar stays.
+	bare?: boolean
+	// Start the sidebar as the icon rail on this page whatever was saved (Practice
+	// wants the room); toggling still works but is not remembered.
+	startCollapsed?: boolean
 	children: ReactNode
 }) {
-	const t = await getTranslations('AppShell')
+	const [t, cookieStore] = await Promise.all([getTranslations('AppShell'), cookies()])
+	const initialCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === SIDEBAR_COLLAPSED
 
 	const groups: NavGroup[] = [
 		{
 			heading: t('groups.learn'),
 			items: [
 				{ key: 'overview', href: '/dashboard', label: t('nav.overview') },
-				{ key: 'problems', href: '/#problems', label: t('nav.problems') },
-				{ key: 'progress', href: '/progress', label: t('nav.progress') }
+				{ key: 'problems', href: '/problems', label: t('nav.problems') }
 			]
 		},
 		{
@@ -55,34 +63,33 @@ export async function AppShell({
 				collapse: t('collapse'),
 				expand: t('expand'),
 				openMenu: t('openMenu'),
-				closeMenu: t('closeMenu')
+				closeMenu: t('closeMenu'),
+				signOut: t('account.signOut')
 			}}
+			bare={bare}
+			initialCollapsed={startCollapsed ?? initialCollapsed}
+			persistCollapsed={startCollapsed == null}
 			topbar={
-				<>
-					<ProblemSearch
-						problems={problems}
-						labels={{
-							label: t('search.label'),
-							placeholder: t('search.placeholder'),
-							empty: t('search.empty')
-						}}
-					/>
-					<div className={styles.actions}>
-						<Suspense fallback={<span className="size-9" aria-hidden="true" />}>
-							<NotificationBellSlot />
-						</Suspense>
-						<AccountMenu
-							email={account.email}
-							isSettings={current === 'settings'}
+				bare ? null : (
+					<>
+						<ProblemSearch
+							problems={problems}
 							labels={{
-								account: t('account.menu'),
-								signedInAs: t('account.signedInAs'),
-								settings: t('account.settings'),
-								signOut: t('account.signOut')
+								label: t('search.label'),
+								placeholder: t('search.placeholder'),
+								empty: t('search.empty')
 							}}
 						/>
-					</div>
-				</>
+						<div className={styles.actions}>
+							<Suspense fallback={null}>
+								<StreakSlot />
+							</Suspense>
+							<Suspense fallback={<span className="size-9" aria-hidden="true" />}>
+								<NotificationBellSlot />
+							</Suspense>
+						</div>
+					</>
+				)
 			}
 		>
 			{children}

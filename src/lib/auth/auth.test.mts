@@ -131,12 +131,11 @@ test('practiceAccess: only Two Sum is open to guests; learners open everything',
 test('headerNav: guests get Sign In + Register and no learner navigation', () => {
 	const guest = headerNav(false)
 	assert.deepEqual(guest.actions, ['signIn', 'register'])
-	assert.equal(guest.links.includes('progress'), false)
 	assert.equal((guest.actions as string[]).includes('bell'), false)
 })
 
-test('headerNav: learners get Progress, the bell and the account menu', () => {
+test('headerNav: learners get no Progress link, the bell and the account menu', () => {
 	const learner = headerNav(true)
-	assert.deepEqual(learner.links, ['how', 'problems', 'progress'])
+	assert.deepEqual(learner.links, ['how', 'problems'])
 	assert.deepEqual(learner.actions, ['bell', 'account'])
 })

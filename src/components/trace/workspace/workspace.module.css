@@ -1,0 +1,501 @@
+/* The Practice workspace chrome: toolbar pieces, panes, splitters, tabs, the
+   stopwatch, the tour card and the phone switcher. Colours follow the existing
+   practice palette (graphite editor, emerald accent, light panels). */
+
+.workspace {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 0;
+	min-height: 0;
+	gap: 10px;
+	color: #17231e;
+}
+.panes {
+	display: grid;
+	flex: 1 1 0;
+	min-height: 0;
+	min-width: 0;
+}
+.right {
+	display: grid;
+	min-height: 0;
+	min-width: 0;
+}
+.pane {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+	overflow: hidden;
+	border: 1px solid #bfccc2;
+	border-radius: 14px;
+	background: #fff;
+}
+.paneCode {
+	border-color: #14181b;
+	background: #14181b;
+	color: #dce5ef;
+}
+.paneHidden {
+	visibility: hidden;
+	overflow: hidden;
+	border: 0;
+}
+.paneHead {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	flex: none;
+	height: 44px;
+	padding: 0 6px;
+	border-bottom: 1px solid #e1e6df;
+}
+.paneCode .paneHead {
+	border-color: #303944;
+}
+.headMain {
+	display: flex;
+	align-items: center;
+	flex: 1;
+	gap: 10px;
+	min-width: 0;
+	overflow: hidden;
+}
+.paneBody {
+	flex: 1 1 0;
+	min-height: 0;
+	overflow: auto;
+	scrollbar-width: thin;
+}
+.iconButton {
+	display: grid;
+	flex: none;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: #4d5852;
+	cursor: pointer;
+}
+.iconButton:hover {
+	background: #eef2ec;
+	color: #17231e;
+}
+.paneCode .iconButton {
+	color: #cdd6df;
+}
+.paneCode .iconButton:hover {
+	background: #303944;
+	color: #fff;
+}
+.rail {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 0;
+}
+.railLabel {
+	writing-mode: vertical-rl;
+	color: #4d5852;
+	font-weight: 700;
+}
+
+/* Splitters: a wide hit area with a thin visible line. */
+.splitter {
+	position: relative;
+	display: block;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	touch-action: none;
+}
+.splitterV {
+	cursor: col-resize;
+}
+.splitterH {
+	cursor: row-resize;
+}
+.splitter::before {
+	position: absolute;
+	border-radius: 999px;
+	background: #9fb3a6;
+	content: '';
+}
+.splitterV::before {
+	top: 40%;
+	right: 4px;
+	bottom: 40%;
+	left: 4px;
+}
+.splitterH::before {
+	top: 4px;
+	right: 40%;
+	bottom: 4px;
+	left: 40%;
+}
+.splitter:hover::before,
+.splitter:focus-visible::before,
+.splitter[data-drag='true']::before {
+	background: #087a56;
+}
+.splitter:focus-visible {
+	outline: none;
+}
+.splitter:focus-visible::before {
+	box-shadow: 0 0 0 3px rgba(8, 122, 86, 0.3);
+}
+
+/* AI Tutor column. Docked it is an ordinary grid column; on a mid-width screen it
+   is a drawer over the workspace, and on a phone it is full screen. */
+.paneTutor {
+	min-width: 0;
+	border-color: rgba(88, 215, 162, 0.22);
+	/* The dashboard widget surface without the guide rings: near-black green with
+	   a glow in the middle, soft corner glows and a green halo. */
+	background:
+		radial-gradient(
+			ellipse 85% 42% at 50% 46%,
+			rgba(57, 166, 126, 0.26),
+			rgba(57, 166, 126, 0.08) 55%,
+			transparent 80%
+		),
+		radial-gradient(circle at 100% 0%, rgba(57, 166, 126, 0.16), transparent 14rem),
+		radial-gradient(circle at 0% 100%, rgba(57, 166, 126, 0.08), transparent 12rem), #101714;
+	color: #fff;
+	box-shadow:
+		0 0 0 1px rgba(88, 215, 162, 0.12),
+		0 0 28px rgba(88, 215, 162, 0.14);
+}
+.paneTutorFloating {
+	position: absolute;
+	z-index: 30;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: min(420px, 92%);
+	box-shadow:
+		0 0 0 1px rgba(88, 215, 162, 0.16),
+		-12px 0 32px rgba(15, 20, 18, 0.28);
+}
+.paneTutorFull {
+	width: 100%;
+}
+.panes {
+	position: relative;
+}
+
+/* Tabs */
+.tabs {
+	display: flex;
+	gap: 2px;
+	min-width: 0;
+	/* A narrow pane scrolls its tabs sideways instead of running under the icons. */
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+	display: none;
+}
+.tab {
+	position: relative;
+	flex: none;
+	padding: 7px 8px;
+	border: 0;
+	border-radius: 9px;
+	background: none;
+	color: #4d5852;
+	font: 600 13px var(--sans, system-ui);
+	white-space: nowrap;
+	cursor: pointer;
+}
+.tab:hover {
+	color: #17231e;
+}
+.tabActive {
+	background: #eef2ec;
+	color: #17231e;
+}
+.tabDot {
+	position: absolute;
+	top: 5px;
+	right: 4px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: #087a56;
+}
+.summary {
+	margin-left: auto;
+	padding-right: 6px;
+	color: #6a756e;
+	font-size: 12px;
+	white-space: nowrap;
+}
+.pad {
+	padding: 16px 18px;
+}
+.panel[hidden] {
+	display: none;
+}
+
+/* Code pane */
+.fileChip {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #cdd6df;
+	font: 12px var(--mono, monospace);
+}
+.codeIcon {
+	display: grid;
+	flex: none;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: #cdd6df;
+	cursor: pointer;
+}
+.codeIcon:hover {
+	background: #303944;
+	color: #fff;
+}
+.codeIcon:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+.codeRun {
+	color: #58d7a2;
+}
+.editorStatus {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex: none;
+	gap: 12px;
+	padding: 6px 14px;
+	border-top: 1px solid #303944;
+	color: #8193a1;
+	font: 12px var(--sans, system-ui);
+	font-variant-numeric: tabular-nums;
+}
+.codeFoot {
+	display: flex;
+	align-items: center;
+	flex: none;
+	gap: 10px;
+	padding: 9px 12px;
+	border-top: 1px solid #303944;
+}
+.status {
+	flex: 1;
+	min-width: 0;
+	padding-right: 6px;
+	text-align: right;
+	overflow: hidden;
+	color: #91a397;
+	font: 12px var(--mono, monospace);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.status b {
+	color: #58d7a2;
+	font-weight: 600;
+}
+
+/* Toolbar pieces (the toolbar itself lives in practice.module.css) */
+.stopwatch {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 38px;
+	padding: 0 6px 0 12px;
+	border: 1px solid #bfccc2;
+	border-radius: 12px;
+	background: #fff;
+	color: #17231e;
+}
+.time {
+	min-width: 62px;
+	font: 600 13px var(--mono, monospace);
+	font-variant-numeric: tabular-nums;
+}
+.swButton {
+	display: grid;
+	width: 28px;
+	height: 28px;
+	place-items: center;
+	border: 0;
+	border-radius: 8px;
+	background: none;
+	color: #087a56;
+	cursor: pointer;
+}
+.swButton:hover {
+	background: #eef2ec;
+}
+.helpButton {
+	display: grid;
+	width: 38px;
+	height: 38px;
+	place-items: center;
+	border: 1px solid #bfccc2;
+	border-radius: 12px;
+	background: #fff;
+	color: #087a56;
+	cursor: pointer;
+}
+.helpButton:hover {
+	background: #eef2ec;
+}
+
+/* Tour: a card at the bottom right, with a ring on the control it names. */
+.tour {
+	position: fixed;
+	z-index: 60;
+	right: 20px;
+	bottom: 20px;
+	width: min(320px, calc(100vw - 32px));
+	padding: 16px 18px;
+	border-radius: 14px;
+	background: #17231e;
+	color: #fff;
+	box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+}
+.tour h2 {
+	margin: 0 0 4px;
+	font-size: 15px;
+}
+.tour p {
+	margin: 0 0 12px;
+	color: #cfdad3;
+	font-size: 13px;
+	line-height: 1.5;
+}
+.tourRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #9fb0a6;
+	font-size: 12px;
+}
+.tourSpacer {
+	flex: 1;
+}
+.tourButton {
+	padding: 6px 11px;
+	border: 1px solid #3a4a42;
+	border-radius: 9px;
+	background: none;
+	color: #fff;
+	font: 600 12px var(--sans, system-ui);
+	cursor: pointer;
+}
+.tourPrimary {
+	border-color: #58d7a2;
+	background: #58d7a2;
+	color: #0b231a;
+}
+
+/* Phone: one view at a time instead of splitters. */
+.views {
+	display: none;
+}
+.viewTab {
+	position: relative;
+	flex: 1;
+	min-height: 44px;
+	border: 0;
+	border-radius: 10px;
+	background: none;
+	color: #4d5852;
+	font: 600 13px var(--sans, system-ui);
+	cursor: pointer;
+}
+.viewTabActive {
+	background: #17231e;
+	color: #fff;
+}
+@media (max-width: 767px) {
+	.views {
+		display: flex;
+		flex: none;
+		padding: 3px;
+		border: 1px solid #bfccc2;
+		border-radius: 13px;
+		background: #fff;
+	}
+	.panes {
+		display: block !important;
+		position: relative;
+	}
+	.right {
+		display: block !important;
+		height: 100%;
+	}
+	.splitter {
+		display: none;
+	}
+	.pane {
+		height: 100%;
+	}
+	.panes > .pane:not(.paneHidden),
+	.right,
+	.right > .pane {
+		visibility: visible;
+	}
+	.workspace[data-view='problem'] .right,
+	.workspace:not([data-view='problem']) .paneLeft {
+		display: none !important;
+	}
+	.workspace[data-view='code'] .paneResults,
+	.workspace[data-view='results'] .paneCode {
+		display: none !important;
+	}
+	.tour {
+		right: 16px;
+		bottom: 16px;
+	}
+	.panes > .paneTutor {
+		position: fixed;
+		z-index: 70;
+		inset: 0;
+		width: auto;
+		height: auto;
+		border: 0;
+		border-radius: 0;
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+		box-shadow: none;
+	}
+	.panes > .paneTutor.paneHidden {
+		visibility: hidden;
+	}
+	/* One view at a time: collapse and maximize have nothing to act on. */
+	.paneHead .iconButton {
+		display: none;
+	}
+}
+@media (prefers-reduced-motion: no-preference) {
+	.paneTutorFloating:not(.paneHidden) {
+		animation: tutor-in 150ms ease-out;
+	}
+	.panes,
+	.right {
+		transition:
+			grid-template-columns 150ms ease,
+			grid-template-rows 150ms ease;
+	}
+}
+
+@keyframes tutor-in {
+	from {
+		opacity: 0;
+		transform: translateX(16px);
+	}
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type KeyboardEvent, type UIEvent } from 'react'
+import { useRef, type KeyboardEvent, type SyntheticEvent, type UIEvent } from 'react'
 import styles from './practice.module.css'
 
 // Dark Python editor matching the prototype: a transparent <textarea> over a
@@ -64,15 +64,26 @@ export function CodeEditor({
 	value,
 	onChange,
 	readOnly = false,
-	ariaLabel = 'Python code editor'
+	ariaLabel = 'Python code editor',
+	onCursorChange
 }: {
 	value: string
 	onChange?: (next: string) => void
 	readOnly?: boolean
 	ariaLabel?: string
+	// 1-based line and column of the caret, for a status bar.
+	onCursorChange?: (line: number, column: number) => void
 }) {
 	const overlayRef = useRef<HTMLDivElement>(null)
 	const lines = value.split('\n')
+
+	function reportCursor(event: SyntheticEvent<HTMLTextAreaElement>) {
+		if (onCursorChange == null) return
+		const textarea = event.currentTarget
+		const before = textarea.value.slice(0, textarea.selectionStart)
+		const lineStart = before.lastIndexOf('\n') + 1
+		onCursorChange(before.split('\n').length, before.length - lineStart + 1)
+	}
 
 	function syncScroll(event: UIEvent<HTMLTextAreaElement>) {
 		const overlay = overlayRef.current
@@ -129,6 +140,7 @@ export function CodeEditor({
 				value={value}
 				onChange={(e) => onChange?.(e.target.value)}
 				onKeyDown={onKeyDown}
+				onSelect={reportCursor}
 				onScroll={syncScroll}
 				className={styles.editor}
 			/>

@@ -17,7 +17,7 @@ surface. It shows only what the app already records.
 ## Scope (80/20 slice)
 
 In: app shell (collapsible sidebar, top bar with search, bell and account
-menu), Recent runs, By topic, a three-number summary strip.
+menu), Progress, Explore problems, By topic, a three-number summary strip.
 Out (follow-ups, not in this spec): moving Progress, Settings or Practice into
 the new shell (the user will ask for that separately); the problem table;
 drag/resize panels; any new stored data. `/progress` and `/practice/*` are not
@@ -39,26 +39,30 @@ touched by this change.
   redirects to `/login?next=/dashboard` before any progress loader runs. The
   page is `noindex`.
 - **AC2** — GIVEN a verified session WHEN `/dashboard` renders THEN it shows
-  a sidebar, a top bar and two content regions: Recent runs (centre) and By
+  a sidebar, a top bar and two content regions: the Progress and Explore cards (centre) and By
   topic (right), using the landing page's light tokens (no dark theme, no new
   palette).
 - **AC3** — GIVEN the sidebar WHEN rendered THEN it lists Overview
-  (`/dashboard`, `aria-current="page"`), Problems (`/#problems`), Progress
-  (`/progress`) and Settings (`/settings`), each with an icon from
-  `@/components/ui/icons`. The brand mark links to `/`.
+  (`/dashboard`, `aria-current="page"`) and Problems (`/problems`) at the top,
+  each with an icon from `@/components/ui/icons`. There is no Progress entry: the
+  `/progress` route, its analytics, recommendations and notification links still
+  exist, they are just no longer in the sidebar. Settings (`/settings`) sits in an
+  Account group at the bottom, with an icon-only sign-out button (the existing
+  `signOutAction`, labelled "Sign out") at the far right of the same row. The
+  brand mark links to `/`.
 - **AC4** — GIVEN the sidebar toggle WHEN activated by pointer or keyboard
   THEN the sidebar collapses to an icon-only rail (icons stay, labels become
   visually hidden but remain the accessible name, plus a tooltip on hover and
   focus) and expands again. The toggle has `aria-expanded` and an accessible
-  name. The choice persists per browser (`localStorage`, failure-safe); with
-  storage unavailable it defaults to expanded.
+  name. The choice persists per browser in a cookie that the server reads, so the
+  first paint is already the right width (no expanded-then-collapsed flash on a
+  page load or between pages); with cookies blocked it defaults to expanded.
 - **AC5** — GIVEN the summary strip WHEN rendered THEN it shows Solved (`n of
 total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   is invented.
-- **AC6** — GIVEN Recent runs WHEN the learner has runs THEN each row shows
-  problem, result (`passed/total`, with a pass or fail style and a text label,
-  never colour alone) and time (`LocalTime`), newest first, with the problem
-  linking to `/practice/<slug>`, and a note that only the last 10 runs show.
+- **AC6** — GIVEN the centre column THEN, under the summary strip (AC5), it shows
+  two cards in this order: Progress and Explore problems (AC25–AC28). There is no
+  list of repeated submissions on the Overview.
 - **AC7** — GIVEN By topic WHEN rendered THEN each topic shows `solved/total`
   from `view.topics` with a proportional bar whose width is `solved/total`,
   and `role="img"`-free semantics: the text value is the source of truth, the
@@ -66,10 +70,12 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - **AC8** — GIVEN a viewport of 1024px or wider WHEN the page scrolls THEN the
   centre and right columns scroll independently inside the shell, the By topic
   panel stays in view (sticky) with a subtle floating treatment (soft shadow
-  and a slow vertical drift), and the scrollbars are thin and low-contrast.
-  The drift is disabled under `prefers-reduced-motion: reduce`.
+  and glow; one smooth lift-and-settle when the cursor
+  enters it, a brighter glow and shifted rings while it is hovered, and no
+  replay while it stays or when it leaves), and the scrollbars are thin and low-contrast.
+  The lift is disabled under `prefers-reduced-motion: reduce`.
 - **AC9** — GIVEN a viewport below 1024px THEN there is no sticky panel and no
-  drift: the layout is a single column (summary, By topic, Recent runs); the
+  hover lift: the layout is a single column (summary, Progress, Explore problems, then the By topic widget); the
   sidebar becomes an off-canvas drawer opened from a menu button in the top
   bar (focus trapped while open, Escape and outside click close it, focus
   returns to the button); the page itself scrolls, with no horizontal
@@ -86,18 +92,18 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   ("12 min. ago"), a link button and Mark read, unread cards tinted with a dot.
   Data, actions and the unread count are the existing M7.5B ones; no second
   inbox is added. The panel is shared by every header that renders the bell.
-- **AC12** — GIVEN the account button WHEN opened by pointer or keyboard THEN
-  a dropdown shows the account email and the links Settings (`/settings`) and Sign Out (the existing
-  `signOutAction`). Escape, outside click and selection close it; focus
-  returns to the trigger on Escape. The avatar shows the initials from
-  `account-initials`, not a stock photo.
-- **AC13** — GIVEN a learner with no runs THEN Recent runs shows an empty state
-  with a "Solve Two Sum" link, and By topic still lists every topic as `0/n`.
+- **AC12** — GIVEN the top bar THEN it has no account button or menu: the
+  search box on the left and the notification bell at the far right. Settings
+  and Sign out live at the bottom of the sidebar (AC3).
+- **AC13** — GIVEN a learner with no attempts THEN Progress says they haven't attempted
+  a problem yet, Explore problems lists every problem, and By
+  topic still lists every topic as `0/n`.
 - **AC14** — GIVEN saved progress that can't be read THEN the content region
   shows the same unavailable message as `/progress`, with the shell still
   usable. No placeholder numbers.
 - **AC15** — GIVEN a keyboard user THEN every control has a visible focus ring
-  and the tab order is sidebar, top bar, Recent runs, By topic.
+  and the tab order is sidebar, top bar, Progress, Explore problems, By
+  topic.
 - **AC16** — GIVEN a successful sign-in or registration with no explicit `next`
   WHEN the learner is redirected THEN they land on `/dashboard`
   (`DEFAULT_RETURN_TO` changes from `/progress`; an explicit safe `next` still
@@ -107,27 +113,76 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   lives outside the dashboard route and takes the current nav item as a prop,
   so later pages follow the dashboard's theme by adopting it. The dashboard is
   the first consumer; no dashboard-specific markup lives in the shell.
+- **AC17a** — GIVEN a signed-in learner WHEN they open `/practice/<slug>` THEN the
+  existing workspace renders unchanged inside the shell (sidebar only: no search box, no bell, no right widget, no sidebar item
+  highlighted; the sidebar starts collapsed to the icon rail whatever was saved,
+  and toggling it there is not remembered; the content starts near the top and
+  is left-aligned), without the workspace's
+  own top strip (brand, problem picker, Progress link), which the shell replaces. A guest on Two Sum keeps
+  the standalone page, because the shell is account-only.
 - **AC18** — GIVEN the sidebar WHEN expanded THEN it is 232px wide (collapsed
-  68px), set by one CSS token so it can be tuned.
-- **AC19** — GIVEN a learner with progress THEN "What to practise next" shows as
-  a second floating widget in the right column under By topic (same drift,
-  offset in time): the heading and subheading, then one "From your activity"
-  card (summary, "Next step: …" with a Start/Continue/Open button on the same
-  line, the recorded-runs note, Refresh AI insight), then the Focus concepts
-  chips after the card. When the engine's summary is "You solved <slug> after
-  some earlier unsuccessful attempts", the slug is shown as "recent problems
-  based on <topic and topic>" (at most two topics); any other summary, including
-  an AI one, shows unchanged. Data and the refresh action are the existing M7.5
-  ones. `/progress` keeps its existing card. If the column is taller than the
-  window it scrolls inside itself with no visible scrollbar.
+  68px), set by one CSS token so it can be tuned. The sidebar (and the mobile
+  drawer) use the same dark landing-hero green as the right-hand card, with its
+  glow and faint corner rings; the current item is a light-green pill.
+- **AC19** — GIVEN a learner with progress THEN the right column is one
+  floating card (same hover lift) in one dark-green theme, with a single gradient
+  behind both parts so it reads as one surface: the "Coverage by topic" section
+  on top and the "What to practise next" section below it. The lower section has no visible heading (an
+  `sr-only` "What to practise next" keeps the region labelled) and shows one card with a lightbulb and
+  "Your learning insight", a one-line summary, "UP NEXT", the problem title and
+  its topic chips and a Start/Continue/Open problem button, with a refresh icon
+  at the right of the header (an AI-written summary also shows a small "AI"
+  tag). Every refresh outcome (refreshed, already up to date, cooldown, already
+  running, failed) shows as a toast at the bottom right, e.g. "Couldn’t refresh
+  the AI insight right now — showing your latest." for a failure. The card has a soft green glow behind it and faint concentric guide
+  rings like the landing hero. When the engine's summary is
+  "You solved <slug> after some earlier unsuccessful attempts", it reads
+  "You've solved <topic and topic> problems after earlier attempts. Ready for a
+  new challenge?" (at most two topics); any other summary, including an AI one,
+  shows unchanged. Data and the refresh action are the existing M7.5 ones;
+  a refresh updates the whole section. `/progress` keeps its own card. If the
+  column is taller than the window it scrolls inside itself with no visible
+  scrollbar.
 - **AC20** — GIVEN an avatar (account button, and wherever one is shown) THEN a
   shared `Avatar` renders a photo when an image URL is supplied and falls back
   to initials otherwise. No avatar image is stored today, so initials show until
   a source exists; no stock photo is bundled as a stand-in for the learner.
+- **AC25** — GIVEN the Progress card THEN it lists up to five distinct problems
+  the learner has attempted, most recently attempted first (solved and in progress
+  alike), one row per problem with its title, topics, a Solved or In progress
+  status and its attempt count, all from their persisted progress. The title (the
+  row) opens the shared problem-detail modal (AC26). Beside it, Continue
+  (attempted, unsolved) or Reattempt (solved) links to the real
+  `/practice/<slug>` page. No attempt record is changed, removed or
+  de-duplicated; attempts are only grouped by problem here.
+- **AC26** — GIVEN the problem-detail modal THEN it is the one modal also used by
+  the Problems table (problems-page AC15): a compact dialog opened from a title
+  and closed by the Close button, Escape or a click outside it, with focus kept
+  inside while open and returned to the title that opened it. It shows only the
+  problem title and difficulty, topics, status (Solved, In progress or Not
+  started), total attempts, best test result, first attempted, last attempted and,
+  for a solved problem, first solved and last solved, plus the Practice action (Reattempt,
+  Continue or Start). There is no attempt list, no insight and nothing is
+  fetched; a value that does not exist yet (a never-attempted problem) shows a
+  dash, never an invented one.
+- **AC27** — GIVEN the first-attempted date THEN it is the earliest attempt the
+  learner has saved for that problem, read once per page load as a single
+  read-only aggregate scoped to the signed-in learner (one row per problem; no
+  source, results or replay data). If it cannot be read the modal shows a dash.
+- **AC28** — GIVEN Explore problems THEN it lists the problems the learner has
+  never attempted (up to 20), five rows visible and the rest scrolling, each with
+  its topics and, beside the Start link to its practice page, a difficulty pill
+  (green easy, orange medium, red hard, also used in the modal), following the
+  order of the right-hand panel's recommendation ranking (the catalogue order
+  without one), including the problem that panel recommends so every
+  problem the learner has not started is accounted for. "View all problems" links to `/problems`. Below 520px the summary
+  metrics stay three across and the cards stack with no horizontal overflow.
 
 ## Data / API
 
-- No Prisma, route or schema changes. Reads `getLearningProgress()` and
+- No Prisma or schema changes. The progress rows gain `lastAttemptAt` (the existing `updatedAt`, which only
+  `saveAttempt` writes) and one read-only aggregate, `getFirstAttemptDates`,
+  gives each problem's first attempt (AC27). Reads `getLearningProgress()` and
   `buildProgressView()` only (same loaders as `/progress`), plus
   `currentAccountSafe()` and the existing `NotificationBellSlot`.
 - `specs/01-architecture.md` needs no edit (no model or API change).
@@ -139,15 +194,16 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 ## Edge cases
 
 - Empty / first-time: AC13. No fabricated runs, bars or counts.
-- Errors: loader failure → AC14; localStorage throws → default expanded.
+- Errors: loader failure → AC14; cookies blocked → default expanded.
 - Unauthenticated or another user's data: AC1; loaders read the session, never
   a browser-supplied user id.
 - Long titles and topic names wrap or truncate with a `title`, no overflow.
 - Many topics: By topic scrolls inside its panel (AC8) rather than growing the
   page.
-- Recent runs whose problem is no longer in the catalogue render as plain text,
+- A problem no longer in the catalogue never appears in Progress or Explore,
   not a broken link.
-- Limits: Recent runs is the last 10 (existing loader limit).
+- Limits: Progress shows five problems; Explore shows five rows then scrolls, at
+  most 20 rows.
 - Locale: all copy in the `Dashboard` messages namespace; links via
   `@/i18n/routing`.
 
@@ -169,7 +225,7 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - [ ] `/dashboard` route, auth redirect, noindex, `Dashboard` messages
 - [ ] App shell: collapsible sidebar, drawer on mobile, top bar
 - [ ] Problem search (client-side combobox)
-- [ ] Recent runs and By topic panels, sticky/drift and scrollbars
+- [ ] Progress, Explore problems and By topic panels, sticky card, hover lift and scrollbars
 - [ ] Wire bell and account dropdown
 - [ ] Unit tests (view mapping, search filter) and e2e for AC1, AC4, AC9, AC10,
       AC12, AC16
@@ -177,5 +233,11 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 ## Changelog
 
 - 2026-11-03 — created (Draft).
+- 2026-11-03 — centre column reorganised: "Progress" (one row per attempted
+  problem, with a detail modal) and "Explore problems" replace the Recent runs
+  table (AC6, AC25–AC28; user).
+- 2026-11-03 — Progress removed from the sidebar (AC3); the card is titled
+  Progress, shows five problems, and the modal drops attempt history for compact
+  facts (AC25–AC27; user).
 - 2026-11-03 — open questions answered; added post-login redirect, shared shell,
   sidebar width, recommendation card and avatar ACs.

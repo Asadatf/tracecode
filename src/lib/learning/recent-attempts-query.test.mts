@@ -7,12 +7,13 @@ import { isMissingColumnError } from './missing-column.ts'
 // column of `attempts`. Once the client knows `codeFeatures`, that would have
 // broken /progress for every signed-in learner on any database that had not run
 // the codeFeatures migration yet.
-test('the recent-attempts query selects exactly what the progress page uses', () => {
+test('the recent-attempts query selects exactly what the progress page and dashboard use', () => {
 	const q = recentAttemptsQuery('learner-1')
 	assert.deepEqual(Object.keys(q.select).sort(), [
 		'allPassed',
 		'createdAt',
 		'problemSlug',
+		'status',
 		'testsPassed',
 		'testsTotal'
 	])

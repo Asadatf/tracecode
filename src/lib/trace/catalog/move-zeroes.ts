@@ -28,7 +28,7 @@ export const moveZeroes = {
 	title: 'Move Zeroes',
 	entry: 'move_zeroes',
 	params: [{ name: 'nums' }],
-	difficulty: 'easy',
+	difficulty: 'medium',
 	conceptTags: ['arrays', 'two-pointers'],
 	statement: [
 		'Given an integer array nums, move every 0 to the end while keeping the non-zero values in their original relative order.',
@@ -83,7 +83,7 @@ export const moveZeroes = {
 	correctnessHints: [
 		'Compare the final contents of nums (not what the function returned) with the expected list: are the non-zero values in their original order, and are all the zeros at the end?',
 		'The caller keeps the list it passed in and is judged on that same list afterwards. Building a new list, or rebinding the name nums, leaves the original untouched.',
-		'Change the elements of the original list itself — assign to indexes, swap positions, or assign to a full slice — while keeping the non-zero values in the order they came in.'
+		'Change the elements of the original list itself: assign to indexes, swap positions, or assign to a full slice, while keeping the non-zero values in the order they came in.'
 	],
 	optimization: {
 		title: 'Optional: look for avoidable storage',

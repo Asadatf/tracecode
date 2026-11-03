@@ -23,7 +23,7 @@ test('AC1: the server-rendered HTML already has the signed-out header (no client
 }) => {
 	const html = await (await request.get('/')).text()
 	expect(html).toContain('href="/register"')
-	expect(html).not.toContain('href="/progress"')
+	expect(html).not.toContain('href="/dashboard"')
 })
 
 test('AC3: Two Sum stays open to a signed-out visitor', async ({ page }) => {
@@ -121,9 +121,9 @@ test('AC7: Register validates length and confirmation without calling the server
 
 test('AC9: an unsafe next value is never carried into the form', async ({ page }) => {
 	await page.goto('/login?next=https%3A%2F%2Fevil.example')
-	await expect(page.locator('input[name="next"]')).toHaveValue('/progress')
+	await expect(page.locator('input[name="next"]')).toHaveValue('/dashboard')
 	await page.goto('/login?next=%2F%2Fevil.example')
-	await expect(page.locator('input[name="next"]')).toHaveValue('/progress')
+	await expect(page.locator('input[name="next"]')).toHaveValue('/dashboard')
 })
 
 test('AC11: phone width — form first, no brand panel, no horizontal scroll', async ({ page }) => {

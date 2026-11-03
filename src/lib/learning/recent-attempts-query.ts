@@ -1,5 +1,6 @@
-// The learner's ten most recent attempts for the progress page. The `select` is
-// deliberate: the page needs five scalar columns, so the query must not depend on
+// The learner's ten most recent attempts for the progress page and the dashboard.
+// The `select` is deliberate: they need six scalar columns (`status` has been on
+// `attempts` since its first migration), so the query must not depend on
 // (or read) anything else on `attempts` — not the full `source` text, and not
 // `codeFeatures`, which does not exist in a database until its migration has run.
 // Without it, deploying the app ahead of that migration would break /progress.
@@ -13,6 +14,7 @@ export function recentAttemptsQuery(userId: string) {
 		select: {
 			problemSlug: true,
 			createdAt: true,
+			status: true,
 			testsPassed: true,
 			testsTotal: true,
 			allPassed: true

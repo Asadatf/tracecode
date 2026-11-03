@@ -7,33 +7,42 @@ import styles from './dashboard.module.css'
 export async function TopicPanel({ topics }: { topics: TopicRow[] }) {
 	const t = await getTranslations('Dashboard.topics')
 
+	const attempted = topics.filter((topic) => topic.attempted > 0).length
+
 	return (
-		<section aria-labelledby="dashboard-topics" className={styles.sideSection}>
-			<div className={`${styles.floatCard} ${styles.float}`}>
+		<section aria-labelledby="dashboard-topics" className={styles.topicsPart}>
+			<div className={styles.topicsHead}>
 				<h2 id="dashboard-topics" className={styles.cardTitle}>
 					{t('heading')}
 				</h2>
-				<ul className={styles.topicList}>
-					{topics.map((topic) => (
-						<li key={topic.topic} className={styles.topic}>
-							<div className={styles.topicRow}>
-								<span>{topic.topic}</span>
-								<span className={styles.topicCount}>
-									{topic.solved}/{topic.total}
-								</span>
-							</div>
-							<div className={styles.bar} aria-hidden="true">
-								<div
-									className={styles.barFill}
-									style={{
-										width: `${topic.total === 0 ? 0 : (topic.solved / topic.total) * 100}%`
-									}}
-								/>
-							</div>
-						</li>
-					))}
-				</ul>
+				<span
+					className={styles.topicsTally}
+					title={t('attempted', { attempted, total: topics.length })}
+					aria-label={t('attempted', { attempted, total: topics.length })}
+				>
+					{attempted}/{topics.length}
+				</span>
 			</div>
+			<ul className={styles.topicList}>
+				{topics.map((topic) => (
+					<li key={topic.topic} className={styles.topic}>
+						<div className={styles.topicRow}>
+							<span>{topic.topic}</span>
+							<span className={styles.topicCount}>
+								{topic.solved}/{topic.total}
+							</span>
+						</div>
+						<div className={styles.bar} aria-hidden="true">
+							<div
+								className={styles.barFill}
+								style={{
+									width: `${topic.total === 0 ? 0 : (topic.solved / topic.total) * 100}%`
+								}}
+							/>
+						</div>
+					</li>
+				))}
+			</ul>
 		</section>
 	)
 }

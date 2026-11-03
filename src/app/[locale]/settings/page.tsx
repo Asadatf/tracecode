@@ -20,7 +20,7 @@ export default async function SettingsPage() {
 	}
 	const [t, preferences] = await Promise.all([getTranslations('SettingsPage'), getPreferences()])
 	return (
-		<AppShell account={account} current="settings">
+		<AppShell current="settings">
 			<div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pb-12">
 				<div>
 					<h1 className="m-0 text-3xl font-bold tracking-tight">{t('heading')}</h1>

@@ -15,6 +15,10 @@ export interface ProgressProblemRow {
 	best: { passed: number; total: number } | null
 	runs: number
 	solvedAt: string | null
+	// The most recent time the learner solved it (null until solved).
+	latestSolvedAt: string | null
+	// The latest attempt, or null when the learner has none on this problem.
+	lastAttemptAt: string | null
 }
 
 export interface RecentRun {
@@ -24,12 +28,16 @@ export interface RecentRun {
 	passed: number
 	total: number
 	allPassed: boolean
+	// How the run ended (completed, syntax_error, timeout, engine_error).
+	status: string
 	at: string
 }
 
 export interface TopicRow {
 	topic: string
 	solved: number
+	// Problems in the topic with at least one saved run (solved counts too).
+	attempted: number
 	total: number
 }
 
@@ -61,22 +69,27 @@ export function buildProgressView(
 					? null
 					: { passed: row.bestTestsPassed, total: row.testsTotal },
 			runs: row?.attempts ?? 0,
-			solvedAt: row?.firstSolvedAt ?? null
+			solvedAt: row?.firstSolvedAt ?? null,
+			latestSolvedAt: row?.latestSolvedAt ?? null,
+			lastAttemptAt: row?.lastAttemptAt ?? null
 		}
 	})
 
 	const topics: TopicRow[] = []
 	for (const problem of problems) {
-		const solved = rows.find((row) => row.slug === problem.slug)?.status === 'solved'
+		const status = rows.find((row) => row.slug === problem.slug)?.status
+		const solved = status === 'solved'
+		const attempted = status != null && status !== 'not_started'
 		for (const tag of problem.conceptTags) {
 			const topic = topicLabel(tag)
 			let entry = topics.find((t) => t.topic === topic)
 			if (entry == null) {
-				entry = { topic, solved: 0, total: 0 }
+				entry = { topic, solved: 0, attempted: 0, total: 0 }
 				topics.push(entry)
 			}
 			entry.total += 1
 			if (solved) entry.solved += 1
+			if (attempted) entry.attempted += 1
 		}
 	}
 
@@ -87,6 +100,7 @@ export function buildProgressView(
 		passed: attempt.testsPassed,
 		total: attempt.testsTotal,
 		allPassed: attempt.allPassed,
+		status: attempt.status,
 		at: attempt.createdAt
 	}))
 

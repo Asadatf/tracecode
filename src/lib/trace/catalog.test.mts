@@ -43,7 +43,7 @@ test('catalog: six problems, unique slugs, every definition valid', () => {
 test('new problems carry difficulty, tags, strategies and full hint ladders', () => {
 	for (const slug of NEW_SLUGS) {
 		const p = PROBLEMS[slug]!
-		assert.equal(p.difficulty, 'easy')
+		assert.ok(['easy', 'medium', 'hard'].includes(p.difficulty), `${slug}: difficulty`)
 		assert.ok(p.knownStrategies != null && p.knownStrategies.length >= 2, `${slug}: strategies`)
 		assert.ok(
 			p.correctnessHints?.every((h) => h.length > 20),

@@ -1,25 +1,30 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { withSolvedTopics } from './summary-topics.ts'
+import { chipLabel, insightSummary } from './summary-topics.ts'
 
-const topics = { 'two-sum': 'arrays and loops', 'valid-anagram': 'strings and hashing' }
+const topics = { 'two-sum': 'array and loop', 'valid-anagram': 'string and hashing' }
 
-test('withSolvedTopics: swaps the slug for the problem’s topics', () => {
+test('insightSummary: names the solved problem’s topics instead of its slug', () => {
 	assert.equal(
-		withSolvedTopics(
+		insightSummary(
 			'You solved two-sum after some earlier unsuccessful attempts. Here’s one you haven’t started yet.',
 			topics
 		),
-		'You solved recent problems based on arrays and loops after some earlier unsuccessful attempts. Here’s one you haven’t started yet.'
+		'You’ve solved array and loop problems after earlier attempts. Ready for a new challenge?'
 	)
 })
 
-test('withSolvedTopics: leaves any other summary untouched', () => {
+test('insightSummary: leaves any other summary untouched', () => {
 	for (const summary of [
 		'You’ve made progress on the problems you’ve tried. Here’s one you haven’t started yet.',
 		'You solved unknown-slug after some earlier unsuccessful attempts.',
 		'A model-written summary that mentions two-sum.'
 	]) {
-		assert.equal(withSolvedTopics(summary, topics), summary)
+		assert.equal(insightSummary(summary, topics), summary)
 	}
+})
+
+test('chipLabel: title-cases a concept tag', () => {
+	assert.equal(chipLabel('binary-search'), 'Binary Search')
+	assert.equal(chipLabel('arrays'), 'Arrays')
 })

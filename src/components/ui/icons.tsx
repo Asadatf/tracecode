@@ -18,9 +18,14 @@
 // `/ssr` build takes its props directly and renders in both. Keep this
 // import path if you stay on phosphor.
 import {
+	ArrowCounterClockwise,
 	ArrowRight,
+	ArrowsClockwise,
+	ArrowsIn,
+	ArrowsOut,
 	ArrowSquareOut,
 	Bell,
+	Fire,
 	Calendar,
 	CaretDown,
 	CaretLeft,
@@ -39,17 +44,25 @@ import {
 	FunnelSimple,
 	Gear,
 	Info,
+	Lightbulb,
 	List,
 	Lock,
 	MagnifyingGlass,
 	Minus,
+	Pause,
+	PaperPlaneRight,
 	PencilSimple,
+	Play,
 	Plus,
 	SidebarSimple,
 	SignOut,
+	Sparkle,
 	Sliders,
 	SquaresFour,
+	TextIndent,
+	Timer,
 	Trash,
+	Question,
 	User,
 	Warning,
 	X
@@ -103,6 +116,7 @@ function Glyph({ source: Source, size = DEFAULT_SIZE, className }: IconProps & {
 export const AlertIcon = (props: IconProps) => <Glyph source={Warning} {...props} />
 export const ArrowRightIcon = (props: IconProps) => <Glyph source={ArrowRight} {...props} />
 export const BellIcon = (props: IconProps) => <Glyph source={Bell} {...props} />
+export const FlameIcon = (props: IconProps) => <Glyph source={Fire} {...props} />
 export const CalendarIcon = (props: IconProps) => <Glyph source={Calendar} {...props} />
 export const ChartIcon = (props: IconProps) => <Glyph source={ChartLineUp} {...props} />
 export const CheckIcon = (props: IconProps) => <Glyph source={Check} {...props} />
@@ -120,17 +134,29 @@ export const ExternalLinkIcon = (props: IconProps) => <Glyph source={ArrowSquare
 export const EyeIcon = (props: IconProps) => <Glyph source={Eye} {...props} />
 export const EyeOffIcon = (props: IconProps) => <Glyph source={EyeSlash} {...props} />
 export const FilterIcon = (props: IconProps) => <Glyph source={FunnelSimple} {...props} />
+export const ExpandIcon = (props: IconProps) => <Glyph source={ArrowsOut} {...props} />
+export const FormatIcon = (props: IconProps) => <Glyph source={TextIndent} {...props} />
+export const HelpIcon = (props: IconProps) => <Glyph source={Question} {...props} />
+export const PauseIcon = (props: IconProps) => <Glyph source={Pause} {...props} />
+export const PlayIcon = (props: IconProps) => <Glyph source={Play} {...props} />
+export const ResetIcon = (props: IconProps) => <Glyph source={ArrowCounterClockwise} {...props} />
+export const ShrinkIcon = (props: IconProps) => <Glyph source={ArrowsIn} {...props} />
+export const TimerIcon = (props: IconProps) => <Glyph source={Timer} {...props} />
 export const InfoIcon = (props: IconProps) => <Glyph source={Info} {...props} />
+export const LightbulbIcon = (props: IconProps) => <Glyph source={Lightbulb} {...props} />
 export const LockIcon = (props: IconProps) => <Glyph source={Lock} {...props} />
 export const MenuIcon = (props: IconProps) => <Glyph source={List} {...props} />
 export const MinusIcon = (props: IconProps) => <Glyph source={Minus} {...props} />
 export const MoreIcon = (props: IconProps) => <Glyph source={DotsThreeVertical} {...props} />
 export const PlusIcon = (props: IconProps) => <Glyph source={Plus} {...props} />
+export const RefreshIcon = (props: IconProps) => <Glyph source={ArrowsClockwise} {...props} />
 export const SearchIcon = (props: IconProps) => <Glyph source={MagnifyingGlass} {...props} />
+export const SendIcon = (props: IconProps) => <Glyph source={PaperPlaneRight} {...props} />
 export const SettingsIcon = (props: IconProps) => <Glyph source={Gear} {...props} />
 export const SidebarIcon = (props: IconProps) => <Glyph source={SidebarSimple} {...props} />
 export const SignOutIcon = (props: IconProps) => <Glyph source={SignOut} {...props} />
 export const SlidersIcon = (props: IconProps) => <Glyph source={Sliders} {...props} />
+export const SparkleIcon = (props: IconProps) => <Glyph source={Sparkle} {...props} />
 export const SuccessIcon = (props: IconProps) => <Glyph source={CheckCircle} {...props} />
 export const TrashIcon = (props: IconProps) => <Glyph source={Trash} {...props} />
 export const UserIcon = (props: IconProps) => <Glyph source={User} {...props} />

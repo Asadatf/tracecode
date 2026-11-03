@@ -1,12 +1,11 @@
 import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
-import { cn } from '@/lib/cn'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 
-// The thin top bar (specs/features/home-page.md AC1/AC3, progress-page.md AC1).
+// The thin top bar (specs/features/home-page.md AC1/AC3, progress-page.md).
 // No "Sign in" until there is a sign-in page (home-page.md, Decisions).
-export async function SiteHeader({ current }: { current?: 'progress' } = {}) {
+export async function SiteHeader() {
 	const t = await getTranslations('SiteHeader')
 
 	return (
@@ -26,24 +25,8 @@ export async function SiteHeader({ current }: { current?: 'progress' } = {}) {
 					tracecode
 				</Link>
 				<nav aria-label={t('nav')} className="flex flex-wrap gap-x-6 gap-y-1">
-					<Link
-						href="/#problems"
-						className={cn(
-							'hover:text-accent',
-							current == null ? 'text-text font-semibold' : 'text-text-muted'
-						)}
-					>
+					<Link href="/#problems" className="text-text hover:text-accent font-semibold">
 						{t('problems')}
-					</Link>
-					<Link
-						href="/progress"
-						aria-current={current === 'progress' ? 'page' : undefined}
-						className={cn(
-							'hover:text-accent',
-							current === 'progress' ? 'text-text font-semibold' : 'text-text-muted'
-						)}
-					>
-						{t('progress')}
 					</Link>
 				</nav>
 				{/* M7.5B: the notification bell, signed-in learners only. Suspense so the

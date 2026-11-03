@@ -21,9 +21,9 @@ const SOURCE = [
 const STEP_LINES = [1, 2, 3, 4, 6, 2, 3, 4, 5] as const
 // What each variable shows at each of those steps.
 const VARIABLES: Array<{ name: string; values: readonly string[] }> = [
-	{ name: 'i', values: ['—', '0', '0', '0', '0', '1', '1', '1', '1'] },
-	{ name: 'n', values: ['—', '3', '3', '3', '3', '2', '2', '2', '2'] },
-	{ name: 'need', values: ['—', '—', '3', '3', '3', '3', '4', '4', '4'] },
+	{ name: 'i', values: ['-', '0', '0', '0', '0', '1', '1', '1', '1'] },
+	{ name: 'n', values: ['-', '3', '3', '3', '3', '2', '2', '2', '2'] },
+	{ name: 'need', values: ['-', '-', '3', '3', '3', '3', '4', '4', '4'] },
 	{
 		name: 'seen',
 		values: ['{}', '{}', '{}', '{}', '{3: 0}', '{3: 0}', '{3: 0}', '{3: 0}', '{3: 0}']

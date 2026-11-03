@@ -1,0 +1,546 @@
+/* The problems list. Card, table and heading styles come from the dashboard so
+   both pages in the shell read as one surface; only the pills are new. */
+
+.tally {
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	color: var(--accent-hover);
+	font: 700 14px var(--font-mono);
+}
+.pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	font-size: 13px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+.easy,
+.solved {
+	background: color-mix(in srgb, var(--success) 12%, transparent);
+	color: var(--success);
+}
+.medium {
+	background: rgba(228, 155, 48, 0.2);
+	color: #a56a10;
+}
+.attempted {
+	background: color-mix(in srgb, var(--warning) 14%, transparent);
+	color: var(--warning);
+}
+.hard {
+	background: var(--danger-soft);
+	color: var(--danger);
+}
+.not_started,
+.unknown {
+	background: color-mix(in srgb, var(--text) 7%, transparent);
+	color: var(--text-muted);
+}
+.number {
+	color: var(--text-muted);
+	font-family: var(--font-mono);
+}
+.topics {
+	color: var(--text-muted);
+}
+.row:hover td {
+	background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+/* Card header: topic filter chips on the left, the solved tally on the right. */
+.listHead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px 14px;
+	margin-bottom: 14px;
+}
+.filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	min-width: 0;
+}
+.filterChip {
+	padding: 6px 13px;
+	border: 1px solid var(--border-strong);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text-muted);
+	font: 600 13px var(--font-sans);
+	cursor: pointer;
+}
+.filterChip:hover {
+	background: var(--surface-hover);
+	color: var(--text);
+}
+.filterChip[aria-pressed='true'] {
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	color: var(--accent-hover);
+}
+.filterChip:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+	outline-offset: 2px;
+}
+
+/* The header's right side: the status dropdown and the solved tally. */
+.headEnd {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-left: auto;
+}
+.statusFilter {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 600;
+}
+.statusFilter select {
+	padding: 7px 30px 7px 12px;
+	border: 1px solid var(--border-strong);
+	border-radius: 10px;
+	background: var(--surface);
+	color: var(--text);
+	font: 600 13px var(--font-sans);
+	cursor: pointer;
+}
+.statusFilter select:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+	outline-offset: 2px;
+}
+
+/* The table is as tall as its rows: no scroll box of its own, so the page has one
+   scrollbar and the column headings pin to the top of the page scroll. */
+.tableWrap {
+	border: 1px solid var(--border);
+	border-radius: 14px;
+}
+.table th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+.table td {
+	height: 56px;
+	box-sizing: border-box;
+}
+.titleButton {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--text);
+	font: 600 14px var(--font-sans);
+	text-align: left;
+	white-space: nowrap;
+	cursor: pointer;
+}
+.titleButton:hover {
+	color: var(--accent);
+	text-decoration: underline;
+}
+.titleButton:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+.colAction {
+	text-align: right;
+}
+.noMatch {
+	padding: 28px 16px;
+	color: var(--text-muted);
+	text-align: center;
+}
+/* The difficulty pill under the title is for phones only. */
+.phoneMeta {
+	display: none;
+}
+@media (max-width: 700px) {
+	/* A phone drops the number, topics and difficulty columns so the rest fit
+	   without sideways scrolling: the difficulty moves under the title and the
+	   topics are in the detail modal. */
+	.colNumber,
+	.colTopics,
+	.colDifficulty {
+		display: none;
+	}
+	.phoneMeta {
+		display: block;
+		margin-top: 4px;
+	}
+	.table th,
+	.table td {
+		padding-inline: 10px;
+	}
+	.table td {
+		height: auto;
+		padding-block: 10px;
+	}
+	.titleButton {
+		white-space: normal;
+	}
+	.colAction,
+	.pill {
+		white-space: nowrap;
+	}
+	.table .colAction a {
+		padding: 7px 10px;
+	}
+	.headEnd {
+		width: 100%;
+		justify-content: space-between;
+	}
+	.tableWrap {
+		overflow-x: auto;
+	}
+}
+
+/* Calendar widget: a graphite card under a raised, floating header strip. The
+   strip and its month badge pop out above the card; the accent hue rotates by
+   month through data-month (the layout never changes). */
+.calCard {
+	--cal-light: #58d7a2;
+	--cal-mid: #2fae7a;
+	--cal-dark: #14513b;
+	--cal-ink: #0a0f0d;
+	--lift: 40px;
+
+	position: relative;
+	margin-top: var(--lift);
+	border-radius: 18px;
+	/* The card itself never changes with the month: graphite, with guide rings
+	   in the month's accent at very low opacity. */
+	background:
+		repeating-radial-gradient(
+			circle at 100% 100%,
+			transparent 0,
+			transparent 34px,
+			color-mix(in srgb, var(--cal-mid) 11%, transparent) 35px,
+			transparent 36px
+		),
+		#14181b;
+	color: #fff;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.06),
+		0 14px 26px -16px rgba(0, 0, 0, 0.45);
+}
+.calCard[data-month='1'] {
+	--cal-light: #34d399;
+	--cal-mid: #10b981;
+	--cal-dark: #065f46;
+}
+.calCard[data-month='2'] {
+	--cal-light: #60a5fa;
+	--cal-mid: #2563eb;
+	--cal-dark: #1e3a8a;
+}
+.calCard[data-month='3'] {
+	--cal-light: #a78bfa;
+	--cal-mid: #7c3aed;
+	--cal-dark: #4c1d95;
+}
+.calCard[data-month='4'] {
+	--cal-light: #f472b6;
+	--cal-mid: #ec4899;
+	--cal-dark: #831843;
+}
+.calCard[data-month='5'] {
+	--cal-light: #2dd4bf;
+	--cal-mid: #14b8a6;
+	--cal-dark: #115e59;
+}
+.calCard[data-month='6'] {
+	--cal-light: #facc15;
+	--cal-mid: #eab308;
+	--cal-dark: #713f12;
+}
+.calCard[data-month='7'] {
+	--cal-light: #fb923c;
+	--cal-mid: #f97316;
+	--cal-dark: #7c2d12;
+}
+.calCard[data-month='8'] {
+	--cal-light: #22d3ee;
+	--cal-mid: #06b6d4;
+	--cal-dark: #155e75;
+}
+.calCard[data-month='9'] {
+	--cal-light: #818cf8;
+	--cal-mid: #6366f1;
+	--cal-dark: #312e81;
+}
+.calCard[data-month='10'] {
+	--cal-light: #e879f9;
+	--cal-mid: #d946ef;
+	--cal-dark: #701a75;
+}
+.calCard[data-month='11'] {
+	--cal-light: #58d7a2;
+	--cal-mid: #2fae7a;
+	--cal-dark: #14513b;
+}
+.calCard[data-month='12'] {
+	--cal-light: #bae6fd;
+	--cal-mid: #7dd3fc;
+	--cal-dark: #0c4a6e;
+}
+
+.strip {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	height: 58px;
+	margin: calc(var(--lift) * -1) 14px 0;
+	padding: 0 8px 0 16px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 16px;
+	background: linear-gradient(180deg, #252a2e, #191d20);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.08),
+		0 10px 18px -12px rgba(0, 0, 0, 0.55),
+		0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+/* A thin accent line along the strip's lower edge. */
+.strip::after {
+	position: absolute;
+	right: 22px;
+	bottom: -1px;
+	left: 22px;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+	content: '';
+}
+.stripLeft {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	min-width: 0;
+}
+.stripRight {
+	display: flex;
+	align-items: center;
+	gap: 0;
+}
+.calTitle {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	white-space: nowrap;
+}
+.timeLeft {
+	color: rgba(255, 255, 255, 0.5);
+	font: 500 11px var(--font-mono);
+	white-space: nowrap;
+}
+.utc {
+	padding: 2px 9px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.1);
+	font: 700 11px var(--font-mono);
+}
+.navButton {
+	display: grid;
+	width: 24px;
+	height: 24px;
+	place-items: center;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: rgba(255, 255, 255, 0.78);
+	cursor: pointer;
+}
+.navButton:hover,
+.navButton:focus-visible {
+	background: color-mix(in srgb, var(--cal-mid) 28%, transparent);
+	color: var(--cal-light);
+	outline: none;
+}
+/* The month badge: nested hexagons, a metal rim around accent rings and a dark
+   core. It pops up out of the strip. */
+.hexSlot {
+	position: relative;
+	width: 74px;
+	height: 36px;
+}
+.hexRim,
+.hexRing,
+.hexLine,
+.hexCore {
+	display: grid;
+	place-items: center;
+	clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.hexRim {
+	position: absolute;
+	top: -34px;
+	left: 0;
+	width: 74px;
+	height: 85px;
+	background: linear-gradient(150deg, #8b9490, #3a413e 50%, #6f7975);
+	filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+}
+.hexRing {
+	width: 67px;
+	height: 77px;
+	background: #0e1210;
+}
+.hexLine {
+	width: 60px;
+	height: 69px;
+	background: linear-gradient(160deg, var(--cal-light), var(--cal-dark) 62%, var(--cal-mid));
+}
+.hexCore {
+	width: 54px;
+	height: 62px;
+	align-content: center;
+	background: linear-gradient(160deg, #1d2226, #0c0f11);
+	text-align: center;
+}
+.hexCore strong {
+	display: block;
+	color: #dbe2df;
+	font-size: 24px;
+	line-height: 1;
+}
+.hexCore small {
+	display: block;
+	margin-top: 3px;
+	color: var(--cal-light);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+}
+
+.body {
+	padding: 14px 22px 22px;
+}
+.month {
+	margin: 0 0 12px;
+	color: rgba(255, 255, 255, 0.62);
+	font-size: 13px;
+	font-weight: 600;
+	text-align: center;
+}
+.grid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	grid-template-rows: auto repeat(6, 36px);
+	gap: 4px 0;
+	justify-items: center;
+}
+.weekday {
+	padding-bottom: 6px;
+	color: rgba(255, 255, 255, 0.45);
+	font-size: 12px;
+	font-weight: 600;
+}
+.day {
+	display: grid;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border-radius: 50%;
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 14px;
+	text-decoration: none;
+}
+a.day:hover {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+}
+.dayToday {
+	background: var(--cal-light);
+	color: var(--cal-ink);
+	font-weight: 700;
+	box-shadow: 0 0 10px color-mix(in srgb, var(--cal-mid) 35%, transparent);
+}
+a.dayToday:hover {
+	background: var(--cal-light);
+	color: var(--cal-ink);
+	filter: brightness(1.08);
+}
+.todayRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 16px;
+	padding: 13px 16px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.05);
+	color: #fff;
+	text-decoration: none;
+}
+.todayRow:hover {
+	background: rgba(255, 255, 255, 0.09);
+}
+.todayRow strong {
+	display: block;
+	font-size: 16px;
+}
+.todayLabel {
+	display: block;
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+/* A slightly wider side column than the dashboard's, for the header strip. */
+.boardCal {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+@media (min-width: 1024px) {
+	.boardCal {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 372px;
+		align-items: start;
+		gap: 24px;
+	}
+}
+@media (min-width: 1024px) {
+	/* Sticky below the top edge, leaving room for the badge that pops out above. */
+	.sideCal {
+		position: sticky;
+		top: 64px;
+		/* Matches the list column's top padding so both cards start level. */
+		padding-top: 4px;
+	}
+}
+/* One lift when the cursor arrives; ends where it began. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+	.calCard {
+		transition: box-shadow 700ms ease;
+	}
+	.calCard:hover {
+		animation: lift 1100ms cubic-bezier(0.37, 0, 0.2, 1);
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.09),
+			0 18px 30px -16px rgba(0, 0, 0, 0.5);
+	}
+}
+@keyframes lift {
+	0%,
+	100% {
+		transform: translateY(0) scale(1);
+	}
+	45% {
+		transform: translateY(-6px) scale(1.006);
+	}
+}

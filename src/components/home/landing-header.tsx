@@ -28,23 +28,18 @@ export async function LandingHeader() {
 				<nav aria-label={t('nav')} className={styles.nav}>
 					{nav.links.includes('how') && <a href="#how-it-works">{t('how')}</a>}
 					{nav.links.includes('problems') && <a href="#problems">{t('problems')}</a>}
-					{nav.links.includes('progress') && (
-						<Link href="/progress" className={styles.navKeep}>
-							{t('progress')}
-						</Link>
-					)}
 				</nav>
 				{authenticated ? (
 					<div className={styles.headerActions}>
-						<Suspense fallback={null}>
-							<NotificationBellSlot />
-						</Suspense>
 						<Link
 							href="/practice/two-sum"
 							className={`${styles.headerCta} ${styles.headerCtaWide}`}
 						>
 							{t('cta')}
 						</Link>
+						<Suspense fallback={null}>
+							<NotificationBellSlot />
+						</Suspense>
 						<details className={styles.accountMenu}>
 							<summary aria-label={t('account')} className={styles.accountButton}>
 								<span aria-hidden="true">{initial}</span>

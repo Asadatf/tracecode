@@ -11,7 +11,7 @@ export const validParentheses = {
 	title: 'Valid Parentheses',
 	entry: 'is_valid',
 	params: [{ name: 's' }],
-	difficulty: 'easy',
+	difficulty: 'hard',
 	conceptTags: ['strings', 'stacks'],
 	statement: [
 		'Given a string s made only of the characters ( ) [ ] { }, return True if the brackets are valid. Otherwise return False.',

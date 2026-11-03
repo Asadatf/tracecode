@@ -21,6 +21,17 @@ const CD_NESTED = `def contains_duplicate(nums):
                 return True
     return False`
 
+// The first-visit tour covers the bottom right of the workspace; mark it seen.
+test.beforeEach(async ({ page }) => {
+	await page.addInitScript(() => {
+		try {
+			window.localStorage.setItem('tc-practice-tour-v1', '1')
+		} catch {
+			// storage unavailable: the tour just shows
+		}
+	})
+})
+
 test('Contains Duplicate runs on the generic engine and earns optimization guidance', async ({
 	page
 }) => {
@@ -31,7 +42,9 @@ test('Contains Duplicate runs on the generic engine and earns optimization guida
 	await setEditor(page.getByLabel('Python code editor'), CD_NESTED)
 	await page.getByRole('button', { name: 'Run code' }).click()
 
-	await expect(page.getByText('5 / 5 passed').first()).toBeVisible({ timeout: 120_000 })
+	await expect(page.getByText('5 / 5 passed').filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
 	// A correct nested-loop solution: optimization guidance becomes available.
 	await expect(page.getByText('A faster approach is possible')).toBeVisible()
 })

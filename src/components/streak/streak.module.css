@@ -1,0 +1,197 @@
+/* The toolbar flame and its popover. Neutral gray until a 3-day streak is live,
+   then orange; the popover is the widget green. */
+.root {
+	position: relative;
+}
+
+/* Same button as the bell (the shell's `.actions button[aria-haspopup]`); only the
+   icon colour differs: gray until a streak is live. */
+.root .flame[data-streak] {
+	position: relative;
+	color: #7c8781;
+}
+/* The orange of the second variable in the interactive solution steps. */
+.root .flame[data-streak='active'],
+.root .flame[data-streak='active']:hover {
+	color: #e49b30;
+}
+.flame:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+/* The count sits on the corner like the notification badge (colours come from the
+   shell's `.actions button[aria-haspopup='dialog'] > span`). */
+.count {
+	position: absolute;
+	top: -2px;
+	right: -2px;
+	display: grid;
+	min-width: 16px;
+	padding: 0 4px;
+	place-items: center;
+	border-radius: 999px;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 16px;
+}
+
+.panel {
+	position: absolute;
+	right: 0;
+	z-index: 30;
+	width: min(21rem, calc(100vw - 2rem));
+	margin-top: 12px;
+	padding: 18px 20px 20px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 20px;
+	background: #101714;
+	color: #fff;
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.08),
+		0 24px 48px -16px rgba(0, 0, 0, 0.55);
+}
+.head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.headFlame {
+	display: grid;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.08);
+	color: #8d9892;
+}
+.headFlameOn {
+	background: rgba(228, 155, 48, 0.18);
+	color: #e49b30;
+}
+.title {
+	flex: 1;
+	margin: 0;
+	font-size: 17px;
+	font-weight: 700;
+}
+.utc {
+	padding: 2px 7px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.1);
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+}
+.stats {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+	margin: 16px 0 0;
+}
+.stats > div {
+	padding: 10px 12px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.05);
+}
+.stats dt {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 12px;
+	font-weight: 600;
+}
+.stats dd {
+	margin: 2px 0 0;
+	font-size: 20px;
+	font-weight: 700;
+}
+.statOn {
+	color: #e49b30;
+}
+.note {
+	margin: 12px 0 0;
+	color: rgba(255, 255, 255, 0.65);
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+.monthRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 14px;
+}
+.month {
+	margin: 0;
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 13px;
+	font-weight: 600;
+}
+.nav {
+	display: grid;
+	width: 28px;
+	height: 28px;
+	place-items: center;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: rgba(255, 255, 255, 0.75);
+	cursor: pointer;
+}
+.nav:hover {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+}
+.nav:focus-visible {
+	outline: 2px solid #e49b30;
+	outline-offset: 1px;
+}
+.grid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	grid-template-rows: auto repeat(6, 32px);
+	gap: 2px 0;
+	justify-items: center;
+	margin-top: 8px;
+}
+.weekday {
+	padding-bottom: 4px;
+	color: rgba(255, 255, 255, 0.45);
+	font-size: 12px;
+	font-weight: 600;
+}
+.day {
+	display: grid;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border-radius: 50%;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 13px;
+}
+.dayDone {
+	background: #e49b30;
+	color: #17231e;
+	font-weight: 700;
+}
+/* Today keeps a ring so it reads whether or not it is a practiced day. */
+.dayToday {
+	box-shadow: 0 0 0 2px #fff;
+}
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 12px 0 0;
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 12px;
+}
+.swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+}
+.legend .swatch:not(:first-child) {
+	margin-left: 10px;
+	background: transparent;
+}

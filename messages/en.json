@@ -17,7 +17,6 @@
 		"nav": "Main",
 		"how": "How it works",
 		"problems": "Problems",
-		"progress": "Progress",
 		"cta": "Start practicing",
 		"signIn": "Sign in",
 		"register": "Register",
@@ -116,8 +115,7 @@
 	"SiteHeader": {
 		"home": "TraceCode home",
 		"nav": "Main",
-		"problems": "Problems",
-		"progress": "Progress"
+		"problems": "Problems"
 	},
 	"TraceDemo": {
 		"label": "A replay of a failing Two Sum solution",
@@ -151,19 +149,19 @@
 			"solved": "Solved",
 			"attempted": "Attempted",
 			"not_started": "Not started",
-			"unknown": "—"
+			"unknown": "-"
 		},
 		"empty": "No problems yet.",
 		"signIn": "Sign in to track your progress and unlock all six problems.",
 		"locked": "Sign in to unlock",
-		"lockedLabel": "{title} — sign in to unlock",
+		"lockedLabel": "{title}: sign in to unlock",
 		"free": "Free to try"
 	},
 	"ProgressPage": {
-		"metaTitle": "Your progress — TraceCode",
+		"metaTitle": "Your progress | TraceCode",
 		"heading": "Your progress",
 		"unavailable": "Saved progress is unavailable right now.",
-		"none": "—",
+		"none": "-",
 		"summary": {
 			"solved": "Solved",
 			"of": "of {total}",
@@ -224,7 +222,7 @@
 		},
 		"recommendations": {
 			"heading": "What to practise next",
-			"subheading": "A suggestion based on your saved runs — your choice, not a rule.",
+			"subheading": "A suggestion based on your saved runs. Your choice, not a rule.",
 			"empty": "No recommendation yet. Solve or attempt a problem and it will appear here.",
 			"focusConcepts": "Focus concepts",
 			"difficulty": {
@@ -241,14 +239,14 @@
 				"aiHeading": "AI insight",
 				"fallbackHeading": "From your activity",
 				"nextStep": "Next step:",
-				"aiDisclaimer": "Generated from your activity patterns and the structure of your code — the model never sees your source code.",
+				"aiDisclaimer": "Generated from your activity patterns and the structure of your code. The model never sees your source code.",
 				"fallbackDisclaimer": "Based only on your recorded runs and results.",
 				"refresh": "Refresh AI insight",
 				"refreshing": "Refreshing…",
 				"upToDate": "Already up to date.",
-				"cooldown": "You refreshed recently — try again in a few minutes.",
+				"cooldown": "You refreshed recently. Try again in a few minutes.",
 				"running": "A refresh is already in progress.",
-				"failed": "Couldn’t refresh the AI insight right now — showing your latest."
+				"failed": "Couldn’t refresh the AI insight right now. Showing your latest."
 			}
 		},
 		"reminders": {
@@ -260,7 +258,7 @@
 			"emailHelp": "One email a day with your recommended problem. Off unless you turn it on; every email has an unsubscribe link.",
 			"emailUnavailable": "Email reminders aren’t set up on this site yet, so none will be sent for now.",
 			"saved": "Saved.",
-			"failed": "Couldn’t save that — please try again."
+			"failed": "Couldn’t save that. Please try again."
 		},
 		"loading": "Loading your progress"
 	},
@@ -285,13 +283,34 @@
 		"emptyUnread": "You're all caught up.",
 		"settings": "Notification settings"
 	},
+	"Streak": {
+		"heading": "Your streak",
+		"open": "Streak details",
+		"statusActive": "{count, plural, one {# day streak, active} other {# day streak, active}}",
+		"statusInactive": "{count, plural, =0 {Streak not started} one {Streak not active, # day so far} other {Streak not active, # days so far}}",
+		"statusUnavailable": "Streak unavailable",
+		"unavailable": "Your streak is unavailable right now.",
+		"current": "Current streak",
+		"longest": "Longest streak",
+		"days": "{count, plural, one {# day} other {# days}}",
+		"hintStart": "Complete a run today to start a streak. The flame lights on day 3.",
+		"hintBuilding": "{count, plural, one {# more day in a row lights the flame.} other {# more days in a row light the flame.}}",
+		"hintActive": "Complete a run each day to keep it going.",
+		"hintBroken": "Your last streak ended. Complete a run today to start a new one.",
+		"previous": "Previous month",
+		"next": "Next month",
+		"practiced": "Practiced",
+		"today": "Today",
+		"dayPracticed": "{date}, practiced",
+		"utc": "UTC"
+	},
 	"UnsubscribePage": {
-		"metaTitle": "Unsubscribe — TraceCode",
+		"metaTitle": "Unsubscribe | TraceCode",
 		"heading": "Unsubscribe from reminder emails",
-		"body": "Confirm below to stop daily reminder emails. In-app notifications aren’t affected, and you can turn email back on from your progress page.",
+		"body": "Confirm below to stop daily reminder emails. In-app notifications aren’t affected, and you can turn email back on from your settings.",
 		"confirm": "Unsubscribe",
 		"working": "Unsubscribing…",
-		"done": "Done — you won’t get reminder emails any more.",
+		"done": "Done. You won’t get reminder emails any more.",
 		"failed": "Something went wrong. Please try again.",
 		"invalid": "This unsubscribe link isn’t valid. You can manage reminder emails from your progress page."
 	},
@@ -347,7 +366,6 @@
 		"nav": {
 			"overview": "Overview",
 			"problems": "Problems",
-			"progress": "Progress",
 			"settings": "Settings"
 		},
 		"search": {
@@ -356,14 +374,11 @@
 			"empty": "No problems match"
 		},
 		"account": {
-			"menu": "Account menu",
-			"signedInAs": "Signed in as",
-			"settings": "Settings",
 			"signOut": "Sign out"
 		}
 	},
 	"Dashboard": {
-		"metaTitle": "Dashboard — TraceCode",
+		"metaTitle": "Dashboard | TraceCode",
 		"eyebrow": "Learning workspace",
 		"heading": "Overview",
 		"unavailable": "Saved progress is unavailable right now.",
@@ -373,20 +388,33 @@
 			"attempted": "Attempted",
 			"runs": "Runs"
 		},
-		"recent": {
-			"heading": "Recent runs",
-			"columns": {
-				"problem": "Problem",
-				"result": "Result",
-				"when": "When"
-			},
-			"result": "{passed}/{total} passed",
-			"empty": "No runs yet. Solve a problem and your runs will show up here.",
-			"cta": "Solve Two Sum",
-			"note": "Your last 10 runs."
-		},
 		"topics": {
-			"heading": "Coverage by topic"
+			"heading": "Coverage by topic",
+			"attempted": "{attempted} of {total} topics attempted"
+		},
+		"next": {
+			"heading": "What to practise next",
+			"insight": "Your learning insight",
+			"upNext": "Up next",
+			"start": "Start problem",
+			"continue": "Continue problem",
+			"open": "Open problem",
+			"refresh": "Refresh AI insight",
+			"empty": "Nothing to suggest yet.",
+			"aiTag": "AI",
+			"refreshed": "AI insight refreshed."
+		},
+		"explore": {
+			"heading": "Explore problems",
+			"viewAll": "View all problems",
+			"start": "Start",
+			"empty": "You have attempted every problem. Open the full list to revisit one."
+		},
+		"progress": {
+			"heading": "Progress",
+			"empty": "You haven't attempted a problem yet. Start one below.",
+			"open": "Show details for {title}",
+			"attempts": "{count, plural, one {# attempt} other {# attempts}}"
 		}
 	},
 	"ApplicationNav": {
@@ -394,14 +422,13 @@
 		"nav": "Main",
 		"how": "How it works",
 		"problems": "Problems",
-		"progress": "Progress",
 		"settings": "Settings",
 		"signOut": "Sign out",
 		"account": "Account menu",
 		"signedInAs": "Signed in as"
 	},
 	"SettingsPage": {
-		"metaTitle": "Settings — TraceCode",
+		"metaTitle": "Settings | TraceCode",
 		"heading": "Settings",
 		"unavailable": "Settings are unavailable right now.",
 		"profile": "Profile",
@@ -424,5 +451,55 @@
 			"saved": "Saved.",
 			"failed": "Couldn't save. Try again."
 		}
+	},
+	"ProblemsPage": {
+		"metaTitle": "Problems | TraceCode",
+		"eyebrow": "Learning workspace",
+		"heading": "Problems",
+		"listHeading": "All problems",
+		"tally": "{solved} of {total} problems solved",
+		"calendar": {
+			"previous": "Previous month",
+			"next": "Next month",
+			"todaysProblem": "Today’s problem",
+			"dayLabel": "{date}: {title}",
+			"dayHeading": "Day {day}",
+			"timeLeft": "{time} left"
+		},
+		"filterAll": "All topics",
+		"filterLabel": "Filter by topic",
+		"statusFilter": {
+			"label": "Status",
+			"all": "All",
+			"attempted": "Attempted",
+			"not_started": "Not started",
+			"solved": "Solved",
+			"unsolved": "Unsolved"
+		},
+		"actionColumn": "Action",
+		"open": "Show details for {title}",
+		"noMatch": "No problems match these filters."
+	},
+	"ProblemDetail": {
+		"close": "Close",
+		"topics": "Topics",
+		"status": "Status",
+		"statuses": {
+			"solved": "Solved",
+			"attempted": "In progress",
+			"not_started": "Not started",
+			"unknown": "-"
+		},
+		"attempts": "Total attempts",
+		"best": "Best result",
+		"bestValue": "{passed} / {total} tests",
+		"firstAttempt": "First attempted",
+		"lastAttempt": "Last attempted",
+		"firstSolved": "First solved",
+		"none": "-",
+		"start": "Start",
+		"continue": "Continue",
+		"reattempt": "Reattempt",
+		"lastSolved": "Last solved"
 	}
 }

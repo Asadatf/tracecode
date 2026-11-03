@@ -79,8 +79,14 @@ test('equal-score ties break by difficulty then slug — identically on every ru
 			.join()
 	)
 	assert.equal(new Set(orders).size, 1)
-	// All six are easy and untouched, so the order is purely alphabetical by slug.
-	assert.deepEqual(orders[0]!.split(','), ALL_SLUGS)
+	// Untouched, so easier problems come first, then alphabetical by slug within a
+	// difficulty (move-zeroes is medium, valid-parentheses is hard).
+	const rank = { easy: 0, medium: 1, hard: 2 }
+	const expected = [...ALL_SLUGS].sort(
+		(a, b) =>
+			rank[PROBLEMS[a]!.difficulty] - rank[PROBLEMS[b]!.difficulty] || (a < b ? -1 : a > b ? 1 : 0)
+	)
+	assert.deepEqual(orders[0]!.split(','), expected)
 })
 
 test('attempts on the new problems: failures open a run, a solve closes it, solved is never re-recommended while others remain', () => {
@@ -219,8 +225,8 @@ test('M6 statistics and the progress view count the new problems', () => {
 	assert.deepEqual(
 		view.topics.filter((t) => ['Strings', 'Stacks'].includes(t.topic)),
 		[
-			{ topic: 'Strings', solved: 1, total: 2 },
-			{ topic: 'Stacks', solved: 1, total: 1 }
+			{ topic: 'Strings', solved: 1, attempted: 1, total: 2 },
+			{ topic: 'Stacks', solved: 1, attempted: 1, total: 1 }
 		]
 	)
 })

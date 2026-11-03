@@ -4,11 +4,14 @@ import { redirect } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { buildProgressView } from '@/lib/progress/progress-view'
-import { getLearningProgress } from '@/server/learning/progress'
+import { buildDashboardSections } from '@/lib/progress/dashboard-sections'
+import { buildProblemSummaries } from '@/lib/problems/problem-summary'
+import { getFirstAttemptDates, getLearningProgress } from '@/server/learning/progress'
 import { getRecommendation, isRecommendationAiEnabled } from '@/server/learning/recommendation'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { PracticeNextWidget } from '@/components/dashboard/practice-next-widget'
-import { RecentRuns } from '@/components/dashboard/recent-runs'
+import { ExploreProblems } from '@/components/dashboard/explore-problems'
+import { ProgressCard } from '@/components/dashboard/progress-card'
 import { SummaryStrip } from '@/components/dashboard/summary-strip'
 import { TopicPanel } from '@/components/dashboard/topic-panel'
 import styles from '@/components/dashboard/dashboard.module.css'
@@ -28,18 +31,29 @@ export default async function DashboardPage() {
 		return null
 	}
 	// Independent reads start together. getRecommendation never calls the model.
-	const [t, progress, recommendation] = await Promise.all([
+	const [t, progress, recommendation, firstAttempts] = await Promise.all([
 		getTranslations('Dashboard'),
 		getLearningProgress(),
-		getRecommendation()
+		getRecommendation(),
+		getFirstAttemptDates()
 	])
+	const problems = Object.values(PROBLEMS)
 	const view =
-		progress.authenticated && progress.available
-			? buildProgressView(Object.values(PROBLEMS), progress)
-			: null
+		progress.authenticated && progress.available ? buildProgressView(problems, progress) : null
+	// The ranking is the right-hand panel's own: Explore follows it but never repeats
+	// its top pick while there is anything else to show.
+	const sections =
+		view == null
+			? null
+			: buildDashboardSections(
+					buildProblemSummaries(problems, view, firstAttempts),
+					recommendation.authenticated && recommendation.available
+						? { rankedSlugs: recommendation.recommendation.rankedProblems.map((r) => r.slug) }
+						: null
+				)
 
 	return (
-		<AppShell account={account} current="overview">
+		<AppShell current="overview">
 			<header className={styles.head}>
 				<p className={styles.eyebrow}>{t('eyebrow')}</p>
 				<h1 className={styles.title}>{t('heading')}</h1>
@@ -51,21 +65,30 @@ export default async function DashboardPage() {
 					) : (
 						<>
 							<SummaryStrip summary={view.summary} />
-							<div className={styles.recent}>
-								<RecentRuns runs={view.recent} />
-							</div>
+							{sections == null ? null : (
+								<>
+									<div className={styles.yours}>
+										<ProgressCard items={sections.progress} />
+									</div>
+									<div className={styles.explore}>
+										<ExploreProblems items={sections.explore} />
+									</div>
+								</>
+							)}
 						</>
 					)}
 				</div>
 				{view == null ? null : (
 					<aside className={styles.side}>
-						<TopicPanel topics={view.topics} />
-						{recommendation.authenticated && recommendation.available ? (
-							<PracticeNextWidget
-								recommendation={recommendation.recommendation}
-								canRefresh={isRecommendationAiEnabled()}
-							/>
-						) : null}
+						<div className={`${styles.mergedCard} ${styles.float}`}>
+							<TopicPanel topics={view.topics} />
+							{recommendation.authenticated && recommendation.available ? (
+								<PracticeNextWidget
+									recommendation={recommendation.recommendation}
+									canRefresh={isRecommendationAiEnabled()}
+								/>
+							) : null}
+						</div>
 					</aside>
 				)}
 			</div>
