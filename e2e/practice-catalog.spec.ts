@@ -1,3 +1,4 @@
+import { PROBLEMS } from '../src/lib/trace/problems'
 import { openAsLearner } from './helpers/auth'
 import { test, expect, type Locator, type Page } from '@playwright/test'
 
@@ -47,10 +48,10 @@ for (const [slug, title] of ROUTES) {
 		await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible()
 	})
 
-	test(`/practice/${slug} resolves and lists all six problems in the picker`, async ({ page }) => {
+	test(`/practice/${slug} resolves and lists every problem in the picker`, async ({ page }) => {
 		await openAsLearner(page, `/practice/${slug}`)
 		await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
-		await expect(page.locator('select option')).toHaveCount(6)
+		await expect(page.locator('select option')).toHaveCount(Object.keys(PROBLEMS).length)
 	})
 }
 
@@ -173,7 +174,10 @@ test('Binary Search: linear and binary both pass; replay shows left/mid/right', 
 	await runCode(page, BS_BINARY, '25 / 25 passed')
 
 	await page.getByRole('button', { name: 'Replay' }).first().click()
-	await expect(page.getByText('mid').first()).toBeVisible({ timeout: 60_000 })
+	// Scoped to the replay pane: the (hidden) Solutions tab also contains "mid".
+	await expect(page.getByRole('tabpanel', { name: 'Replay' }).getByText('mid').first()).toBeVisible(
+		{ timeout: 60_000 }
+	)
 })
 
 const VP_STACK = `def is_valid(s):
