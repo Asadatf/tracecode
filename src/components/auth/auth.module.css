@@ -443,3 +443,51 @@
 		transform: translateY(24px) scale(0.97);
 	}
 }
+
+/* Google / GitHub sign-in (specs/features/oauth-sign-in.md). */
+.oauth {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 4px;
+}
+
+.oauthButton {
+	display: inline-flex;
+	width: 100%;
+	min-height: 46px;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface);
+	color: var(--text);
+	cursor: pointer;
+	font: 600 15px var(--font-sans);
+}
+
+.oauthButton:hover {
+	background: var(--surface-subtle);
+}
+
+.oauthButton:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+}
+
+.oauthOr {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 6px 0 0;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
+.oauthOr::before,
+.oauthOr::after {
+	flex: 1;
+	height: 1px;
+	background: var(--border);
+	content: '';
+}

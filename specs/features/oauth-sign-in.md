@@ -26,7 +26,7 @@ practice page, and none of them has a password to forget.
 - **AC2** — GIVEN a provider is not enabled (its env flag is unset) THEN its
   button is not shown, and the email form works as today.
 - **AC3** — GIVEN a visitor presses a provider button WHEN the provider
-  approves THEN they return to `/auth/callback`, a session is created, their
+  approves THEN they return to `/api/auth/callback`, a session is created, their
   `users` row is provisioned exactly as for email sign-up, and they land on
   the page in `next` (if it is a safe, same-site path) or `/dashboard`.
 - **AC4** — GIVEN the provider is cancelled or returns an error WHEN the
@@ -41,18 +41,19 @@ practice page, and none of them has a password to forget.
 
 ## Data / API
 
-- Supabase Auth only (`signInWithOAuth` with `redirectTo` =
-  `<NEXT_PUBLIC_APP_URL>/auth/callback?next=…`); no application data through
-  Supabase (`docs/rules/auth.md`). No new tables.
-- New route handler `src/app/auth/callback/route.ts`: exchanges the code for a
-  session, calls `provisionUser`, redirects.
-- Env flags `NEXT_PUBLIC_AUTH_GOOGLE` and `NEXT_PUBLIC_AUTH_GITHUB`
+- Supabase Auth only (`signInWithOAuth` from the `startOAuthAction` form
+  action, with `redirectTo` =
+  `<NEXT_PUBLIC_APP_URL>/api/auth/callback?next=…&provider=…`); no application
+  data through Supabase (`docs/rules/auth.md`). No new tables.
+- New route handler `src/app/api/auth/callback/route.ts` (under `/api` so the
+  locale middleware leaves it alone): exchanges the code for a session, calls
+  `provisionUser`, redirects. Failures go to `/login?oauth_error=<provider>`.
+- Server-only env flags `AUTH_GOOGLE_ENABLED` and `AUTH_GITHUB_ENABLED`
   (`"true"` to show the button), added to `src/lib/env.ts` and
   `.env.example`. Provider client IDs and secrets live only in the Supabase
   dashboard (hosted) or `supabase/config.toml` via `env()` (local), never in
   this repo.
-- Analytics: `user_signed_in` gains `method: 'email' | 'google' | 'github'` if
-  that event exists; otherwise none.
+- Analytics: none (the sign-in flow records none today).
 - `docs/LOCAL_SETUP.md` gains a short "Google/GitHub sign-in (optional)"
   section.
 
@@ -77,3 +78,5 @@ practice page, and none of them has a password to forget.
 ## Changelog
 
 - 2026-11-03 — created.
+- 2026-11-03 — callback moved to `/api/auth/callback`; flags are server-only
+  (`AUTH_*_ENABLED`); no analytics event.

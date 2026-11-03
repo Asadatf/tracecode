@@ -331,6 +331,10 @@
 			"line": "Line",
 			"variables": "Variables",
 			"step": "Step"
+		},
+		"oauth": {
+			"continueWith": "Continue with {provider}",
+			"or": "or"
 		}
 	},
 	"AppShell": {
