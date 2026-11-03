@@ -86,8 +86,7 @@ test('equal-score ties break by difficulty then slug — identically on every ru
 	// All untouched, so the order is by difficulty (easy first), then by slug.
 	const rank = { easy: 0, medium: 1, hard: 2 } as const
 	const expected = [...ALL_SLUGS].sort(
-		(a, b) =>
-			rank[PROBLEMS[a]!.difficulty] - rank[PROBLEMS[b]!.difficulty] || a.localeCompare(b)
+		(a, b) => rank[PROBLEMS[a]!.difficulty] - rank[PROBLEMS[b]!.difficulty] || a.localeCompare(b)
 	)
 	assert.deepEqual(orders[0]!.split(','), expected)
 })

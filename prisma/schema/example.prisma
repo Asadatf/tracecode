@@ -11,27 +11,27 @@
 // users is user-scoped, so its create migration ENABLEs ROW LEVEL SECURITY
 // (no policy, no FORCE) — see docs/rules/authorization.md.
 model User {
-  id          String       @id @db.Uuid
-  email       String       @unique
-  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
-  adminMember AdminMember?
+	id          String       @id @db.Uuid
+	email       String       @unique
+	createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+	updatedAt   DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
+	adminMember AdminMember?
 
-  // Learning domain (prisma/schema/learning.prisma). Virtual back-relations —
-  // no column on users; the FK columns live on the child tables.
-  attempts        Attempt[]
-  replaySessions  ReplaySession[]
-  learningEvents  LearningEvent[]
-  problemProgress ProblemProgress[]
-  problemNotes    ProblemNote[]
+	// Learning domain (prisma/schema/learning.prisma). Virtual back-relations —
+	// no column on users; the FK columns live on the child tables.
+	attempts        Attempt[]
+	replaySessions  ReplaySession[]
+	learningEvents  LearningEvent[]
+	problemProgress ProblemProgress[]
+	problemNotes    ProblemNote[]
 
-  // M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
-  recommendationCache RecommendationCache?
+	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
+	recommendationCache RecommendationCache?
 
-  // M7.5B notifications (prisma/schema/notifications.prisma).
-  notificationPreference NotificationPreference?
-  learningNotifications  LearningNotification[]
-  notificationDeliveries NotificationDelivery[]
+	// M7.5B notifications (prisma/schema/notifications.prisma).
+	notificationPreference NotificationPreference?
+	learningNotifications  LearningNotification[]
+	notificationDeliveries NotificationDelivery[]
 
-  @@map("users")
+	@@map("users")
 }

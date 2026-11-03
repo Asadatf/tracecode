@@ -12,104 +12,104 @@
 // (ADR-0001): these rows record what the learner's browser said happened.
 
 model Attempt {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @db.Uuid
-  problemSlug String
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  source      String
-  status      String
-  testsPassed Int
-  testsTotal  Int
-  allPassed   Boolean
+	id          String   @id @default(uuid()) @db.Uuid
+	userId      String   @db.Uuid
+	problemSlug String
+	createdAt   DateTime @default(now()) @db.Timestamptz(6)
+	source      String
+	status      String
+	testsPassed Int
+	testsTotal  Int
+	allPassed   Boolean
 
-  // M7.1: versioned structural fingerprint of `source` (CodeFeatures, parsed in
-  // the browser — never executed on the server). Null for attempts made before
-  // M7 and until the bounded browser backfill reaches them; readers must treat
-  // null as "no features". Validated on write (codeFeaturesSchema).
-  codeFeatures Json?
+	// M7.1: versioned structural fingerprint of `source` (CodeFeatures, parsed in
+	// the browser — never executed on the server). Null for attempts made before
+	// M7 and until the bounded browser backfill reaches them; readers must treat
+	// null as "no features". Validated on write (codeFeaturesSchema).
+	codeFeatures Json?
 
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  testResults AttemptTestResult[]
-  replays     ReplaySession[]
+	user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+	testResults AttemptTestResult[]
+	replays     ReplaySession[]
 
-  @@index([userId, problemSlug])
-  @@map("attempts")
+	@@index([userId, problemSlug])
+	@@map("attempts")
 }
 
 model AttemptTestResult {
-  id           String  @id @default(uuid()) @db.Uuid
-  attemptId    String  @db.Uuid
-  testId       String
-  passed       Boolean
-  expected     Json
-  actual       Json?
-  errorType    String?
-  errorMessage String?
+	id           String  @id @default(uuid()) @db.Uuid
+	attemptId    String  @db.Uuid
+	testId       String
+	passed       Boolean
+	expected     Json
+	actual       Json?
+	errorType    String?
+	errorMessage String?
 
-  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+	attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
-  @@index([attemptId])
-  @@map("attempt_test_results")
+	@@index([attemptId])
+	@@map("attempt_test_results")
 }
 
 model ReplaySession {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @db.Uuid
-  attemptId  String   @db.Uuid
-  testId     String
-  startedAt  DateTime @default(now()) @db.Timestamptz(6)
-  testPassed Boolean
+	id         String   @id @default(uuid()) @db.Uuid
+	userId     String   @db.Uuid
+	attemptId  String   @db.Uuid
+	testId     String
+	startedAt  DateTime @default(now()) @db.Timestamptz(6)
+	testPassed Boolean
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+	user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+	attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([attemptId])
-  @@map("replay_sessions")
+	@@index([userId])
+	@@index([attemptId])
+	@@map("replay_sessions")
 }
 
 model LearningEvent {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @db.Uuid
-  problemSlug String
-  type        String // 'replay_inspected' | 'hint_revealed' | 'milestone_reached'
-  detail      String? // small enum-ish token (hint id, milestone name) — never PII/free text
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+	id          String   @id @default(uuid()) @db.Uuid
+	userId      String   @db.Uuid
+	problemSlug String
+	type        String // 'replay_inspected' | 'hint_revealed' | 'milestone_reached'
+	detail      String? // small enum-ish token (hint id, milestone name) — never PII/free text
+	createdAt   DateTime @default(now()) @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, problemSlug])
-  @@map("learning_events")
+	@@index([userId, problemSlug])
+	@@map("learning_events")
 }
 
 model ProblemProgress {
-  userId          String    @db.Uuid
-  problemSlug     String
-  status          String // 'attempted' | 'solved'
-  attempts        Int       @default(0)
-  bestTestsPassed Int       @default(0)
-  testsTotal      Int       @default(0)
-  firstSolvedAt   DateTime? @db.Timestamptz(6)
-  latestSolvedAt  DateTime? @db.Timestamptz(6)
-  updatedAt       DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+	userId          String    @db.Uuid
+	problemSlug     String
+	status          String // 'attempted' | 'solved'
+	attempts        Int       @default(0)
+	bestTestsPassed Int       @default(0)
+	testsTotal      Int       @default(0)
+	firstSolvedAt   DateTime? @db.Timestamptz(6)
+	latestSolvedAt  DateTime? @db.Timestamptz(6)
+	updatedAt       DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([userId, problemSlug])
-  @@map("problem_progress")
+	@@id([userId, problemSlug])
+	@@map("problem_progress")
 }
 
 // A learner's own note on a problem (specs/features/problem-notes.md): plain
 // text, at most 2 000 characters, one per learner per problem. An empty note is
 // deleted rather than stored.
 model ProblemNote {
-  userId      String   @db.Uuid
-  problemSlug String
-  body        String
-  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+	userId      String   @db.Uuid
+	problemSlug String
+	body        String
+	updatedAt   DateTime @default(now()) @updatedAt @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@id([userId, problemSlug])
-  @@map("problem_notes")
+	@@id([userId, problemSlug])
+	@@map("problem_notes")
 }
