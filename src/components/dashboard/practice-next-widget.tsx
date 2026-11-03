@@ -45,8 +45,7 @@ export async function PracticeNextWidget({
 						start: t('start'),
 						continue: t('continue'),
 						open: t('open'),
-						basedOnActivity: t('basedOnActivity'),
-						aiBasedOnActivity: t('aiBasedOnActivity'),
+						aiTag: t('aiTag'),
 						refresh: t('refresh'),
 						refreshing: insight('refreshing'),
 						statuses: {

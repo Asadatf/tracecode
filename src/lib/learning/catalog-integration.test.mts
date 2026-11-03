@@ -219,8 +219,8 @@ test('M6 statistics and the progress view count the new problems', () => {
 	assert.deepEqual(
 		view.topics.filter((t) => ['Strings', 'Stacks'].includes(t.topic)),
 		[
-			{ topic: 'Strings', solved: 1, total: 2 },
-			{ topic: 'Stacks', solved: 1, total: 1 }
+			{ topic: 'Strings', solved: 1, attempted: 1, total: 2 },
+			{ topic: 'Stacks', solved: 1, attempted: 1, total: 1 }
 		]
 	)
 })

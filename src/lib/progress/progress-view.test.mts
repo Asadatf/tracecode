@@ -85,11 +85,11 @@ test('AC6: recent runs keep their order, use titles, and fall back to the slug',
 	)
 })
 
-test('AC7: solved/total per topic, capitalised, in first-seen registry order', () => {
+test('AC7: solved/attempted/total per topic, capitalised, in first-seen registry order', () => {
 	assert.deepEqual(view.topics, [
-		{ topic: 'Arrays', solved: 1, total: 2 },
-		{ topic: 'Loops', solved: 1, total: 1 },
-		{ topic: 'Hashing', solved: 0, total: 1 }
+		{ topic: 'Arrays', solved: 1, attempted: 2, total: 2 },
+		{ topic: 'Loops', solved: 1, attempted: 1, total: 1 },
+		{ topic: 'Hashing', solved: 0, attempted: 1, total: 1 }
 	])
 })
 

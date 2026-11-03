@@ -171,24 +171,61 @@
 /* One floating card in a single dark-green theme: one gradient runs behind
    both sections, so the topics and the next-practice parts read as one surface. */
 .mergedCard {
+	position: relative;
 	overflow: hidden;
 	border-radius: 22px;
 	background:
 		radial-gradient(
 			circle at 100% 0%,
-			color-mix(in srgb, var(--accent) 30%, transparent),
-			transparent 16rem
+			color-mix(in srgb, #39a67e 16%, transparent),
+			transparent 15rem
 		),
 		radial-gradient(
 			circle at 0% 100%,
-			color-mix(in srgb, var(--accent) 18%, transparent),
-			transparent 14rem
+			color-mix(in srgb, #39a67e 9%, transparent),
+			transparent 13rem
 		),
-		color-mix(in srgb, var(--accent) 34%, #0f1412);
+		#101714;
 	color: #fff;
+	/* A soft green glow behind the card, then the drop shadow. */
 	box-shadow:
-		0 2px 6px rgba(15, 20, 18, 0.18),
-		0 28px 56px -8px rgba(15, 20, 18, 0.4);
+		0 0 0 1px rgba(88, 215, 162, 0.16),
+		0 0 36px 0 rgba(88, 215, 162, 0.24),
+		0 24px 48px -12px rgba(15, 20, 18, 0.4);
+}
+/* Concentric guide rings, the same motif as the landing hero. */
+.mergedCard::before,
+.mergedCard::after {
+	position: absolute;
+	z-index: 0;
+	border: 1px solid rgba(57, 166, 126, 0.24);
+	border-radius: 50%;
+	background: repeating-radial-gradient(
+		circle,
+		transparent 0,
+		transparent 34px,
+		rgba(57, 166, 126, 0.2) 35px,
+		transparent 36px
+	);
+	content: '';
+	pointer-events: none;
+}
+.mergedCard::before {
+	top: -150px;
+	right: -150px;
+	width: 380px;
+	height: 380px;
+}
+.mergedCard::after {
+	bottom: -170px;
+	left: -170px;
+	width: 380px;
+	height: 380px;
+}
+.topicsPart,
+.nextPart {
+	position: relative;
+	z-index: 1;
 }
 .topicsPart {
 	padding: 22px 22px 8px;
@@ -265,6 +302,15 @@
 	background: rgba(255, 255, 255, 0.1);
 	color: #fff;
 }
+.aiTag {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(88, 215, 162, 0.16);
+	color: #58d7a2;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+}
 .insightFoot {
 	display: flex;
 	flex-wrap: wrap;
@@ -278,10 +324,6 @@
 }
 .insightFoot a:hover {
 	background: #7be4b8;
-}
-.basis {
-	color: rgba(255, 255, 255, 0.6);
-	font-size: 13px;
 }
 .refresh {
 	display: grid;
@@ -308,13 +350,45 @@
 	font-size: 13px;
 }
 
+.topicsHead {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.topicsHead .cardTitle {
+	margin: 0;
+}
+.topicsTally {
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	font: 700 14px var(--font-mono);
+}
+
 .topicList {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+	max-height: clamp(120px, calc(100dvh - 560px), 320px);
 	margin: 0;
-	padding: 0;
+	padding: 0 10px 0 0;
 	list-style: none;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+.topicList::-webkit-scrollbar {
+	width: 6px;
+}
+.topicList::-webkit-scrollbar-thumb {
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.28);
+}
+.topicList::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.45);
 }
 .topicRow {
 	display: flex;
@@ -356,15 +430,20 @@
 		min-width: 0;
 		padding: 4px 0 28px 4px;
 	}
+	/* No clipping box around the card: a scroll container here would cut the
+	   glow and shadow into a visible rectangle. The topics list shrinks with
+	   the window instead (see .topicList), and only very short windows scroll. */
 	.side {
 		position: sticky;
-		top: 0;
+		top: 24px;
 		display: flex;
 		flex-direction: column;
 		gap: 22px;
-		padding: 4px 8px 28px 0;
-		/* Taller than the window → wheel-scroll inside, no visible bar. */
-		max-height: calc(100dvh - 96px);
+	}
+}
+@media (min-width: 1024px) and (max-height: 700px) {
+	.side {
+		max-height: calc(100dvh - 120px);
 		overflow-y: auto;
 		scrollbar-width: none;
 	}
@@ -372,17 +451,81 @@
 		display: none;
 	}
 }
+/* Hover, desktop only. The lift and the bar sweep play once when the cursor
+   arrives (staying on the card or leaving does not replay them, and both end
+   where they began, so nothing jumps). The glow and rings ease to a brighter
+   state while hovered and ease back on leave. */
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
 	.float {
-		animation: drift 7s ease-in-out infinite alternate;
+		transition: box-shadow 700ms ease;
+	}
+	.float::before,
+	.float::after {
+		transition: transform 1100ms cubic-bezier(0.22, 0.7, 0.2, 1);
+	}
+	.float:hover {
+		animation: lift 1100ms cubic-bezier(0.37, 0, 0.2, 1);
+		box-shadow:
+			0 0 0 1px rgba(88, 215, 162, 0.26),
+			0 0 54px 4px rgba(88, 215, 162, 0.34),
+			0 28px 56px -12px rgba(15, 20, 18, 0.42);
+	}
+	.float:hover::before {
+		transform: translate(-14px, 14px) scale(1.04);
+	}
+	.float:hover::after {
+		transform: translate(14px, -14px) scale(1.04);
+	}
+	.float:hover .barFill {
+		transform-origin: left center;
+		animation: sweep 900ms cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
+	}
+	.float:hover .topic:nth-child(2) .barFill {
+		animation-delay: 45ms;
+	}
+	.float:hover .topic:nth-child(3) .barFill {
+		animation-delay: 90ms;
+	}
+	.float:hover .topic:nth-child(4) .barFill {
+		animation-delay: 135ms;
+	}
+	.float:hover .topic:nth-child(5) .barFill {
+		animation-delay: 180ms;
+	}
+	.float:hover .topic:nth-child(6) .barFill {
+		animation-delay: 225ms;
+	}
+	.float:hover .topic:nth-child(7) .barFill {
+		animation-delay: 270ms;
+	}
+	.float:hover .topic:nth-child(8) .barFill {
+		animation-delay: 315ms;
+	}
+	.float:hover .topic:nth-child(9) .barFill {
+		animation-delay: 360ms;
+	}
+	.float:hover .topic:nth-child(10) .barFill {
+		animation-delay: 405ms;
+	}
+	.float:hover .topic:nth-child(11) .barFill {
+		animation-delay: 450ms;
+	}
+	.float:hover .topic:nth-child(12) .barFill {
+		animation-delay: 495ms;
 	}
 }
-@keyframes drift {
-	from {
-		transform: translateY(0);
+@keyframes lift {
+	0%,
+	100% {
+		transform: translateY(0) scale(1);
 	}
-	to {
-		transform: translateY(-6px);
+	45% {
+		transform: translateY(-6px) scale(1.006);
+	}
+}
+@keyframes sweep {
+	from {
+		transform: scaleX(0);
 	}
 }
 

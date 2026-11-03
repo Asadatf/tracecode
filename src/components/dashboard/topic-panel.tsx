@@ -7,11 +7,22 @@ import styles from './dashboard.module.css'
 export async function TopicPanel({ topics }: { topics: TopicRow[] }) {
 	const t = await getTranslations('Dashboard.topics')
 
+	const attempted = topics.filter((topic) => topic.attempted > 0).length
+
 	return (
 		<section aria-labelledby="dashboard-topics" className={styles.topicsPart}>
-			<h2 id="dashboard-topics" className={styles.cardTitle}>
-				{t('heading')}
-			</h2>
+			<div className={styles.topicsHead}>
+				<h2 id="dashboard-topics" className={styles.cardTitle}>
+					{t('heading')}
+				</h2>
+				<span
+					className={styles.topicsTally}
+					title={t('attempted', { attempted, total: topics.length })}
+					aria-label={t('attempted', { attempted, total: topics.length })}
+				>
+					{attempted}/{topics.length}
+				</span>
+			</div>
 			<ul className={styles.topicList}>
 				{topics.map((topic) => (
 					<li key={topic.topic} className={styles.topic}>

@@ -264,7 +264,10 @@
 		min-height: 0;
 	}
 	.main {
+		overflow-x: hidden;
 		overflow-y: auto;
+		/* Room above the page content so a glow or shadow isn't cut flat. */
+		padding-top: 24px;
 	}
 }
 

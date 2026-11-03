@@ -30,6 +30,8 @@ export interface RecentRun {
 export interface TopicRow {
 	topic: string
 	solved: number
+	// Problems in the topic with at least one saved run (solved counts too).
+	attempted: number
 	total: number
 }
 
@@ -67,16 +69,19 @@ export function buildProgressView(
 
 	const topics: TopicRow[] = []
 	for (const problem of problems) {
-		const solved = rows.find((row) => row.slug === problem.slug)?.status === 'solved'
+		const status = rows.find((row) => row.slug === problem.slug)?.status
+		const solved = status === 'solved'
+		const attempted = status != null && status !== 'not_started'
 		for (const tag of problem.conceptTags) {
 			const topic = topicLabel(tag)
 			let entry = topics.find((t) => t.topic === topic)
 			if (entry == null) {
-				entry = { topic, solved: 0, total: 0 }
+				entry = { topic, solved: 0, attempted: 0, total: 0 }
 				topics.push(entry)
 			}
 			entry.total += 1
 			if (solved) entry.solved += 1
+			if (attempted) entry.attempted += 1
 		}
 	}
 

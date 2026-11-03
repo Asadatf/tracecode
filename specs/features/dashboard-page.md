@@ -66,10 +66,12 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - **AC8** — GIVEN a viewport of 1024px or wider WHEN the page scrolls THEN the
   centre and right columns scroll independently inside the shell, the By topic
   panel stays in view (sticky) with a subtle floating treatment (soft shadow
-  and a slow vertical drift), and the scrollbars are thin and low-contrast.
-  The drift is disabled under `prefers-reduced-motion: reduce`.
+  and glow; one smooth lift-and-settle and a sweep of the topic bars when the cursor
+  enters it, a brighter glow and shifted rings while it is hovered, and no
+  replay while it stays or when it leaves), and the scrollbars are thin and low-contrast.
+  The lift is disabled under `prefers-reduced-motion: reduce`.
 - **AC9** — GIVEN a viewport below 1024px THEN there is no sticky panel and no
-  drift: the layout is a single column (summary, By topic, Recent runs); the
+  hover lift: the layout is a single column (summary, By topic, Recent runs); the
   sidebar becomes an off-canvas drawer opened from a menu button in the top
   bar (focus trapped while open, Escape and outside click close it, focus
   returns to the button); the page itself scrolls, with no horizontal
@@ -110,14 +112,15 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - **AC18** — GIVEN the sidebar WHEN expanded THEN it is 232px wide (collapsed
   68px), set by one CSS token so it can be tuned.
 - **AC19** — GIVEN a learner with progress THEN the right column is one
-  floating card (same drift) in one dark-green theme, with a single gradient
+  floating card (same hover lift) in one dark-green theme, with a single gradient
   behind both parts so it reads as one surface: the "Coverage by topic" section
   on top and the "What to practise next" section below it. The lower section has no visible heading (an
   `sr-only` "What to practise next" keeps the region labelled) and shows one card with a lightbulb and
   "Your learning insight", a one-line summary, "UP NEXT", the problem title and
-  its topic chips, a Start/Continue/Open problem button with "Based on your
-  activity" beside it (AI summaries: "AI insight · based on your activity"),
-  and a "Refresh AI insight" link under the card. When the engine's summary is
+  its topic chips and a Start/Continue/Open problem button, with a refresh icon
+  at the right of the header (an AI-written summary also shows a small "AI"
+  tag). The card has a soft green glow behind it and faint concentric guide
+  rings like the landing hero. When the engine's summary is
   "You solved <slug> after some earlier unsuccessful attempts", it reads
   "You've solved <topic and topic> problems after earlier attempts. Ready for a
   new challenge?" (at most two topics); any other summary, including an AI one,
@@ -174,7 +177,7 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - [ ] `/dashboard` route, auth redirect, noindex, `Dashboard` messages
 - [ ] App shell: collapsible sidebar, drawer on mobile, top bar
 - [ ] Problem search (client-side combobox)
-- [ ] Recent runs and By topic panels, sticky/drift and scrollbars
+- [ ] Recent runs and By topic panels, sticky card, hover lift and scrollbars
 - [ ] Wire bell and account dropdown
 - [ ] Unit tests (view mapping, search filter) and e2e for AC1, AC4, AC9, AC10,
       AC12, AC16

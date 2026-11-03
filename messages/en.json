@@ -386,7 +386,8 @@
 			"note": "Your last 10 runs."
 		},
 		"topics": {
-			"heading": "Coverage by topic"
+			"heading": "Coverage by topic",
+			"attempted": "{attempted} of {total} topics attempted"
 		},
 		"next": {
 			"heading": "What to practise next",
@@ -395,10 +396,9 @@
 			"start": "Start problem",
 			"continue": "Continue problem",
 			"open": "Open problem",
-			"basedOnActivity": "Based on your activity",
-			"aiBasedOnActivity": "AI insight · based on your activity",
 			"refresh": "Refresh AI insight",
-			"empty": "Nothing to suggest yet."
+			"empty": "Nothing to suggest yet.",
+			"aiTag": "AI"
 		}
 	},
 	"ApplicationNav": {

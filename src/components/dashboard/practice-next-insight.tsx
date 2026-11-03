@@ -15,8 +15,7 @@ export interface NextLabels {
 	start: string
 	continue: string
 	open: string
-	basedOnActivity: string
-	aiBasedOnActivity: string
+	aiTag: string
 	refresh: string
 	refreshing: string
 	statuses: { up_to_date: string; cooldown: string; running: string; failed: string }
@@ -63,6 +62,7 @@ export function PracticeNextInsight({
 				<div className={styles.insightHead}>
 					<LightbulbIcon size={20} />
 					<span>{labels.insight}</span>
+					{diagnosis.source === 'ai' ? <span className={styles.aiTag}>{labels.aiTag}</span> : null}
 					{canRefresh ? (
 						<button
 							type="button"
@@ -106,9 +106,6 @@ export function PracticeNextInsight({
 					) : (
 						<span />
 					)}
-					<span className={styles.basis}>
-						{diagnosis.source === 'ai' ? labels.aiBasedOnActivity : labels.basedOnActivity}
-					</span>
 				</div>
 			</div>
 		</>
