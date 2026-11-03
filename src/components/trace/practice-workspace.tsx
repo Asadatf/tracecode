@@ -55,6 +55,7 @@ import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
 import { SolutionsPanel } from './solutions-panel'
 import { AttemptCompare } from './attempt-compare'
+import { NotesPanel } from './notes-panel'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
 import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
@@ -118,11 +119,14 @@ function allPassed(result: RunResult): boolean {
 export function PracticeWorkspace({
 	slug,
 	isAuthenticated = false,
-	initialLayout
+	initialLayout,
+	initialNote = null
 }: {
 	slug: string
 	isAuthenticated?: boolean
 	initialLayout: LayoutState
+	// The signed-in learner's saved note (specs/features/problem-notes.md, AC3).
+	initialNote?: string | null
 }) {
 	const problem = PROBLEMS[slug]
 	if (problem == null) return null
@@ -134,6 +138,7 @@ export function PracticeWorkspace({
 			problem={problem}
 			isAuthenticated={isAuthenticated}
 			initialLayout={initialLayout}
+			initialNote={initialNote}
 		/>
 	)
 }
@@ -142,7 +147,8 @@ const LEFT_TABS: readonly TabItem[] = [
 	{ id: 'description', label: 'Description' },
 	{ id: 'hints', label: 'Hints' },
 	{ id: 'history', label: 'History' },
-	{ id: 'solutions', label: 'Solutions' }
+	{ id: 'solutions', label: 'Solutions' },
+	{ id: 'notes', label: 'Notes' }
 ]
 const RESULT_TABS: readonly TabItem[] = [
 	{ id: 'tests', label: 'Test results' },
@@ -179,11 +185,13 @@ function clip(text: string): string {
 function ProblemWorkspace({
 	problem,
 	isAuthenticated,
-	initialLayout
+	initialLayout,
+	initialNote
 }: {
 	problem: ProblemDefinition
 	isAuthenticated: boolean
 	initialLayout: LayoutState
+	initialNote: string | null
 }) {
 	const router = useRouter()
 	const meta = problemMeta(problem)
@@ -947,6 +955,20 @@ function ProblemWorkspace({
 								onReveal={() => setSolutionsRevealed(true)}
 								onWatch={watchSolution}
 								measure={measureSteps}
+							/>
+						</div>
+
+						<div
+							role="tabpanel"
+							id={panelId('left', 'notes')}
+							aria-labelledby={tabId('left', 'notes')}
+							hidden={leftTab !== 'notes'}
+							className={wsStyles.pad}
+						>
+							<NotesPanel
+								slug={problem.slug}
+								signedIn={isAuthenticated}
+								initialNote={initialNote}
 							/>
 						</div>
 					</>

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { openAsLearner } from './helpers/auth'
 import { TWO_SUM_BUGGY, TWO_SUM_PASSING, hydrated, setEditor, skipTour } from './helpers/practice'
 
 // The student-feature additions to the practice workspace, on Two Sum (open to
@@ -123,4 +124,45 @@ test('compare-attempts AC2–AC4: a fail then a pass shows the line that fixed i
 	const changes = page.getByRole('group', { name: 'Changes between the two attempts' })
 	await expect(changes.getByText('for j in range(len(nums)):')).toBeVisible()
 	await expect(changes.getByText('for j in range(i + 1, len(nums)):')).toBeVisible()
+})
+
+test('problem-notes AC2: a signed-out visitor is asked to sign in', async ({ page }) => {
+	await page.goto('/practice/two-sum')
+	await hydrated(page)
+	await page
+		.getByRole('tablist', { name: 'Challenge tabs' })
+		.getByRole('tab', { name: 'Notes' })
+		.click()
+	await expect(page.getByText(/Sign in to keep notes on problems/)).toBeVisible()
+	await expect(page.getByLabel('Your notes on this problem')).toHaveCount(0)
+})
+
+test('problem-notes AC3, AC4, AC7: a signed-in note saves, survives a reload, and clears', async ({
+	page
+}) => {
+	await openAsLearner(page, '/practice/climbing-stairs')
+	await hydrated(page)
+	const notesTab = page
+		.getByRole('tablist', { name: 'Challenge tabs' })
+		.getByRole('tab', { name: 'Notes' })
+	await notesTab.click()
+	const box = page.getByLabel('Your notes on this problem')
+	await box.fill('ways(n) = ways(n - 1) + ways(n - 2)')
+	await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible({
+		timeout: 15_000
+	})
+
+	await page.reload()
+	await hydrated(page)
+	await notesTab.click()
+	await expect(box).toHaveValue('ways(n) = ways(n - 1) + ways(n - 2)')
+
+	await box.fill('')
+	await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible({
+		timeout: 15_000
+	})
+	await page.reload()
+	await hydrated(page)
+	await notesTab.click()
+	await expect(box).toHaveValue('')
 })

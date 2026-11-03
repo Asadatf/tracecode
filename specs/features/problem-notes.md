@@ -47,12 +47,14 @@ Timestamptz @updatedAt }`, primary key `(userId, problemSlug)`, cascade on
   enabled (no policies) in a hand-written follow-up migration, as for every
   table.
 - Server actions in `src/server/actions/notes.ts` through `validatedAction`:
-  - `getProblemNote({ problemSlug })` → `{ body: string | null }`
   - `saveProblemNote({ problemSlug, body: string max 2000 })` →
-    `{ saved: true, updatedAt }`; empty body deletes.
+    `{ saved: boolean }` (false when signed out); empty body deletes.
   - `problemSlug` must be a registry slug (Zod refine).
-- Analytics: `problem_note_saved` with `{ problem_slug, length_bucket }`
-  (`'short' | 'medium' | 'long'`), never the text (`docs/rules/analytics.md`).
+- Analytics: none in this slice (TraceCode records learning activity in its
+  own tables, not the PostHog taxonomy).
+- Reads happen on the server: `getProblemNote(slug)` in
+  `src/server/learning/notes.ts` is called by the practice page, so the panel
+  renders with the note (AC3) and no read action is exposed.
 - `specs/01-architecture.md` data model gains the table.
 
 ## Edge cases
@@ -76,3 +78,5 @@ Timestamptz @updatedAt }`, primary key `(userId, problemSlug)`, cascade on
 ## Changelog
 
 - 2026-11-03 — created.
+- 2026-11-03 — dropped the analytics event; the note is read on the server
+  rather than through a read action.

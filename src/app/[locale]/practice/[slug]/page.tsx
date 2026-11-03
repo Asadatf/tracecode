@@ -9,6 +9,7 @@ import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { PracticeWorkspace } from '@/components/trace/practice-workspace'
+import { getProblemNote } from '@/server/learning/notes'
 import { CodeFeatureBackfill } from '@/components/trace/code-feature-backfill'
 import { currentUserIdSafe } from '@/server/auth/session'
 import { LAYOUT_COOKIE, parseLayoutCookie } from '@/lib/trace/workspace-layout'
@@ -58,12 +59,18 @@ export default async function PracticePage({
 	// unchanged workspace; a guest on Two Sum keeps the standalone page, since
 	// the shell is account-only.
 	// The saved pane sizes, read here so the first paint already matches them (AC7).
-	const initialLayout = parseLayoutCookie((await cookies()).get(LAYOUT_COOKIE)?.value)
+	// The note is read alongside the layout, not after it (specs/features/problem-notes.md).
+	const [cookieStore, initialNote] = await Promise.all([
+		cookies(),
+		isAuthenticated ? getProblemNote(slug) : Promise.resolve(null)
+	])
+	const initialLayout = parseLayoutCookie(cookieStore.get(LAYOUT_COOKIE)?.value)
 	const workspace = (
 		<PracticeWorkspace
 			slug={slug}
 			isAuthenticated={isAuthenticated}
 			initialLayout={initialLayout}
+			initialNote={initialNote}
 		/>
 	)
 
