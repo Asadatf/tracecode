@@ -104,12 +104,18 @@
 	align-self: stretch;
 	gap: 8px;
 }
+/* Label and count on one line, the bar full width under them, so it stays
+   readable in the narrow challenge pane. */
 .barRow {
 	display: grid;
-	grid-template-columns: 7.5rem minmax(0, 1fr) auto;
-	gap: 10px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 4px 10px;
 	align-items: center;
 	font-size: 12px;
+}
+.barRow .track {
+	grid-column: 1 / -1;
+	grid-row: 2;
 }
 .track {
 	height: 10px;
