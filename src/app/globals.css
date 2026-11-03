@@ -91,3 +91,17 @@ body {
 nextjs-portal {
 	display: none;
 }
+
+/* Toasts slide in from the right and out again (src/components/ui/toast.tsx). */
+@keyframes toast-in {
+	from {
+		opacity: 0;
+		transform: translateX(24px) scale(0.98);
+	}
+}
+@keyframes toast-out {
+	to {
+		opacity: 0;
+		transform: translateX(24px) scale(0.98);
+	}
+}

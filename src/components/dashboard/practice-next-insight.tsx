@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowRightIcon, LightbulbIcon, RefreshIcon, SpinnerIcon } from '@/components/ui/icons'
 import { useInsightRefresh } from '@/components/progress/use-insight-refresh'
+import { toast } from '@/lib/toast'
 import { insightSummary } from '@/lib/learning/summary-topics'
 import type { ReasonCode, Recommendation } from '@/lib/learning/recommend'
 import styles from './dashboard.module.css'
@@ -18,7 +19,14 @@ export interface NextLabels {
 	aiTag: string
 	refresh: string
 	refreshing: string
-	statuses: { up_to_date: string; cooldown: string; running: string; failed: string }
+	// Toast text for how a refresh ended.
+	outcomes: {
+		refreshed: string
+		up_to_date: string
+		cooldown: string
+		running: string
+		failed: string
+	}
 }
 
 export interface NextProblem {
@@ -51,7 +59,17 @@ export function PracticeNextInsight({
 	problems: Record<string, NextProblem>
 	topicsBySlug: Record<string, string>
 }) {
-	const { recommendation, status, pending, refresh } = useInsightRefresh(initial)
+	const { recommendation, pending, refresh } = useInsightRefresh(initial, (outcome) =>
+		toast({
+			description: labels.outcomes[outcome],
+			variant:
+				outcome === 'failed'
+					? 'destructive'
+					: outcome === 'refreshed' || outcome === 'up_to_date'
+						? 'success'
+						: 'default'
+		})
+	)
 	const { diagnosis } = recommendation
 	const top = recommendation.rankedProblems[0]
 	const next = top == null ? undefined : problems[top.slug]
@@ -76,11 +94,6 @@ export function PracticeNextInsight({
 						</button>
 					) : null}
 				</div>
-				{status != null ? (
-					<span role="status" className={styles.refreshStatus}>
-						{labels.statuses[status]}
-					</span>
-				) : null}
 				<p className={styles.insightText}>{insightSummary(diagnosis.summary, topicsBySlug)}</p>
 				{top != null && next != null ? (
 					<div className={styles.upNext}>

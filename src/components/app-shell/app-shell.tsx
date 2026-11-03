@@ -1,6 +1,5 @@
 import { Suspense, type ReactNode } from 'react'
 import { getTranslations } from 'next-intl/server'
-import { AccountMenu } from '@/components/account-menu'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 import { topicLabel } from '@/lib/home/problem-rows'
 import { PROBLEMS } from '@/lib/trace/problems'
@@ -14,15 +13,7 @@ import type { NavGroup, NavKey } from './sidebar-nav'
 // wrapping its content in this and naming its own nav item
 // (specs/features/dashboard-page.md AC17); nothing page-specific lives here.
 // The slim problem list is built here so the client never receives test data.
-export async function AppShell({
-	account,
-	current,
-	children
-}: {
-	account: { email: string | null }
-	current: NavKey
-	children: ReactNode
-}) {
+export async function AppShell({ current, children }: { current: NavKey; children: ReactNode }) {
 	const t = await getTranslations('AppShell')
 
 	const groups: NavGroup[] = [
@@ -55,7 +46,8 @@ export async function AppShell({
 				collapse: t('collapse'),
 				expand: t('expand'),
 				openMenu: t('openMenu'),
-				closeMenu: t('closeMenu')
+				closeMenu: t('closeMenu'),
+				signOut: t('account.signOut')
 			}}
 			topbar={
 				<>
@@ -71,16 +63,6 @@ export async function AppShell({
 						<Suspense fallback={<span className="size-9" aria-hidden="true" />}>
 							<NotificationBellSlot />
 						</Suspense>
-						<AccountMenu
-							email={account.email}
-							isSettings={current === 'settings'}
-							labels={{
-								account: t('account.menu'),
-								signedInAs: t('account.signedInAs'),
-								settings: t('account.settings'),
-								signOut: t('account.signOut')
-							}}
-						/>
 					</div>
 				</>
 			}

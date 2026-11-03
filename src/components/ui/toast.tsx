@@ -23,12 +23,16 @@ export function ToastViewport({
 }
 
 const toastVariants = cva(
-	'pointer-events-auto relative flex w-full items-start justify-between gap-3 rounded-lg border p-4 shadow-sm transition-opacity data-[state=closed]:opacity-0',
+	// Solid colours with white text, the same in light and dark mode. Slides in
+	// from the right on open and out on close (keyframes in globals.css); the
+	// Toaster delays unmounting so the exit plays.
+	'pointer-events-auto relative flex w-full items-start justify-between gap-3 rounded-xl p-4 text-white shadow-lg data-[state=closed]:animate-[toast-out_220ms_ease-in_forwards] data-[state=open]:animate-[toast-in_360ms_cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:animate-none',
 	{
 		variants: {
 			variant: {
-				default: 'border-border bg-surface text-text',
-				destructive: 'border-danger bg-surface text-text'
+				default: 'bg-[#17231e]',
+				success: 'bg-[#087a56]',
+				destructive: 'bg-[#b44837]'
 			}
 		},
 		defaultVariants: { variant: 'default' }
@@ -47,21 +51,14 @@ export function ToastTitle({
 	className,
 	...props
 }: React.ComponentProps<typeof ToastPrimitives.Title>) {
-	return (
-		<ToastPrimitives.Title
-			className={cn('text-text text-sm font-semibold', className)}
-			{...props}
-		/>
-	)
+	return <ToastPrimitives.Title className={cn('text-sm font-semibold', className)} {...props} />
 }
 
 export function ToastDescription({
 	className,
 	...props
 }: React.ComponentProps<typeof ToastPrimitives.Description>) {
-	return (
-		<ToastPrimitives.Description className={cn('text-text-muted text-sm', className)} {...props} />
-	)
+	return <ToastPrimitives.Description className={cn('text-sm opacity-90', className)} {...props} />
 }
 
 export function ToastClose({
@@ -72,8 +69,8 @@ export function ToastClose({
 		<ToastPrimitives.Close
 			aria-label="Dismiss"
 			className={cn(
-				'text-text-faint hover:text-text shrink-0 rounded',
-				'focus-visible:outline-accent focus-visible:outline focus-visible:outline-2',
+				'shrink-0 rounded opacity-70 hover:opacity-100',
+				'focus-visible:outline focus-visible:outline-2 focus-visible:outline-white',
 				className
 			)}
 			{...props}

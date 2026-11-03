@@ -50,6 +50,7 @@ export interface ShellLabels {
 	expand: string
 	openMenu: string
 	closeMenu: string
+	signOut: string
 }
 
 // Client half of the shell: the collapsible rail, the mobile drawer, and the
@@ -98,7 +99,7 @@ export function ShellFrame({
 						</button>
 					</div>
 					<nav aria-label={labels.nav} className={styles.sidebarNav}>
-						<SidebarNav groups={groups} current={current} />
+						<SidebarNav groups={groups} current={current} signOutLabel={labels.signOut} />
 					</nav>
 				</div>
 			</aside>
@@ -142,6 +143,7 @@ export function ShellFrame({
 						<SidebarNav
 							groups={groups}
 							current={current}
+							signOutLabel={labels.signOut}
 							onNavigate={() => drawerRef.current?.close()}
 						/>
 					</nav>

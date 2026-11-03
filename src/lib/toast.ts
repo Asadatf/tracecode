@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 export type ToastInput = {
 	title?: string
 	description?: string
-	variant?: 'default' | 'destructive'
+	variant?: 'default' | 'success' | 'destructive'
 }
 
 type ToastItem = ToastInput & { id: string }
@@ -18,7 +18,9 @@ let toasts: ToastItem[] = []
 const listeners = new Set<(toasts: ToastItem[]) => void>()
 let nextId = 0
 
-const TOAST_DURATION_MS = 5000
+// A safety net past Radix's own 5s auto-close plus the exit animation, so the Toaster
+// (which removes a toast after it closes) normally gets there first.
+const TOAST_DURATION_MS = 5500
 
 function emit() {
 	listeners.forEach((listener) => listener(toasts))

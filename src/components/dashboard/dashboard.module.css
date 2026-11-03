@@ -45,14 +45,18 @@
 .summary {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 12px;
+	gap: 18px;
 	margin: 0;
 }
 .stat {
 	padding: 16px 18px;
-	border: 1px solid var(--border);
+	border: 1px solid #bfccc2;
 	border-radius: 16px;
-	background: var(--surface);
+	/* The green glow sits behind the card, in the page background only. */
+	background: #f6f7f5;
+	box-shadow:
+		0 0 12px rgba(8, 122, 86, 0.11),
+		0 8px 14px -12px rgba(15, 20, 18, 0.2);
 }
 .stat dt {
 	color: var(--text-muted);
@@ -74,9 +78,13 @@
 
 .card {
 	padding: 20px;
-	border: 1px solid var(--border);
+	border: 1px solid #bfccc2;
 	border-radius: 18px;
-	background: var(--surface);
+	/* The green glow sits behind the card, in the page background only. */
+	background: #f6f7f5;
+	box-shadow:
+		0 0 12px rgba(8, 122, 86, 0.11),
+		0 8px 14px -12px rgba(15, 20, 18, 0.2);
 }
 .cardTitle {
 	margin: 0 0 14px;
@@ -97,7 +105,7 @@
 }
 .table th {
 	padding: 12px 16px;
-	background: var(--surface-subtle);
+	background: #eef0ed;
 	color: var(--text-muted);
 	font-weight: 600;
 	text-align: left;
@@ -344,10 +352,6 @@
 .refresh:disabled {
 	opacity: 0.6;
 	cursor: default;
-}
-.refreshStatus {
-	color: rgba(255, 255, 255, 0.7);
-	font-size: 13px;
 }
 
 .topicsHead {

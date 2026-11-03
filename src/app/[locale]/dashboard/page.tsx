@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 			: null
 
 	return (
-		<AppShell account={account} current="overview">
+		<AppShell current="overview">
 			<header className={styles.head}>
 				<p className={styles.eyebrow}>{t('eyebrow')}</p>
 				<h1 className={styles.title}>{t('heading')}</h1>

@@ -1,7 +1,14 @@
 'use client'
 
 import { Link } from '@/i18n/routing'
-import { ChartIcon, CodeIcon, DashboardIcon, SettingsIcon } from '@/components/ui/icons'
+import { signOutAction } from '@/server/actions/auth'
+import {
+	ChartIcon,
+	CodeIcon,
+	DashboardIcon,
+	SettingsIcon,
+	SignOutIcon
+} from '@/components/ui/icons'
 import styles from './app-shell.module.css'
 
 export type NavKey = 'overview' | 'problems' | 'progress' | 'settings'
@@ -30,18 +37,27 @@ const ICONS = {
 export function SidebarNav({
 	groups,
 	current,
+	signOutLabel,
 	onNavigate
 }: {
 	groups: NavGroup[]
 	current: NavKey
+	// Adds a Sign out entry at the end of the last group.
+	signOutLabel: string
 	onNavigate?: () => void
 }) {
 	return (
 		<>
-			{groups.map((group) => (
+			{groups.map((group, groupIndex) => (
 				<div key={group.heading} className={styles.group}>
 					<p className={styles.groupHeading}>{group.heading}</p>
-					<ul className={styles.navList}>
+					<ul
+						className={
+							groupIndex === groups.length - 1
+								? `${styles.navList} ${styles.accountRow}`
+								: styles.navList
+						}
+					>
 						{group.items.map((item) => {
 							const Icon = ICONS[item.key]
 							return (
@@ -59,6 +75,20 @@ export function SidebarNav({
 								</li>
 							)
 						})}
+						{groupIndex === groups.length - 1 ? (
+							<li>
+								<form action={signOutAction}>
+									<button
+										type="submit"
+										className={styles.signOutIcon}
+										aria-label={signOutLabel}
+										data-tip={signOutLabel}
+									>
+										<SignOutIcon size={20} />
+									</button>
+								</form>
+							</li>
+						) : null}
 					</ul>
 				</div>
 			))}

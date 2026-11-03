@@ -356,9 +356,6 @@
 			"empty": "No problems match"
 		},
 		"account": {
-			"menu": "Account menu",
-			"signedInAs": "Signed in as",
-			"settings": "Settings",
 			"signOut": "Sign out"
 		}
 	},
@@ -398,7 +395,8 @@
 			"open": "Open problem",
 			"refresh": "Refresh AI insight",
 			"empty": "Nothing to suggest yet.",
-			"aiTag": "AI"
+			"aiTag": "AI",
+			"refreshed": "AI insight refreshed."
 		}
 	},
 	"ApplicationNav": {

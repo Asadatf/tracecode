@@ -48,7 +48,8 @@ export async function PracticeNextWidget({
 						aiTag: t('aiTag'),
 						refresh: t('refresh'),
 						refreshing: insight('refreshing'),
-						statuses: {
+						outcomes: {
+							refreshed: t('refreshed'),
 							up_to_date: insight('upToDate'),
 							cooldown: insight('cooldown'),
 							running: insight('running'),

@@ -45,7 +45,9 @@ touched by this change.
 - **AC3** — GIVEN the sidebar WHEN rendered THEN it lists Overview
   (`/dashboard`, `aria-current="page"`), Problems (`/#problems`), Progress
   (`/progress`) and Settings (`/settings`), each with an icon from
-  `@/components/ui/icons`. The brand mark links to `/`.
+  `@/components/ui/icons`. Settings sits in an Account group at the bottom of
+  the sidebar, with a sign-out icon button at the far right of the same row (the existing
+  `signOutAction`; icon-only, labelled "Sign out"). The brand mark links to `/`.
 - **AC4** — GIVEN the sidebar toggle WHEN activated by pointer or keyboard
   THEN the sidebar collapses to an icon-only rail (icons stay, labels become
   visually hidden but remain the accessible name, plus a tooltip on hover and
@@ -88,11 +90,9 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   ("12 min. ago"), a link button and Mark read, unread cards tinted with a dot.
   Data, actions and the unread count are the existing M7.5B ones; no second
   inbox is added. The panel is shared by every header that renders the bell.
-- **AC12** — GIVEN the account button WHEN opened by pointer or keyboard THEN
-  a dropdown shows the account email and the links Settings (`/settings`) and Sign Out (the existing
-  `signOutAction`). Escape, outside click and selection close it; focus
-  returns to the trigger on Escape. The avatar shows the initials from
-  `account-initials`, not a stock photo.
+- **AC12** — GIVEN the top bar THEN it has no account button or menu: the
+  search box on the left and the notification bell at the far right. Settings
+  and Sign out live at the bottom of the sidebar (AC3).
 - **AC13** — GIVEN a learner with no runs THEN Recent runs shows an empty state
   with a "Solve Two Sum" link, and By topic still lists every topic as `0/n`.
 - **AC14** — GIVEN saved progress that can't be read THEN the content region
@@ -110,7 +110,9 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   so later pages follow the dashboard's theme by adopting it. The dashboard is
   the first consumer; no dashboard-specific markup lives in the shell.
 - **AC18** — GIVEN the sidebar WHEN expanded THEN it is 232px wide (collapsed
-  68px), set by one CSS token so it can be tuned.
+  68px), set by one CSS token so it can be tuned. The sidebar (and the mobile
+  drawer) use the same dark landing-hero green as the right-hand card, with its
+  glow and faint corner rings; the current item is a light-green pill.
 - **AC19** — GIVEN a learner with progress THEN the right column is one
   floating card (same hover lift) in one dark-green theme, with a single gradient
   behind both parts so it reads as one surface: the "Coverage by topic" section
@@ -119,7 +121,9 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   "Your learning insight", a one-line summary, "UP NEXT", the problem title and
   its topic chips and a Start/Continue/Open problem button, with a refresh icon
   at the right of the header (an AI-written summary also shows a small "AI"
-  tag). The card has a soft green glow behind it and faint concentric guide
+  tag). Every refresh outcome (refreshed, already up to date, cooldown, already
+  running, failed) shows as a toast at the bottom right, e.g. "Couldn’t refresh
+  the AI insight right now — showing your latest." for a failure. The card has a soft green glow behind it and faint concentric guide
   rings like the landing hero. When the engine's summary is
   "You solved <slug> after some earlier unsuccessful attempts", it reads
   "You've solved <topic and topic> problems after earlier attempts. Ready for a
