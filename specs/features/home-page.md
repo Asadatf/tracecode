@@ -103,6 +103,10 @@ to execute Python on the landing page.
   and mint controls with dark text. The learning-loop cards use dark surfaces
   with mint accents; the learning loop and closing CTA have continuous full-width
   radial mint glows on the same near-black green background as the hero.
+- **AC16** — GIVEN a signed-in learner WHEN they open `/` THEN they are
+  redirected to `/dashboard`; the landing page is for visitors only. The app
+  shell's logo links to `/dashboard`, so it never drops a learner out of the
+  app onto the landing page.
 
 ## Data / API
 
@@ -178,6 +182,8 @@ Track B (UI)
 - 2026-11-01 — built; Shipped once merged to `main`.
 - 2026-11-02 — superseded the static step-table presentation with the approved
   fixture-backed, user-controlled Landing Page tour; backend and Practice unchanged.
+- 2026-11-04 — AC16: signed-in learners go from `/` to `/dashboard`, and the app
+  logo links to `/dashboard`.
 - 2026-11-02 — added the session-aware landing navigation action now that the
   combined sign-in and registration page exists.
 - 2026-11-02 — corrected the public sequence to green, white, green, white, green.

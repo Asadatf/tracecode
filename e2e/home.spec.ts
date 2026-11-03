@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { openAsLearner } from './helpers/auth'
 
 // specs/features/home-page.md — the browser-level acceptance criteria. The
 // data-level ones (AC5–AC8) are unit tests in src/lib/home/.
@@ -259,4 +260,15 @@ test('AC13: guided preview code fits its panel without horizontal scrolling', as
 		await expect(source.locator('code')).toHaveCount(6)
 		await expect(source.locator('code').nth(3)).toHaveText('if nums[i] + nums[j] == target:')
 	}
+})
+
+test('AC16: a signed-in learner opening / lands on the dashboard, and the app logo stays in the app', async ({
+	page
+}) => {
+	await openAsLearner(page, '/dashboard')
+	await page.goto('/')
+	await page.waitForURL((url) => url.pathname === '/dashboard')
+	await page.goto('/problems')
+	await page.getByRole('link', { name: /home/i }).first().click()
+	await page.waitForURL((url) => url.pathname === '/dashboard')
 })
