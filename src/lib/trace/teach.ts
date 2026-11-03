@@ -165,7 +165,7 @@ const optimiseAfterCorrect: Rule = (context) => {
 		id: 'optimise-nested-loops',
 		title: 'A faster approach is possible',
 		hints: hints(
-			`All tests pass using nested loops, which checks roughly every pair — about O(n²) time.`,
+			`All tests pass using nested loops, which checks roughly every pair, about O(n²) time.`,
 			`Could you avoid re-examining pairs by remembering the numbers you have already seen?`,
 			`For each number, check for its complement (target − number) in a hash map of earlier values to reach O(n).`
 		)
@@ -186,7 +186,7 @@ const cdNotBoolean: Rule = (context) => {
 		hints: hints(
 			`The function returned ${formatValue(actual)}, but this problem expects True or False.`,
 			`Re-read what the problem asks you to return, and compare it with what your return statement produces.`,
-			`Return a Python boolean — True as soon as a repeat is found, otherwise False.`
+			`Return a Python boolean: True as soon as a repeat is found, otherwise False.`
 		)
 	}
 }
@@ -205,7 +205,7 @@ const cdWrongVerdict: Rule = (context) => {
 			title: 'A repeated value was missed',
 			hints: hints(
 				`The function returned False, but this input contains a value that appears more than once.`,
-				`Replay the run and watch the comparisons — is every earlier value still being checked against the current one?`,
+				`Replay the run and watch the comparisons. Is every earlier value still being checked against the current one?`,
 				`Remember the values you have already seen (for example in a set) and return True as soon as one repeats.`
 			)
 		}
@@ -231,7 +231,7 @@ const cdOptimise: Rule = (context) => {
 		id: 'optimise-nested-loops',
 		title: 'A faster approach is possible',
 		hints: hints(
-			`All tests pass using nested loops, which compares roughly every pair — about O(n²) time.`,
+			`All tests pass using nested loops, which compares roughly every pair, about O(n²) time.`,
 			`Could you decide whether a value has been seen before without re-scanning the whole array each time?`,
 			`Keep a set of values seen while scanning once, for average O(n) time.`
 		)
@@ -278,7 +278,7 @@ const notBoolean: Rule = (context) => {
 		hints: hints(
 			`The function returned ${formatValue(actual)}, but this problem expects True or False.`,
 			`Re-read what the problem asks you to return, and compare it with what your return statement produces.`,
-			`Return a Python boolean — True or False — on every path through the function.`
+			`Return a Python boolean (True or False) on every path through the function.`
 		)
 	}
 }
@@ -318,7 +318,7 @@ const anagramCountsDiffer: Rule = (context) => {
 		title: 'Same letters, different counts',
 		hints: hints(
 			`s and t use the same set of letters and have the same length, yet the function returned True.`,
-			`Having the same letters is not enough — "aab" and "abb" use the same letters. Does your code compare how many times each letter appears?`,
+			`Having the same letters is not enough. "aab" and "abb" use the same letters. Does your code compare how many times each letter appears?`,
 			`Compare per-letter counts (or compare the strings in a canonical order), not just which letters are present.`
 		)
 	}

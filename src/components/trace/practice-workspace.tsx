@@ -31,13 +31,14 @@ import { saveAttempt, recordReplaySession, recordLearningEvent } from '@/server/
 import { resolveAttemptDbId } from '@/lib/learning/replay-link'
 import { hintRevealDetail } from '@/lib/learning/hint-event'
 import { replayInspectedEvent } from '@/lib/learning/replay-writes'
-import { FormatIcon, HelpIcon, PlayIcon, ResetIcon } from '@/components/ui/icons'
+import { FormatIcon, HelpIcon, PlayIcon, ResetIcon, SparkleIcon } from '@/components/ui/icons'
 import { formatPython } from '@/lib/trace/format-python'
 import { toast } from '@/lib/toast'
 import type { LayoutState } from '@/lib/trace/workspace-layout'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
+import { TutorPanel } from './tutor/tutor-panel'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
 import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
@@ -116,6 +117,8 @@ const LABELS: WorkspaceLabels = {
 	collapseChallenge: 'Collapse challenge pane',
 	expandChallenge: 'Expand challenge pane',
 	collapseResults: 'Collapse results pane',
+	collapseCode: 'Collapse code pane',
+	expandCode: 'Expand code pane',
 	expandResults: 'Expand results pane',
 	maximizeChallenge: 'Maximize challenge pane',
 	maximizeCode: 'Maximize code pane',
@@ -128,7 +131,9 @@ const LABELS: WorkspaceLabels = {
 	viewCode: 'Code',
 	viewResults: 'Results',
 	challenge: 'Challenge',
-	results: 'Results'
+	results: 'Results',
+	tutor: 'AI Tutor',
+	resizeTutor: 'Resize code and AI Tutor panes'
 }
 
 // Long inputs (a 20 000-character string, a 10 000-element list) are clipped in
@@ -163,6 +168,9 @@ function ProblemWorkspace({
 	const [replayStep, setReplayStep] = useState(0)
 	const [tourSignal, setTourSignal] = useState(0)
 	const [cursor, setCursor] = useState({ line: 1, column: 1 })
+	// The AI Tutor preview is closed on every visit; opening it never touches the
+	// editor, the results or the replay, which all live in this component.
+	const [tutorOpen, setTutorOpen] = useState(false)
 
 	// Start the Python download as the page opens (fail-and-replay AC1), so the
 	// first Run doesn't wait on it. Fire-and-forget: a failed warm-up just
@@ -299,6 +307,12 @@ function ProblemWorkspace({
 		editorPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 	}
 
+	function closeTutor() {
+		setTutorOpen(false)
+		// Hand focus back to the button that opens it.
+		requestAnimationFrame(() => document.getElementById('tutor-toggle')?.focus())
+	}
+
 	// Format fixes indentation only, and always says what it did: a button that
 	// silently does nothing reads as broken.
 	function formatCode() {
@@ -342,7 +356,7 @@ function ProblemWorkspace({
 			...prev,
 			{ id: localId, createdAt: new Date().toISOString(), source, result, saving }
 		])
-		if (result.status === 'timeout') setNotice('Execution timed out — check for an infinite loop.')
+		if (result.status === 'timeout') setNotice('Execution timed out. Check for an infinite loop.')
 		if (result.status === 'engine_error')
 			setNotice(result.error?.message ?? 'The engine could not run this code.')
 	}
@@ -500,8 +514,8 @@ function ProblemWorkspace({
 							</option>
 						))}
 					</select>
-					<Link className={styles.topLink} href="/progress">
-						Progress
+					<Link className={styles.topLink} href="/dashboard">
+						Overview
 					</Link>
 				</div>
 			</header>
@@ -520,6 +534,17 @@ function ProblemWorkspace({
 					))}
 				</div>
 				<span className={styles.toolbarSpacer} />
+				<button
+					id="tutor-toggle"
+					type="button"
+					className={cn(styles.btn, tutorOpen && styles.btnActive)}
+					aria-pressed={tutorOpen}
+					aria-expanded={tutorOpen}
+					aria-controls="pane-tutor"
+					onClick={() => (tutorOpen ? closeTutor() : setTutorOpen(true))}
+				>
+					<SparkleIcon size={16} /> AI Tutor
+				</button>
 				<Stopwatch
 					labels={{
 						timer: 'Stopwatch',
@@ -542,6 +567,21 @@ function ProblemWorkspace({
 				initial={initialLayout}
 				labels={LABELS}
 				resultsDot={submitted != null}
+				tutorOpen={tutorOpen}
+				renderTutor={({ mode, maximized, toggleMaximize }) => (
+					<TutorPanel
+						context={{
+							problemTitle: problem.title,
+							difficulty: problem.difficulty,
+							runSummary: submitted == null ? null : resultSummary
+						}}
+						mode={mode}
+						open={tutorOpen}
+						maximized={maximized}
+						onToggleMaximize={toggleMaximize}
+						onClose={closeTutor}
+					/>
+				)}
 				leftHead={
 					<TabList
 						id="tour-left-tabs"
@@ -963,7 +1003,7 @@ function ResultRow({
 					<br />
 					{test.error != null
 						? `Error: ${test.error.type}: ${test.error.message}`
-						: `${resultLabel}: ${test.actual != null ? formatValue(test.actual) : '—'}`}
+						: `${resultLabel}: ${test.actual != null ? formatValue(test.actual) : '-'}`}
 				</div>
 			</div>
 			<div className={styles.testActions}>

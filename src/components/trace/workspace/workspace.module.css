@@ -148,6 +148,45 @@
 	box-shadow: 0 0 0 3px rgba(8, 122, 86, 0.3);
 }
 
+/* AI Tutor column. Docked it is an ordinary grid column; on a mid-width screen it
+   is a drawer over the workspace, and on a phone it is full screen. */
+.paneTutor {
+	min-width: 0;
+	border-color: rgba(88, 215, 162, 0.22);
+	/* The dashboard widget surface without the guide rings: near-black green with
+	   a glow in the middle, soft corner glows and a green halo. */
+	background:
+		radial-gradient(
+			ellipse 85% 42% at 50% 46%,
+			rgba(57, 166, 126, 0.26),
+			rgba(57, 166, 126, 0.08) 55%,
+			transparent 80%
+		),
+		radial-gradient(circle at 100% 0%, rgba(57, 166, 126, 0.16), transparent 14rem),
+		radial-gradient(circle at 0% 100%, rgba(57, 166, 126, 0.08), transparent 12rem), #101714;
+	color: #fff;
+	box-shadow:
+		0 0 0 1px rgba(88, 215, 162, 0.12),
+		0 0 28px rgba(88, 215, 162, 0.14);
+}
+.paneTutorFloating {
+	position: absolute;
+	z-index: 30;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: min(420px, 92%);
+	box-shadow:
+		0 0 0 1px rgba(88, 215, 162, 0.16),
+		-12px 0 32px rgba(15, 20, 18, 0.28);
+}
+.paneTutorFull {
+	width: 100%;
+}
+.panes {
+	position: relative;
+}
+
 /* Tabs */
 .tabs {
 	display: flex;
@@ -405,7 +444,7 @@
 	.pane {
 		height: 100%;
 	}
-	.panes > .pane,
+	.panes > .pane:not(.paneHidden),
 	.right,
 	.right > .pane {
 		visibility: visible;
@@ -422,16 +461,41 @@
 		right: 16px;
 		bottom: 16px;
 	}
+	.panes > .paneTutor {
+		position: fixed;
+		z-index: 70;
+		inset: 0;
+		width: auto;
+		height: auto;
+		border: 0;
+		border-radius: 0;
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+		box-shadow: none;
+	}
+	.panes > .paneTutor.paneHidden {
+		visibility: hidden;
+	}
 	/* One view at a time: collapse and maximize have nothing to act on. */
 	.paneHead .iconButton {
 		display: none;
 	}
 }
 @media (prefers-reduced-motion: no-preference) {
+	.paneTutorFloating:not(.paneHidden) {
+		animation: tutor-in 150ms ease-out;
+	}
 	.panes,
 	.right {
 		transition:
 			grid-template-columns 150ms ease,
 			grid-template-rows 150ms ease;
+	}
+}
+
+@keyframes tutor-in {
+	from {
+		opacity: 0;
+		transform: translateX(16px);
 	}
 }

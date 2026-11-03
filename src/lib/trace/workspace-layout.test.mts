@@ -4,6 +4,9 @@ import {
 	DEFAULT_LAYOUT,
 	clampLeft,
 	clampTop,
+	clampTutor,
+	leftLimits,
+	tutorLimits,
 	layoutCookieValue,
 	parseLayoutCookie,
 	stepPercent
@@ -37,9 +40,55 @@ test('AC5: keyboard steps are pixels as a percent of the container', () => {
 })
 
 test('AC7: the layout cookie round-trips and ignores garbage', () => {
-	const saved = { left: 41.26, top: 52, leftCollapsed: true, resultsCollapsed: false }
-	assert.deepEqual(parseLayoutCookie(layoutCookieValue(saved)), { ...saved, left: 41.3 })
+	const saved = {
+		left: 41.26,
+		top: 52,
+		leftCollapsed: true,
+		resultsCollapsed: false,
+		codeCollapsed: true,
+		tutor: 31.84
+	}
+	assert.deepEqual(parseLayoutCookie(layoutCookieValue(saved)), {
+		...saved,
+		left: 41.3,
+		tutor: 31.8
+	})
 	assert.deepEqual(parseLayoutCookie(undefined), DEFAULT_LAYOUT)
 	assert.deepEqual(parseLayoutCookie('nope'), DEFAULT_LAYOUT)
 	assert.equal(parseLayoutCookie('999,1,0,0').left, 60)
+})
+
+test('AC17: the Tutor column keeps 300px, at most 45%, and the middle keeps 420px', () => {
+	// 1440px wide, challenge at 20%: 300px is 20.9%, room for the middle caps it at 45%.
+	assert.equal(clampTutor(5, 1440, 20, false), 20.9)
+	assert.equal(clampTutor(80, 1440, 20, false), 45)
+	// A wide challenge pane leaves less: 1440 − 40% − (420+20)/1440 ≈ 29.4%.
+	assert.equal(tutorLimits(1440, 40, false).max, 29.4)
+	// A collapsed challenge rail takes only 44px.
+	assert.ok(tutorLimits(1440, 40, true).max > tutorLimits(1440, 40, false).max)
+})
+
+test('AC17: with the Tutor open the challenge pane gives up room to the middle', () => {
+	assert.equal(leftLimits(1440).max, 60)
+	assert.equal(clampLeft(60, 1440, 28), leftLimits(1440, 28).max)
+	assert.ok(leftLimits(1440, 28).max < 60)
+	// The range is never inverted, even in a window too small for all three.
+	const tight = leftLimits(900, 28)
+	assert.ok(tight.max >= tight.min)
+	const tightTutor = tutorLimits(900, 20, false)
+	assert.ok(tightTutor.max >= tightTutor.min)
+})
+
+test('AC7: a cookie saved before the Tutor existed still loads', () => {
+	const old = parseLayoutCookie('36,58,0,0')
+	assert.equal(old.tutor, DEFAULT_LAYOUT.tutor)
+	assert.equal(old.left, 36)
+})
+
+test('AC6: the code pane can be folded up, but never together with the results', () => {
+	assert.equal(parseLayoutCookie('36,58,0,0,28,1').codeCollapsed, true)
+	const both = parseLayoutCookie('36,58,0,1,28,1')
+	assert.equal(both.codeCollapsed, true)
+	assert.equal(both.resultsCollapsed, false)
+	assert.equal(parseLayoutCookie('36,58,0,0').codeCollapsed, false)
 })

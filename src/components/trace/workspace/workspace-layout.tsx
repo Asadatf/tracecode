@@ -14,15 +14,19 @@ import {
 	LAYOUT_DEFAULTS,
 	clampLeft,
 	clampTop,
+	clampTutor,
 	layoutCookie,
 	leftLimits,
 	stepPercent,
 	topLimits,
+	tutorLimits,
 	type LayoutState
 } from '@/lib/trace/workspace-layout'
+import type { TutorMode } from '../tutor/tutor-types'
+import { useViewportMode } from './viewport-mode'
 import styles from './workspace.module.css'
 
-type Maximized = null | 'left' | 'code' | 'results'
+type Maximized = null | 'left' | 'code' | 'results' | 'tutor'
 type PhoneView = 'problem' | 'code' | 'results'
 
 const KEY_STEP_PX = 16
@@ -32,6 +36,8 @@ export interface WorkspaceLabels {
 	collapseChallenge: string
 	expandChallenge: string
 	collapseResults: string
+	collapseCode: string
+	expandCode: string
 	expandResults: string
 	maximizeChallenge: string
 	maximizeCode: string
@@ -45,6 +51,8 @@ export interface WorkspaceLabels {
 	viewResults: string
 	challenge: string
 	results: string
+	tutor: string
+	resizeTutor: string
 }
 
 // The resizable three-pane workspace (specs/features/practice-workspace-layout.md
@@ -61,6 +69,8 @@ export function WorkspaceLayout({
 	resultsHead,
 	resultsBody,
 	resultsDot,
+	tutorOpen,
+	renderTutor,
 	labels
 }: {
 	initial: LayoutState
@@ -73,20 +83,34 @@ export function WorkspaceLayout({
 	resultsBody: ReactNode
 	// Something new in Results, for the phone switcher's dot.
 	resultsDot: boolean
+	// The AI Tutor column. It stays mounted while closed, so opening and closing it
+	// never touches the panes, and the parent keeps owning all workspace state.
+	tutorOpen: boolean
+	renderTutor: (api: {
+		mode: TutorMode
+		maximized: boolean
+		toggleMaximize: () => void
+	}) => ReactNode
 	labels: WorkspaceLabels
 }) {
 	const [layout, setLayout] = useState(initial)
 	const [maximized, setMaximized] = useState<Maximized>(null)
 	const [phoneView, setPhoneView] = useState<PhoneView>('problem')
+	const viewport = useViewportMode()
 	const workspaceRef = useRef<HTMLDivElement>(null)
 	const rightRef = useRef<HTMLDivElement>(null)
+
+	// Closing the Tutor drops its maximized state, so it reopens at its normal size.
+	if (!tutorOpen && maximized === 'tutor') setMaximized(null)
+	const docked = tutorOpen && viewport === 'wide'
+	const tutorMode: TutorMode = viewport === 'wide' ? 'docked' : viewport
 
 	function commit(next: LayoutState) {
 		setLayout(next)
 		document.cookie = layoutCookie(next)
 	}
 
-	function startDrag(event: PointerEvent<HTMLButtonElement>, axis: 'x' | 'y') {
+	function startDrag(event: PointerEvent<HTMLButtonElement>, axis: 'x' | 'y' | 't') {
 		event.preventDefault()
 		const handle = event.currentTarget
 		handle.setPointerCapture(event.pointerId)
@@ -96,13 +120,27 @@ export function WorkspaceLayout({
 			if (axis === 'x') {
 				const box = workspaceRef.current?.getBoundingClientRect()
 				if (box == null) return
-				const pct = clampLeft(((moveEvent.clientX - box.left) / box.width) * 100, box.width)
+				const pct = clampLeft(
+					((moveEvent.clientX - box.left) / box.width) * 100,
+					box.width,
+					docked ? latest.tutor : 0
+				)
 				latest = { ...latest, left: pct, leftCollapsed: false }
+			} else if (axis === 't') {
+				const box = workspaceRef.current?.getBoundingClientRect()
+				if (box == null) return
+				const pct = clampTutor(
+					((box.right - moveEvent.clientX) / box.width) * 100,
+					box.width,
+					latest.left,
+					latest.leftCollapsed
+				)
+				latest = { ...latest, tutor: pct }
 			} else {
 				const box = rightRef.current?.getBoundingClientRect()
 				if (box == null) return
 				const pct = clampTop(((moveEvent.clientY - box.top) / box.height) * 100, box.height)
-				latest = { ...latest, top: pct, resultsCollapsed: false }
+				latest = { ...latest, top: pct, resultsCollapsed: false, codeCollapsed: false }
 			}
 			setLayout(latest)
 		}
@@ -118,26 +156,34 @@ export function WorkspaceLayout({
 		handle.addEventListener('pointercancel', end)
 	}
 
-	function onSplitterKey(event: KeyboardEvent<HTMLButtonElement>, axis: 'x' | 'y') {
+	function onSplitterKey(event: KeyboardEvent<HTMLButtonElement>, axis: 'x' | 'y' | 't') {
 		const px = event.shiftKey ? KEY_STEP_BIG_PX : KEY_STEP_PX
-		const box = (axis === 'x' ? workspaceRef : rightRef).current?.getBoundingClientRect()
+		const box = (axis === 'y' ? rightRef : workspaceRef).current?.getBoundingClientRect()
 		if (box == null) return
-		const size = axis === 'x' ? box.width : box.height
-		const limits = axis === 'x' ? leftLimits(size) : topLimits(size)
-		const current = axis === 'x' ? layout.left : layout.top
-		const before = axis === 'x' ? 'ArrowLeft' : 'ArrowUp'
-		const after = axis === 'x' ? 'ArrowRight' : 'ArrowDown'
+		const size = axis === 'y' ? box.height : box.width
+		const limits =
+			axis === 'x'
+				? leftLimits(size, docked ? layout.tutor : 0)
+				: axis === 'y'
+					? topLimits(size)
+					: tutorLimits(size, layout.left, layout.leftCollapsed)
+		const current = axis === 'x' ? layout.left : axis === 'y' ? layout.top : layout.tutor
+		// Moving the right-hand splitter left makes the Tutor column wider.
+		const grow = axis === 'x' ? 'ArrowRight' : axis === 'y' ? 'ArrowDown' : 'ArrowLeft'
+		const shrink = axis === 'x' ? 'ArrowLeft' : axis === 'y' ? 'ArrowUp' : 'ArrowRight'
 		let value: number | null = null
-		if (event.key === before) value = current - stepPercent(px, size)
-		else if (event.key === after) value = current + stepPercent(px, size)
+		if (event.key === grow) value = current + stepPercent(px, size)
+		else if (event.key === shrink) value = current - stepPercent(px, size)
 		else if (event.key === 'Home') value = limits.min
 		else if (event.key === 'End') value = limits.max
-		if (event.key === 'Enter') {
+		if (event.key === 'Enter' && axis !== 't') {
 			event.preventDefault()
 			commit(
 				axis === 'x'
 					? { ...layout, leftCollapsed: !layout.leftCollapsed }
-					: { ...layout, resultsCollapsed: !layout.resultsCollapsed }
+					: layout.codeCollapsed
+						? { ...layout, codeCollapsed: false }
+						: { ...layout, resultsCollapsed: !layout.resultsCollapsed }
 			)
 			return
 		}
@@ -147,15 +193,19 @@ export function WorkspaceLayout({
 		commit(
 			axis === 'x'
 				? { ...layout, left: clamped, leftCollapsed: false }
-				: { ...layout, top: clamped, resultsCollapsed: false }
+				: axis === 'y'
+					? { ...layout, top: clamped, resultsCollapsed: false, codeCollapsed: false }
+					: { ...layout, tutor: clamped }
 		)
 	}
 
-	function reset(axis: 'x' | 'y') {
+	function reset(axis: 'x' | 'y' | 't') {
 		commit(
 			axis === 'x'
 				? { ...layout, left: LAYOUT_DEFAULTS.left, leftCollapsed: false }
-				: { ...layout, top: LAYOUT_DEFAULTS.top, resultsCollapsed: false }
+				: axis === 'y'
+					? { ...layout, top: LAYOUT_DEFAULTS.top, resultsCollapsed: false, codeCollapsed: false }
+					: { ...layout, tutor: LAYOUT_DEFAULTS.tutor }
 		)
 	}
 
@@ -173,25 +223,33 @@ export function WorkspaceLayout({
 
 	const leftCollapsed = layout.leftCollapsed && maximized == null
 	const resultsCollapsed = layout.resultsCollapsed && maximized == null
-	const hideLeft = maximized === 'code' || maximized === 'results'
-	const hideRight = maximized === 'left'
+	const codeCollapsed = layout.codeCollapsed && maximized == null
+	// A docked Tutor maximized takes the whole workspace; as a drawer it just fills itself.
+	const tutorFills = docked && maximized === 'tutor'
+	const hideLeft = maximized === 'code' || maximized === 'results' || tutorFills
+	const hideRight = maximized === 'left' || tutorFills
 	const hideCode = maximized === 'results'
 	const hideResults = maximized === 'code'
+	const tutorHidden = !tutorOpen || (maximized != null && maximized !== 'tutor')
+	const showTutorSplitter = docked && maximized == null
 
-	const columns = hideRight
-		? 'minmax(0, 1fr) 0px 0px'
-		: hideLeft
-			? '0px 0px minmax(0, 1fr)'
-			: leftCollapsed
-				? '44px 10px minmax(0, 1fr)'
-				: `${layout.left}% 10px minmax(0, 1fr)`
+	const leftTrack = leftCollapsed ? '44px' : `${layout.left}%`
+	const columns = tutorFills
+		? '0px 0px 0px 0px minmax(0, 1fr)'
+		: maximized === 'left'
+			? 'minmax(0, 1fr) 0px 0px 0px 0px'
+			: hideLeft
+				? '0px 0px minmax(0, 1fr) 0px 0px'
+				: `${leftTrack} 10px minmax(0, 1fr) ${docked ? `10px ${layout.tutor}%` : '0px 0px'}`
 	const rows = hideCode
 		? '0px 0px minmax(0, 1fr)'
 		: hideResults
 			? 'minmax(0, 1fr) 0px 0px'
-			: resultsCollapsed
-				? 'minmax(0, 1fr) 10px 44px'
-				: `${layout.top}% 10px minmax(0, 1fr)`
+			: codeCollapsed
+				? '44px 10px minmax(0, 1fr)'
+				: resultsCollapsed
+					? 'minmax(0, 1fr) 10px 44px'
+					: `${layout.top}% 10px minmax(0, 1fr)`
 
 	return (
 		<div className={styles.workspace} data-view={phoneView} onKeyDown={onKeyDown}>
@@ -308,9 +366,24 @@ export function WorkspaceLayout({
 							>
 								{maximized === 'code' ? <ShrinkIcon size={16} /> : <ExpandIcon size={16} />}
 							</button>
+							<button
+								type="button"
+								className={styles.iconButton}
+								aria-label={codeCollapsed ? labels.expandCode : labels.collapseCode}
+								aria-expanded={!codeCollapsed}
+								onClick={() =>
+									commit({
+										...layout,
+										codeCollapsed: !layout.codeCollapsed,
+										resultsCollapsed: false
+									})
+								}
+							>
+								{codeCollapsed ? <ChevronDownIcon size={16} /> : <ChevronUpIcon size={16} />}
+							</button>
 						</div>
-						<div className={styles.paneBody}>{codeBody}</div>
-						{codeFoot}
+						{codeCollapsed ? null : <div className={styles.paneBody}>{codeBody}</div>}
+						{codeCollapsed ? null : codeFoot}
 					</section>
 
 					<button
@@ -353,7 +426,13 @@ export function WorkspaceLayout({
 								className={styles.iconButton}
 								aria-label={resultsCollapsed ? labels.expandResults : labels.collapseResults}
 								aria-expanded={!resultsCollapsed}
-								onClick={() => commit({ ...layout, resultsCollapsed: !layout.resultsCollapsed })}
+								onClick={() =>
+									commit({
+										...layout,
+										resultsCollapsed: !layout.resultsCollapsed,
+										codeCollapsed: false
+									})
+								}
 							>
 								{resultsCollapsed ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />}
 							</button>
@@ -361,6 +440,41 @@ export function WorkspaceLayout({
 						{resultsCollapsed ? null : <div className={styles.paneBody}>{resultsBody}</div>}
 					</section>
 				</div>
+
+				<button
+					id="tutor-splitter"
+					type="button"
+					role="separator"
+					aria-orientation="vertical"
+					aria-label={labels.resizeTutor}
+					aria-controls="pane-tutor"
+					aria-valuemin={20}
+					aria-valuemax={45}
+					aria-valuenow={Math.round(layout.tutor)}
+					className={cn(styles.splitter, styles.splitterV, !showTutorSplitter && styles.paneHidden)}
+					onPointerDown={(event) => startDrag(event, 't')}
+					onKeyDown={(event) => onSplitterKey(event, 't')}
+					onDoubleClick={() => reset('t')}
+				/>
+
+				<section
+					id="pane-tutor"
+					aria-label={labels.tutor}
+					inert={tutorHidden}
+					className={cn(
+						styles.pane,
+						styles.paneTutor,
+						tutorOpen && !docked && styles.paneTutorFloating,
+						tutorOpen && !docked && maximized === 'tutor' && styles.paneTutorFull,
+						tutorHidden && styles.paneHidden
+					)}
+				>
+					{renderTutor({
+						mode: tutorMode,
+						maximized: maximized === 'tutor',
+						toggleMaximize: () => toggleMax('tutor')
+					})}
+				</section>
 			</div>
 		</div>
 	)

@@ -374,6 +374,11 @@
 	gap: 7px;
 	white-space: nowrap;
 }
+.btnActive {
+	background: #e4f3e9;
+	border-color: #087a56;
+	color: #065c41;
+}
 .btnRun {
 	background: #40be91;
 	border-color: #40be91;
@@ -979,8 +984,12 @@
 .toolbarSpacer {
 	flex: 1;
 }
+.toolbar {
+	min-width: 0;
+}
 .toolbar .stages {
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
+	min-width: 0;
 }
 .toolbar .stage {
 	white-space: nowrap;
