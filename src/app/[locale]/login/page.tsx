@@ -9,7 +9,7 @@ import { currentUserIdSafe } from '@/server/auth/session'
 // An account form, not a marketing page → noindex (which also opts it out of
 // the SEO PUBLIC_PAGES requirement), like /progress.
 export const metadata: Metadata = {
-	title: 'Sign in — TraceCode',
+	title: 'Sign in | TraceCode',
 	robots: { index: false }
 }
 

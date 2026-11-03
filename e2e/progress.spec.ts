@@ -1,21 +1,20 @@
 import { test, expect } from '@playwright/test'
 
-// specs/features/progress-page.md + auth-access.md AC4. /progress is personal,
-// so a signed-out request is redirected to Sign In (with a safe return path)
-// before anything is read. The signed-in views (AC4–AC7 there) are unit tests
-// in src/lib/progress/.
+// Navigation cleanup (specs/features/streak.md AC1–AC2). /progress is retired:
+// old links land on Overview, which sends a signed-out visitor to Sign In, and no
+// progress data is exposed on the way.
 
-test('a signed-out request to /progress redirects to Sign In and exposes no progress data', async ({
+test('a signed-out request to the retired /progress route ends at Sign In, with no progress data', async ({
 	page
 }) => {
 	await page.goto('/progress')
-	await expect(page).toHaveURL('/login?next=%2Fprogress')
+	await expect(page).toHaveURL(/\/login\?next=%2Fdashboard/)
 	await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible()
 	await expect(page.getByRole('heading', { name: 'Your progress' })).toHaveCount(0)
 	await expect(page.getByRole('table')).toHaveCount(0)
 })
 
-test('at phone width the sign-in page has no horizontal scroll', async ({ page }) => {
+test('at phone width the redirect lands on a page with no horizontal scroll', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 })
 	await page.goto('/progress')
 	const overflow = await page.evaluate(

@@ -30,7 +30,7 @@ export async function generateMetadata({
 	const { slug } = await params
 	const problem = PROBLEMS[slug]
 	return {
-		title: problem != null ? `${problem.title} — TraceCode` : 'TraceCode',
+		title: problem != null ? `${problem.title} | TraceCode` : 'TraceCode',
 		robots: { index: false }
 	}
 }

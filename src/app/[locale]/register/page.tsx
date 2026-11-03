@@ -7,7 +7,7 @@ import { authHref, safeReturnTo } from '@/lib/auth/return-to'
 import { currentUserIdSafe } from '@/server/auth/session'
 
 export const metadata: Metadata = {
-	title: 'Create account — TraceCode',
+	title: 'Create account | TraceCode',
 	robots: { index: false }
 }
 

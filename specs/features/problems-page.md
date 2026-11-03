@@ -30,14 +30,15 @@ one click to start.
   the same `AppShell` as the dashboard (sidebar, search, bell) with a header
   ("Learning workspace" / "Problems") and one card listing every registry
   problem in registry order: number, title, topics, difficulty, status.
-- **AC4** — GIVEN a problem row THEN its title links to `/practice/<slug>`.
+- **AC4** — GIVEN a problem row THEN its title opens the shared problem-detail
+  modal (AC15) and its Action button links to `/practice/<slug>` (AC14).
 - **AC5** — GIVEN the card header THEN it shows `solved/total` for the whole
   catalogue.
 - **AC6** — GIVEN saved progress WHEN rendered THEN each status is Solved,
   Attempted or Not started from the learner's own runs; GIVEN progress can't be
   read THEN statuses show "—" and nothing is invented.
 - **AC7** — GIVEN a viewport at 390px THEN the page has no horizontal overflow
-  (the table scrolls inside its card).
+  (see AC13 and AC16).
 - **AC8** — GIVEN `/problems` at 1024px or wider THEN a floating graphite
   calendar widget sits to the right of the list (sticky, with the same hover
   lift as the dashboard's cards); below 1024px it stacks under the list.
@@ -62,6 +63,36 @@ one click to start.
   `/practice/<slug>` for that date's problem, chosen as a pure function of the
   ISO date over the catalogue (the same date always opens the same problem),
   and its accessible name is "<date>: <title>".
+- **AC11** — GIVEN the list card THEN it has no heading. Its header holds topic
+  filter chips on the left ("All topics", then each topic the catalogue has, in
+  catalogue order; one at a time, `aria-pressed`), and on the right a Status
+  dropdown and the solved tally. Choosing a topic shows only the problems with
+  that topic and "All topics" restores them; the filter only narrows rows
+  already loaded.
+- **AC12** — GIVEN the Status dropdown THEN its options are All, Attempted, Not
+  started, Solved and Unsolved. Attempted is every problem with a saved attempt,
+  solved or not; Unsolved is attempted but not yet solved; Not started has none;
+  Solved is solved. It combines with the topic chips, and an empty result says
+  no problems match. When saved progress cannot be read the dropdown is hidden.
+- **AC13** — GIVEN the list THEN the table has no scroll box of its own: it is as
+  tall as its rows, there is no pagination, and the page has one scrollbar. On a
+  desktop the sidebar and the calendar widget stay in place while the table
+  scrolls, and the column headings pin to the top of the page scroll.
+- **AC14** — GIVEN the table THEN its last column is Action, with Start (not
+  started), Continue (attempted, unsolved) or Reattempt (solved), each linking to
+  `/practice/<slug>`.
+- **AC15** — GIVEN a title WHEN activated (pointer or keyboard) THEN the one shared
+  problem-detail modal opens (dashboard-page AC26): title and difficulty, topics,
+  status, total attempts, best result, first attempted, last attempted and, if
+  solved, first solved and last solved, plus the Practice action; there is no second detail
+  system. Escape, the Close button or a click outside closes it and focus
+  returns to the title.
+- **AC16** — GIVEN a viewport of 700px or less THEN the number, topics and
+  difficulty columns are dropped (the difficulty pill moves under the title, and
+  topics are in the modal) so the table fits with no sideways scroll and the page
+  has no horizontal overflow.
+- **AC17** — GIVEN the sidebar THEN it no longer has a Progress entry; this page
+  is the place to see every problem's status.
 
 ## Data / API
 
@@ -87,3 +118,7 @@ choice is `problemForDate` in `src/lib/problems/daily-problem.ts`. Copy lives in
 ## Changelog
 
 - 2026-11-03 — created and agreed from the user's brief.
+- 2026-11-03 — list heading removed, topic filter chips and a ten-row scroll added
+  (AC11, AC12; user).
+- 2026-11-03 — status dropdown, Action column, shared detail modal, single page
+  scroll with sticky sidebar and widget, phone columns (AC11–AC17; user).

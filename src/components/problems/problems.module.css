@@ -22,7 +22,10 @@
 	background: color-mix(in srgb, var(--success) 12%, transparent);
 	color: var(--success);
 }
-.medium,
+.medium {
+	background: rgba(228, 155, 48, 0.2);
+	color: #a56a10;
+}
 .attempted {
 	background: color-mix(in srgb, var(--warning) 14%, transparent);
 	color: var(--warning);
@@ -45,6 +48,159 @@
 }
 .row:hover td {
 	background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+/* Card header: topic filter chips on the left, the solved tally on the right. */
+.listHead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px 14px;
+	margin-bottom: 14px;
+}
+.filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	min-width: 0;
+}
+.filterChip {
+	padding: 6px 13px;
+	border: 1px solid var(--border-strong);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text-muted);
+	font: 600 13px var(--font-sans);
+	cursor: pointer;
+}
+.filterChip:hover {
+	background: var(--surface-hover);
+	color: var(--text);
+}
+.filterChip[aria-pressed='true'] {
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	color: var(--accent-hover);
+}
+.filterChip:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+	outline-offset: 2px;
+}
+
+/* The header's right side: the status dropdown and the solved tally. */
+.headEnd {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-left: auto;
+}
+.statusFilter {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 600;
+}
+.statusFilter select {
+	padding: 7px 30px 7px 12px;
+	border: 1px solid var(--border-strong);
+	border-radius: 10px;
+	background: var(--surface);
+	color: var(--text);
+	font: 600 13px var(--font-sans);
+	cursor: pointer;
+}
+.statusFilter select:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+	outline-offset: 2px;
+}
+
+/* The table is as tall as its rows: no scroll box of its own, so the page has one
+   scrollbar and the column headings pin to the top of the page scroll. */
+.tableWrap {
+	border: 1px solid var(--border);
+	border-radius: 14px;
+}
+.table th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+.table td {
+	height: 56px;
+	box-sizing: border-box;
+}
+.titleButton {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--text);
+	font: 600 14px var(--font-sans);
+	text-align: left;
+	white-space: nowrap;
+	cursor: pointer;
+}
+.titleButton:hover {
+	color: var(--accent);
+	text-decoration: underline;
+}
+.titleButton:focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+.colAction {
+	text-align: right;
+}
+.noMatch {
+	padding: 28px 16px;
+	color: var(--text-muted);
+	text-align: center;
+}
+/* The difficulty pill under the title is for phones only. */
+.phoneMeta {
+	display: none;
+}
+@media (max-width: 700px) {
+	/* A phone drops the number, topics and difficulty columns so the rest fit
+	   without sideways scrolling: the difficulty moves under the title and the
+	   topics are in the detail modal. */
+	.colNumber,
+	.colTopics,
+	.colDifficulty {
+		display: none;
+	}
+	.phoneMeta {
+		display: block;
+		margin-top: 4px;
+	}
+	.table th,
+	.table td {
+		padding-inline: 10px;
+	}
+	.table td {
+		height: auto;
+		padding-block: 10px;
+	}
+	.titleButton {
+		white-space: normal;
+	}
+	.colAction,
+	.pill {
+		white-space: nowrap;
+	}
+	.table .colAction a {
+		padding: 7px 10px;
+	}
+	.headEnd {
+		width: 100%;
+		justify-content: space-between;
+	}
+	.tableWrap {
+		overflow-x: auto;
+	}
 }
 
 /* Calendar widget: a graphite card under a raised, floating header strip. The

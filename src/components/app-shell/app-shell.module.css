@@ -366,29 +366,31 @@
 	height: 40px;
 	padding: 0;
 	place-items: center;
-	border: 1px solid #bfccc2;
-	border-radius: 50%;
-	background: #fff;
-	color: var(--accent-hover);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 14px;
+	background: #101714;
+	color: #d7dedb;
 	font-size: 14px;
 	font-weight: 700;
 	cursor: pointer;
-	box-shadow:
-		0 0 12px rgba(8, 122, 86, 0.11),
-		0 8px 14px -12px rgba(15, 20, 18, 0.2);
+	box-shadow: 0 8px 14px -10px rgba(15, 20, 18, 0.5);
 }
 .actions button[aria-haspopup]:hover {
-	background: var(--surface-hover);
-	color: var(--accent-hover);
+	background: #17211c;
+	color: #fff;
 }
 .actions button[aria-haspopup] svg {
 	width: 20px;
 	height: 20px;
 }
-/* The unread count: solid green, white text. */
+/* Unread notifications: the bell and its count turn orange, like the streak flame. */
+.actions button[data-unread='true'],
+.actions button[data-unread='true']:hover {
+	color: #e49b30;
+}
 .actions button[aria-haspopup='dialog'] > span {
-	background: var(--accent);
-	color: #fff;
+	background: #e49b30;
+	color: #17231e;
 }
 
 /* Bare shell (Practice): no search or bell, so there is no desktop top bar and

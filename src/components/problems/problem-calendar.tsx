@@ -4,7 +4,8 @@ import { useState, useSyncExternalStore } from 'react'
 import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/routing'
 import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/ui/icons'
-import { isoDate, problemForDate } from '@/lib/problems/daily-problem'
+import { monthLayout, monthOf, shiftMonth, dayIso } from '@/lib/calendar/month-grid'
+import { problemForDate } from '@/lib/problems/daily-problem'
 import styles from './problems.module.css'
 
 export interface CalendarLabels {
@@ -58,10 +59,6 @@ function timeUntilUtcMidnight(now: number): string {
 	return `${pad(Math.floor(seconds / 3600))}:${pad(Math.floor((seconds % 3600) / 60))}:${pad(seconds % 60)}`
 }
 
-const GRID_CELLS = 42 // 6 week rows x 7 days
-const WEEKDAY_SUNDAY = Date.UTC(2023, 0, 1)
-const DAY_MS = 86_400_000
-
 // A month of dates, each linking to that date's problem (problems-page
 // AC8–AC10). Dates are UTC days, like the "UTC" chip says, and "today" comes
 // from the server so the first render matches it.
@@ -78,25 +75,16 @@ export function ProblemCalendar({
 }) {
 	const locale = useLocale()
 	const now = useSyncExternalStore(subscribeClock, readClock, readServerClock)
-	const [todayYear = 1970, todayMonth = 1, todayDay = 1] = todayIso.split('-').map(Number)
-	const [view, setView] = useState({ year: todayYear, month: todayMonth - 1 })
-
-	const first = new Date(Date.UTC(view.year, view.month, 1))
-	const leading = first.getUTCDay()
-	const daysInMonth = new Date(Date.UTC(view.year, view.month + 1, 0)).getUTCDate()
-	const monthTitle = new Intl.DateTimeFormat(locale, {
-		month: 'long',
-		year: 'numeric',
-		timeZone: 'UTC'
-	}).format(first)
-	const monthShort = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' })
-		.format(first)
-		.toLocaleUpperCase(locale)
-	const weekdays = Array.from({ length: 7 }, (_, index) =>
-		new Intl.DateTimeFormat(locale, { weekday: 'narrow', timeZone: 'UTC' }).format(
-			new Date(WEEKDAY_SUNDAY + index * DAY_MS)
-		)
-	)
+	const [, , todayDay = 1] = todayIso.split('-').map(Number)
+	const [view, setView] = useState(() => monthOf(todayIso))
+	const {
+		leading,
+		daysInMonth,
+		trailing,
+		title: monthTitle,
+		short: monthShort,
+		weekdays
+	} = monthLayout(view, locale)
 	const dayFormat = new Intl.DateTimeFormat(locale, {
 		month: 'short',
 		day: 'numeric',
@@ -104,10 +92,7 @@ export function ProblemCalendar({
 	})
 
 	function shift(by: number) {
-		setView(({ year, month }) => {
-			const next = new Date(Date.UTC(year, month + by, 1))
-			return { year: next.getUTCFullYear(), month: next.getUTCMonth() }
-		})
+		setView((current) => shiftMonth(current, by))
 	}
 
 	const todaySlug = problemForDate(slugs, todayIso)
@@ -178,7 +163,7 @@ export function ProblemCalendar({
 					))}
 					{Array.from({ length: daysInMonth }, (_, index) => {
 						const day = index + 1
-						const iso = isoDate(view.year, view.month, day)
+						const iso = dayIso(view, day)
 						const slug = problemForDate(slugs, iso)
 						const title = slug == null ? undefined : titles[slug]
 						const isToday = iso === todayIso
@@ -203,7 +188,7 @@ export function ProblemCalendar({
 						)
 					})}
 					{/* Always six week rows, so the card is the same height every month. */}
-					{Array.from({ length: Math.max(0, GRID_CELLS - leading - daysInMonth) }, (_, index) => (
+					{Array.from({ length: trailing }, (_, index) => (
 						<span key={`tail-${index}`} role="gridcell" />
 					))}
 				</div>

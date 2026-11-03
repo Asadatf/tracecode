@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from 'react'
 import { cookies } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
+import { StreakSlot } from '@/components/streak/streak-slot'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 import { topicLabel } from '@/lib/home/problem-rows'
 import { PROBLEMS } from '@/lib/trace/problems'
@@ -38,8 +39,7 @@ export async function AppShell({
 			heading: t('groups.learn'),
 			items: [
 				{ key: 'overview', href: '/dashboard', label: t('nav.overview') },
-				{ key: 'problems', href: '/problems', label: t('nav.problems') },
-				{ key: 'progress', href: '/progress', label: t('nav.progress') }
+				{ key: 'problems', href: '/problems', label: t('nav.problems') }
 			]
 		},
 		{
@@ -81,6 +81,9 @@ export async function AppShell({
 							}}
 						/>
 						<div className={styles.actions}>
+							<Suspense fallback={null}>
+								<StreakSlot />
+							</Suspense>
 							<Suspense fallback={<span className="size-9" aria-hidden="true" />}>
 								<NotificationBellSlot />
 							</Suspense>

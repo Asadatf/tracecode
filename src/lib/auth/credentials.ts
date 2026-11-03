@@ -21,7 +21,7 @@ export const INVALID_CREDENTIALS_INPUT = `Enter a valid email and a password of 
 const USER_CAUSED_AUTH_ERRORS: Record<string, string> = {
 	invalid_credentials: 'Incorrect email or password.',
 	email_not_confirmed: 'Confirm your email first (check your inbox), then sign in.',
-	user_already_exists: 'An account with this email already exists — sign in instead.',
+	user_already_exists: 'An account with this email already exists. Sign in instead.',
 	weak_password: `Choose a stronger password (at least ${MIN_PASSWORD_LENGTH} characters).`,
 	over_email_send_rate_limit:
 		'Too many emails were sent just now. Wait a few minutes and try again.',

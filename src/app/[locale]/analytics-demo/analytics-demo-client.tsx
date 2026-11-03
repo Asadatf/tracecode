@@ -89,7 +89,7 @@ export function AnalyticsDemoClient() {
 			<Card>
 				<CardHeader>
 					<CardTitle>field_changed</CardTitle>
-					<CardDescription>Fires once per edit — records the field, not its value.</CardDescription>
+					<CardDescription>Fires once per edit. Records the field, not its value.</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-2">
 					<Label htmlFor="display_name">Display name</Label>

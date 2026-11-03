@@ -88,7 +88,7 @@ function reportUnmappedModel(row: AiUsageRow): void {
 	if (reportedModels.has(row.model)) return
 	reportedModels.add(row.model)
 	captureError(
-		new Error(`No OpenRouter slug mapped for model "${row.model}" — usage is recorded unpriced`),
+		new Error(`No OpenRouter slug mapped for model "${row.model}", so usage is recorded unpriced`),
 		{ provider: row.provider, model: row.model, feature: row.feature }
 	)
 }

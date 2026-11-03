@@ -25,6 +25,7 @@ import {
 	ArrowsOut,
 	ArrowSquareOut,
 	Bell,
+	Fire,
 	Calendar,
 	CaretDown,
 	CaretLeft,
@@ -49,11 +50,13 @@ import {
 	MagnifyingGlass,
 	Minus,
 	Pause,
+	PaperPlaneRight,
 	PencilSimple,
 	Play,
 	Plus,
 	SidebarSimple,
 	SignOut,
+	Sparkle,
 	Sliders,
 	SquaresFour,
 	TextIndent,
@@ -113,6 +116,7 @@ function Glyph({ source: Source, size = DEFAULT_SIZE, className }: IconProps & {
 export const AlertIcon = (props: IconProps) => <Glyph source={Warning} {...props} />
 export const ArrowRightIcon = (props: IconProps) => <Glyph source={ArrowRight} {...props} />
 export const BellIcon = (props: IconProps) => <Glyph source={Bell} {...props} />
+export const FlameIcon = (props: IconProps) => <Glyph source={Fire} {...props} />
 export const CalendarIcon = (props: IconProps) => <Glyph source={Calendar} {...props} />
 export const ChartIcon = (props: IconProps) => <Glyph source={ChartLineUp} {...props} />
 export const CheckIcon = (props: IconProps) => <Glyph source={Check} {...props} />
@@ -147,10 +151,12 @@ export const MoreIcon = (props: IconProps) => <Glyph source={DotsThreeVertical} 
 export const PlusIcon = (props: IconProps) => <Glyph source={Plus} {...props} />
 export const RefreshIcon = (props: IconProps) => <Glyph source={ArrowsClockwise} {...props} />
 export const SearchIcon = (props: IconProps) => <Glyph source={MagnifyingGlass} {...props} />
+export const SendIcon = (props: IconProps) => <Glyph source={PaperPlaneRight} {...props} />
 export const SettingsIcon = (props: IconProps) => <Glyph source={Gear} {...props} />
 export const SidebarIcon = (props: IconProps) => <Glyph source={SidebarSimple} {...props} />
 export const SignOutIcon = (props: IconProps) => <Glyph source={SignOut} {...props} />
 export const SlidersIcon = (props: IconProps) => <Glyph source={Sliders} {...props} />
+export const SparkleIcon = (props: IconProps) => <Glyph source={Sparkle} {...props} />
 export const SuccessIcon = (props: IconProps) => <Glyph source={CheckCircle} {...props} />
 export const TrashIcon = (props: IconProps) => <Glyph source={Trash} {...props} />
 export const UserIcon = (props: IconProps) => <Glyph source={User} {...props} />

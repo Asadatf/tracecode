@@ -15,6 +15,10 @@ export interface ProgressProblemRow {
 	best: { passed: number; total: number } | null
 	runs: number
 	solvedAt: string | null
+	// The most recent time the learner solved it (null until solved).
+	latestSolvedAt: string | null
+	// The latest attempt, or null when the learner has none on this problem.
+	lastAttemptAt: string | null
 }
 
 export interface RecentRun {
@@ -24,6 +28,8 @@ export interface RecentRun {
 	passed: number
 	total: number
 	allPassed: boolean
+	// How the run ended (completed, syntax_error, timeout, engine_error).
+	status: string
 	at: string
 }
 
@@ -63,7 +69,9 @@ export function buildProgressView(
 					? null
 					: { passed: row.bestTestsPassed, total: row.testsTotal },
 			runs: row?.attempts ?? 0,
-			solvedAt: row?.firstSolvedAt ?? null
+			solvedAt: row?.firstSolvedAt ?? null,
+			latestSolvedAt: row?.latestSolvedAt ?? null,
+			lastAttemptAt: row?.lastAttemptAt ?? null
 		}
 	})
 
@@ -92,6 +100,7 @@ export function buildProgressView(
 		passed: attempt.testsPassed,
 		total: attempt.testsTotal,
 		allPassed: attempt.allPassed,
+		status: attempt.status,
 		at: attempt.createdAt
 	}))
 

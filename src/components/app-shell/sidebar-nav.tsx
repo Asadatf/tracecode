@@ -2,16 +2,10 @@
 
 import { Link } from '@/i18n/routing'
 import { signOutAction } from '@/server/actions/auth'
-import {
-	ChartIcon,
-	CodeIcon,
-	DashboardIcon,
-	SettingsIcon,
-	SignOutIcon
-} from '@/components/ui/icons'
+import { CodeIcon, DashboardIcon, SettingsIcon, SignOutIcon } from '@/components/ui/icons'
 import styles from './app-shell.module.css'
 
-export type NavKey = 'overview' | 'problems' | 'progress' | 'settings'
+export type NavKey = 'overview' | 'problems' | 'settings'
 
 export interface NavItem {
 	key: NavKey
@@ -27,7 +21,6 @@ export interface NavGroup {
 const ICONS = {
 	overview: DashboardIcon,
 	problems: CodeIcon,
-	progress: ChartIcon,
 	settings: SettingsIcon
 } as const
 

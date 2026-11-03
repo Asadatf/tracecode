@@ -307,7 +307,7 @@ function accountInsights(
 			insight({
 				type: 'limited_history',
 				problemSlug: null,
-				message: `Only ${plural(totals.attempts, 'submission')} saved so far — not enough to show trends.`,
+				message: `Only ${plural(totals.attempts, 'submission')} saved so far. Not enough to show trends.`,
 				metrics: { submissions: totals.attempts, minimumForTrends: MIN_SUBMISSIONS_FOR_TRENDS },
 				evidence: 'observed',
 				precision: 'exact'

@@ -78,7 +78,7 @@ export interface NotificationView {
 }
 
 // Renders a stored notification. A payload that doesn't parse, or names a problem
-// the catalog no longer has, becomes a neutral pointer to /progress — never a
+// the catalog no longer has, becomes a neutral pointer to Overview — never a
 // link to a practice page that would 404.
 export function toNotificationView(row: {
 	id: string
@@ -93,10 +93,10 @@ export function toNotificationView(row: {
 		return {
 			...base,
 			title: 'Practice reminder',
-			body: 'Your progress page has today’s recommendation.',
+			body: 'Your overview has today’s recommendation.',
 			concept: null,
-			href: '/progress',
-			cta: 'Open progress'
+			href: '/dashboard',
+			cta: 'Open overview'
 		}
 	}
 	const copy = reminderCopy(plan, problem.title)

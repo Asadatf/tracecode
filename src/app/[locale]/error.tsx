@@ -34,7 +34,7 @@ export default function Error({
 	return (
 		<ErrorPage
 			title="Something went wrong"
-			description="We hit a snag loading this page. We've been notified — try again in a moment."
+			description="We hit a snag loading this page. We've been notified. Try again in a moment."
 			digest={error.digest}
 			action={
 				<button onClick={reset} className={errorPageActionClassName}>

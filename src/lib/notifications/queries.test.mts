@@ -85,7 +85,7 @@ test('a stored notification renders with a link to the real practice page', () =
 test('an invalid payload or an unknown problem never links to a missing page', () => {
 	for (const payload of [{ junk: true }, null, { ...PLAN, problemSlug: 'retired-problem' }]) {
 		const view = toNotificationView({ id: 'n', payload, readAt: NOW, createdAt: NOW })
-		assert.equal(view.href, '/progress')
+		assert.equal(view.href, '/dashboard')
 		assert.equal(view.read, true)
 	}
 })

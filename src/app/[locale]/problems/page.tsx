@@ -3,8 +3,9 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
 import { PROBLEMS } from '@/lib/trace/problems'
-import { buildProblemTable } from '@/lib/home/problem-rows'
-import { getLearningProgress } from '@/server/learning/progress'
+import { buildProgressView } from '@/lib/progress/progress-view'
+import { buildProblemSummaries } from '@/lib/problems/problem-summary'
+import { getFirstAttemptDates, getLearningProgress } from '@/server/learning/progress'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { ProblemCalendar } from '@/components/problems/problem-calendar'
 import { ProblemList } from '@/components/problems/problem-list'
@@ -25,9 +26,16 @@ export default async function ProblemsPage() {
 		redirect({ href: '/login?next=%2Fproblems', locale: await getLocale() })
 		return null
 	}
-	const [t, progress] = await Promise.all([getTranslations('ProblemsPage'), getLearningProgress()])
+	const [t, progress, firstAttempts] = await Promise.all([
+		getTranslations('ProblemsPage'),
+		getLearningProgress(),
+		getFirstAttemptDates()
+	])
 	const problems = Object.values(PROBLEMS)
-	const table = buildProblemTable(problems, progress)
+	// Statuses are shown only when saved progress could actually be read.
+	const view =
+		progress.authenticated && progress.available ? buildProgressView(problems, progress) : null
+	const summaries = buildProblemSummaries(problems, view, firstAttempts)
 
 	return (
 		<AppShell current="problems">
@@ -37,7 +45,7 @@ export default async function ProblemsPage() {
 			</header>
 			<div className={styles.boardCal}>
 				<div className={dashboard.centre}>
-					<ProblemList table={table} />
+					<ProblemList tracked={view != null} rows={summaries} />
 				</div>
 				<aside className={styles.sideCal}>
 					<ProblemCalendar

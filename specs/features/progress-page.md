@@ -1,6 +1,6 @@
 # Feature: Progress page
 
-Status: In progress
+Status: Superseded: the page is retired (see `streak.md` AC2); its sections live on Overview
 Owner: Asad (Track B: visualiser / UI)
 Related: `specs/00-product.md` § How users see progress, `specs/features/home-page.md`,
 design: "Progress — signed in" and "Progress — signed out" on the
