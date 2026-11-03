@@ -10,6 +10,13 @@ import { ArrayView, type ArrayPointer } from './array-view'
 import { highlight, tokenClasses } from './code-editor'
 import styles from './practice.module.css'
 
+const KIND_LABEL = {
+	official: 'Test replay',
+	custom: 'Custom input',
+	// specs/features/solutions-tab.md, AC6
+	solution: 'Solution replay'
+} as const
+
 const POINTER_STYLES = [
 	{ bg: '#287dba', fg: '#fff' },
 	{ bg: '#e49b30', fg: '#17231e' },
@@ -29,7 +36,7 @@ export function ReplayView({
 	trace: Trace
 	meta: ProblemMeta
 	label: string
-	kind: 'official' | 'custom'
+	kind: 'official' | 'custom' | 'solution'
 	// 'all' is the original single panel. 'pane' is the same content sized to
 	// fill a workspace pane. 'trace' and 'variables' show the two halves apart;
 	// a parent that shows both owns the step so they stay in sync.
@@ -199,7 +206,7 @@ export function ReplayView({
 					<p>Every captured Python event. Select any step to jump there.</p>
 				</div>
 				<span className={styles.description}>
-					{total} steps · {kind === 'custom' ? 'Custom input' : 'Test replay'}
+					{total} steps · {KIND_LABEL[kind]}
 				</span>
 			</div>
 			<ol className={styles.stepsList}>
@@ -324,7 +331,7 @@ export function ReplayView({
 							<p>Every captured Python event. Select any step to jump there.</p>
 						</div>
 						<span className={styles.description}>
-							{total} steps · {kind === 'custom' ? 'Custom input' : 'Test replay'}
+							{total} steps · {KIND_LABEL[kind]}
 						</span>
 					</div>
 					<ol className={styles.stepsList}>

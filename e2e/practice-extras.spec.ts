@@ -61,3 +61,36 @@ test('workspace-shortcuts AC4: ? outside the editor lists the shortcuts; Escape 
 	await page.keyboard.press('Escape')
 	await expect(dialog).toBeHidden()
 })
+
+test('solutions-tab AC2, AC4–AC7: locked until a pass, then explained, replayable and compared', async ({
+	page
+}) => {
+	test.setTimeout(240_000)
+	await page.goto('/practice/two-sum')
+	await hydrated(page)
+	const challengeTabs = page.getByRole('tablist', { name: 'Challenge tabs' })
+
+	await challengeTabs.getByRole('tab', { name: 'Solutions' }).click()
+	await expect(page.getByText(/Solutions unlock when you pass all the tests/)).toBeVisible()
+
+	await setEditor(page.getByLabel('Python code editor'), TWO_SUM_PASSING)
+	await page.getByRole('button', { name: 'Run code' }).click()
+	await expect(page.getByText('3 / 3 passed').filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
+
+	await challengeTabs.getByRole('tab', { name: 'Solutions' }).click()
+	await expect(page.getByRole('heading', { name: 'Check every pair' })).toBeVisible()
+	const optimised = page.getByRole('heading', { name: "Remember what you've seen" })
+	await expect(optimised).toBeVisible()
+
+	await page.getByRole('button', { name: 'Watch it run' }).nth(1).click()
+	await expect(
+		page.getByText(/Remember what you've seen · two_sum\(\[2,7,11,15\], 9\)/).first()
+	).toBeVisible({ timeout: 60_000 })
+
+	await page.getByRole('button', { name: 'Compare', exact: true }).click()
+	await expect(page.getByText(/as much work as the optimised approach/)).toBeVisible({
+		timeout: 60_000
+	})
+})

@@ -41,11 +41,19 @@ import {
 	writeDraft
 } from '@/lib/trace/editor-drafts'
 import { detectPlatform, matchShortcut, shortcutKeys, type Platform } from '@/lib/trace/shortcuts'
+import { COMPARISON_ARGS, type ReferenceSolution } from '@/lib/trace/reference-solutions'
+import {
+	comparisonTarget,
+	shownSolutions,
+	solutionsAccess,
+	type StepCount
+} from '@/lib/trace/solutions'
 import { toast } from '@/lib/toast'
 import type { LayoutState } from '@/lib/trace/workspace-layout'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
+import { SolutionsPanel } from './solutions-panel'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
 import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
@@ -90,7 +98,7 @@ interface Outcome {
 	errored: boolean
 }
 interface ReplayState {
-	kind: 'official' | 'custom'
+	kind: 'official' | 'custom' | 'solution'
 	label: string
 	source: string
 	trace: Trace
@@ -132,7 +140,8 @@ export function PracticeWorkspace({
 const LEFT_TABS: readonly TabItem[] = [
 	{ id: 'description', label: 'Description' },
 	{ id: 'hints', label: 'Hints' },
-	{ id: 'history', label: 'History' }
+	{ id: 'history', label: 'History' },
+	{ id: 'solutions', label: 'Solutions' }
 ]
 const RESULT_TABS: readonly TabItem[] = [
 	{ id: 'tests', label: 'Test results' },
@@ -203,6 +212,8 @@ function ProblemWorkspace({
 	// The editor is showing a saved draft the learner hasn't touched yet (AC2).
 	const restoredDraft = edited == null && storedDraft != null
 	const [shortcutsOpen, setShortcutsOpen] = useState(false)
+	// specs/features/solutions-tab.md, AC3: a stuck learner chose to reveal them.
+	const [solutionsRevealed, setSolutionsRevealed] = useState(false)
 	const platform = useSyncExternalStore(noSubscription, clientPlatform, serverPlatform)
 
 	// Save the draft shortly after typing stops (AC1, AC5). Nothing is written
@@ -460,6 +471,57 @@ function ProblemWorkspace({
 		void persistReplay(attempt, test.id, tr?.passed === true)
 	}
 
+	// specs/features/solutions-tab.md, AC6: trace a reference solution on the
+	// problem's first example and show it in the replay pane.
+	async function watchSolution(solution: ReferenceSolution) {
+		const args = problem.examples[0]?.args ?? problem.tests[0]?.args ?? []
+		const result = await withEngine('Replaying…', (onStatus) =>
+			traceCode(
+				{
+					code: solution.source,
+					entry: problem.entry,
+					input: { args },
+					limits: { maxSteps: DEFAULT_LIMITS.maxSteps, timeoutMs: RUN_TIMEOUT_MS }
+				},
+				{ onStatus }
+			)
+		)
+		if (result == null) return
+		if (result.status !== 'completed' || result.trace == null) {
+			setNotice(`Could not replay ${solution.name} (${result.status}).`)
+			return
+		}
+		setReplay({
+			kind: 'solution',
+			label: `${solution.name} · ${labelFor(args)}`,
+			source: solution.source,
+			trace: result.trace,
+			outcome: null
+		})
+		setReplayStep(0)
+		setResultsTab('replay')
+	}
+
+	// AC7, AC8: how many steps a source takes on the comparison input, or null
+	// when it can't be traced (AC9).
+	async function measureSteps(source: string): Promise<StepCount | null> {
+		const args = COMPARISON_ARGS[problem.slug]
+		if (args == null) return null
+		const result = await withEngine('Comparing…', (onStatus) =>
+			traceCode(
+				{
+					code: source,
+					entry: problem.entry,
+					input: { args },
+					limits: { maxSteps: DEFAULT_LIMITS.maxSteps, timeoutMs: RUN_TIMEOUT_MS }
+				},
+				{ onStatus }
+			)
+		)
+		if (result == null || result.status !== 'completed' || result.trace == null) return null
+		return { steps: result.trace.steps.length, truncated: result.trace.truncated }
+	}
+
 	// specs/features/workspace-shortcuts.md. One page-level listener; the event
 	// handler always sees the current code and busy state.
 	const onShortcut = useEffectEvent((event: KeyboardEvent) => {
@@ -569,6 +631,14 @@ function ProblemWorkspace({
 				: latestAttempt.synced === true
 					? 'Saved'
 					: 'Last run not saved yet'
+
+	const failedRuns = attempts.filter((a) => !allPassed(a.result)).length
+	const access = solutionsAccess({
+		solved: solvedAttempt != null,
+		failedRuns,
+		revealed: solutionsRevealed
+	})
+	const latestPassing = attempts.findLast((a) => allPassed(a.result))
 
 	const hintsReady = teaching != null || challenge != null
 	const leftTabs = LEFT_TABS.map((tab) => ({ ...tab, dot: tab.id === 'hints' && hintsReady }))
@@ -844,6 +914,26 @@ function ProblemWorkspace({
 									</div>
 								</>
 							)}
+						</div>
+
+						<div
+							role="tabpanel"
+							id={panelId('left', 'solutions')}
+							aria-labelledby={tabId('left', 'solutions')}
+							hidden={leftTab !== 'solutions'}
+							className={wsStyles.pad}
+						>
+							<SolutionsPanel
+								access={access}
+								failedRuns={failedRuns}
+								solutions={shownSolutions(problem.slug)}
+								optimised={comparisonTarget(problem.slug)}
+								passedSource={latestPassing?.source ?? null}
+								busy={busy}
+								onReveal={() => setSolutionsRevealed(true)}
+								onWatch={watchSolution}
+								measure={measureSteps}
+							/>
 						</div>
 					</>
 				}

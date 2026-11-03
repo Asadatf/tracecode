@@ -45,10 +45,12 @@ noisy runtime percentile.
 - **AC6** — GIVEN an approach WHEN the learner presses "Watch it run" THEN the
   results pane switches to Replay and shows that approach traced on the
   problem's first example, labelled with the approach's name.
-- **AC7** — GIVEN the learner has a passing run in this session WHEN they open
-  Solutions THEN a "Your solution vs. the optimised one" panel traces both on
-  the problem's comparison input and shows each one's step count as two bars,
-  plus one sentence on what the numbers mean.
+- **AC7** — GIVEN the learner has a passing run in this session WHEN they press
+  Compare under "Your solution vs. the optimised one" THEN both their latest
+  passing code and the optimised approach are traced on the problem's
+  comparison input, and each one's step count is shown as a bar, plus one
+  sentence on what the numbers mean. A new passing run makes the result stale
+  and shows the Compare button again.
 - **AC8** — GIVEN a trace that hit the step cap (2 000) WHEN step counts are
   shown THEN that side reads "more than 2,000 steps" rather than a wrong
   number.
@@ -103,3 +105,5 @@ noisy runtime percentile.
 ## Changelog
 
 - 2026-11-03 — created.
+- 2026-11-03 — AC7: the comparison runs on a Compare button rather than on
+  opening the tab, so opening Solutions never costs engine time.
