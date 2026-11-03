@@ -54,6 +54,7 @@ import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
 import { SolutionsPanel } from './solutions-panel'
+import { AttemptCompare } from './attempt-compare'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
 import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
@@ -859,6 +860,19 @@ function ProblemWorkspace({
 											? 'Signed in · saved to your account'
 											: 'This session only · sign in to save'}
 									</p>
+									<AttemptCompare
+										attempts={attempts.map((attempt, index) => ({
+											label: `#${index + 1} · ${
+												attempt.result.status === 'completed'
+													? `${attempt.result.tests.filter((t) => t.passed).length} / ${attempt.result.tests.length} passed`
+													: attempt.result.status
+											} · ${new Date(attempt.createdAt).toLocaleTimeString()}`,
+											source: attempt.source,
+											passed: allPassed(attempt.result)
+										}))}
+										busy={busy}
+										onLoad={loadAttempt}
+									/>
 									<div className={styles.progressList} style={{ padding: 0 }}>
 										{attempts
 											.slice()

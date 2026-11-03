@@ -32,9 +32,9 @@ It reuses the attempt history the workspace already keeps.
   green with "+", unchanged lines plain, with line numbers for each side.
 - **AC5** — GIVEN two identical attempts THEN it says "No changes between these
   attempts" instead of an empty diff.
-- **AC6** — GIVEN the comparison is open WHEN the learner presses "Load this
-  version" on either side THEN that attempt's code goes into the editor (same
-  as Load code today).
+- **AC6** — GIVEN the comparison is open WHEN the learner presses "Load From
+  version" or "Load To version" THEN that attempt's code goes into the editor
+  (same as Load code today).
 
 ## Data / API
 

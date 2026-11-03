@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { TWO_SUM_PASSING, hydrated, setEditor, skipTour } from './helpers/practice'
+import { TWO_SUM_BUGGY, TWO_SUM_PASSING, hydrated, setEditor, skipTour } from './helpers/practice'
 
 // The student-feature additions to the practice workspace, on Two Sum (open to
 // guests). Boots `pnpm dev` — run WITHOUT E2E_BASE_URL.
@@ -93,4 +93,34 @@ test('solutions-tab AC2, AC4–AC7: locked until a pass, then explained, replaya
 	await expect(page.getByText(/as much work as the optimised approach/)).toBeVisible({
 		timeout: 60_000
 	})
+})
+
+test('compare-attempts AC2–AC4: a fail then a pass shows the line that fixed it', async ({
+	page
+}) => {
+	test.setTimeout(240_000)
+	await page.goto('/practice/two-sum')
+	await hydrated(page)
+	const editor = page.getByLabel('Python code editor')
+	const run = page.getByRole('button', { name: 'Run code' })
+
+	await setEditor(editor, TWO_SUM_BUGGY)
+	await run.click()
+	await expect(page.getByText('1 / 3 passed').filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
+	await setEditor(editor, TWO_SUM_PASSING)
+	await run.click()
+	await expect(page.getByText('3 / 3 passed').filter({ visible: true }).first()).toBeVisible({
+		timeout: 120_000
+	})
+
+	await page
+		.getByRole('tablist', { name: 'Challenge tabs' })
+		.getByRole('tab', { name: 'History' })
+		.click()
+	await page.getByText('Compare attempts').click()
+	const changes = page.getByRole('group', { name: 'Changes between the two attempts' })
+	await expect(changes.getByText('for j in range(len(nums)):')).toBeVisible()
+	await expect(changes.getByText('for j in range(i + 1, len(nums)):')).toBeVisible()
 })
