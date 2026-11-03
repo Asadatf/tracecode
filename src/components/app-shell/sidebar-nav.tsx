@@ -6,12 +6,13 @@ import {
 	ChartIcon,
 	CodeIcon,
 	DashboardIcon,
+	PlanIcon,
 	SettingsIcon,
 	SignOutIcon
 } from '@/components/ui/icons'
 import styles from './app-shell.module.css'
 
-export type NavKey = 'overview' | 'problems' | 'progress' | 'settings'
+export type NavKey = 'overview' | 'problems' | 'plans' | 'progress' | 'settings'
 
 export interface NavItem {
 	key: NavKey
@@ -27,6 +28,7 @@ export interface NavGroup {
 const ICONS = {
 	overview: DashboardIcon,
 	problems: CodeIcon,
+	plans: PlanIcon,
 	progress: ChartIcon,
 	settings: SettingsIcon
 } as const

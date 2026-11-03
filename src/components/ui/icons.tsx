@@ -45,6 +45,7 @@ import {
 	Info,
 	Lightbulb,
 	List,
+	ListChecks,
 	Lock,
 	MagnifyingGlass,
 	Minus,
@@ -135,6 +136,7 @@ export const FormatIcon = (props: IconProps) => <Glyph source={TextIndent} {...p
 export const HelpIcon = (props: IconProps) => <Glyph source={Question} {...props} />
 export const PauseIcon = (props: IconProps) => <Glyph source={Pause} {...props} />
 export const PlayIcon = (props: IconProps) => <Glyph source={Play} {...props} />
+export const PlanIcon = (props: IconProps) => <Glyph source={ListChecks} {...props} />
 export const ResetIcon = (props: IconProps) => <Glyph source={ArrowCounterClockwise} {...props} />
 export const ShrinkIcon = (props: IconProps) => <Glyph source={ArrowsIn} {...props} />
 export const TimerIcon = (props: IconProps) => <Glyph source={Timer} {...props} />
