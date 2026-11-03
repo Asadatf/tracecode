@@ -451,9 +451,9 @@
 		display: none;
 	}
 }
-/* Hover, desktop only. The lift and the bar sweep play once when the cursor
-   arrives (staying on the card or leaving does not replay them, and both end
-   where they began, so nothing jumps). The glow and rings ease to a brighter
+/* Hover, desktop only. The lift plays once when the cursor arrives (staying
+   on the card or leaving does not replay it, and it ends where it began, so
+   nothing jumps). The glow and rings ease to a brighter
    state while hovered and ease back on leave. */
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
 	.float {
@@ -476,43 +476,6 @@
 	.float:hover::after {
 		transform: translate(14px, -14px) scale(1.04);
 	}
-	.float:hover .barFill {
-		transform-origin: left center;
-		animation: sweep 900ms cubic-bezier(0.22, 0.7, 0.2, 1) backwards;
-	}
-	.float:hover .topic:nth-child(2) .barFill {
-		animation-delay: 45ms;
-	}
-	.float:hover .topic:nth-child(3) .barFill {
-		animation-delay: 90ms;
-	}
-	.float:hover .topic:nth-child(4) .barFill {
-		animation-delay: 135ms;
-	}
-	.float:hover .topic:nth-child(5) .barFill {
-		animation-delay: 180ms;
-	}
-	.float:hover .topic:nth-child(6) .barFill {
-		animation-delay: 225ms;
-	}
-	.float:hover .topic:nth-child(7) .barFill {
-		animation-delay: 270ms;
-	}
-	.float:hover .topic:nth-child(8) .barFill {
-		animation-delay: 315ms;
-	}
-	.float:hover .topic:nth-child(9) .barFill {
-		animation-delay: 360ms;
-	}
-	.float:hover .topic:nth-child(10) .barFill {
-		animation-delay: 405ms;
-	}
-	.float:hover .topic:nth-child(11) .barFill {
-		animation-delay: 450ms;
-	}
-	.float:hover .topic:nth-child(12) .barFill {
-		animation-delay: 495ms;
-	}
 }
 @keyframes lift {
 	0%,
@@ -523,12 +486,6 @@
 		transform: translateY(-6px) scale(1.006);
 	}
 }
-@keyframes sweep {
-	from {
-		transform: scaleX(0);
-	}
-}
-
 @media (max-width: 520px) {
 	.summary {
 		grid-template-columns: 1fr;

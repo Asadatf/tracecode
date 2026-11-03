@@ -66,7 +66,7 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - **AC8** — GIVEN a viewport of 1024px or wider WHEN the page scrolls THEN the
   centre and right columns scroll independently inside the shell, the By topic
   panel stays in view (sticky) with a subtle floating treatment (soft shadow
-  and glow; one smooth lift-and-settle and a sweep of the topic bars when the cursor
+  and glow; one smooth lift-and-settle when the cursor
   enters it, a brighter glow and shifted rings while it is hovered, and no
   replay while it stays or when it leaves), and the scrollbars are thin and low-contrast.
   The lift is disabled under `prefers-reduced-motion: reduce`.
