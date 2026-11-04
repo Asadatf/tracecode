@@ -19,6 +19,27 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
+
+def scrub_git_env() -> None:
+    """Drop repo-local GIT_* variables (GIT_DIR, GIT_WORK_TREE, ...) that git exports to hooks.
+
+    The pre-push hook runs these tests with GIT_DIR pointing at the real repo, which would make
+    every temp clone below resolve to the real .git and its ref cache. Each test must see only
+    its own temporary repository.
+    """
+    names = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR', 'GIT_PREFIX']
+    try:
+        out = subprocess.run(['git', 'rev-parse', '--local-env-vars'], capture_output=True, text=True, timeout=5)
+        if out.returncode == 0:
+            names += out.stdout.split()
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    for name in names:
+        os.environ.pop(name, None)
+
+
+scrub_git_env()
+
 HOOK = Path(__file__).with_name('extract-log.py')
 spec = importlib.util.spec_from_file_location('extract_log', HOOK)
 hook = importlib.util.module_from_spec(spec)
@@ -33,6 +54,24 @@ def make_clone(root: Path) -> Path:
     """A fresh clone: a .git directory and nothing else (no .env files, no cache)."""
     (root / '.git').mkdir()
     return root
+
+
+class GitHookEnvironmentTest(unittest.TestCase):
+    """The suite must pass when run by a git hook, with GIT_DIR/GIT_WORK_TREE inherited."""
+
+    def test_suite_passes_with_git_hook_environment_variables_set(self):
+        if os.environ.get('EXTRACT_LOG_NESTED_RUN'):
+            self.skipTest('nested run')
+        if subprocess.run(['git', '--version'], capture_output=True).returncode != 0:
+            self.skipTest('git unavailable')
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(['git', 'init', '-q', tmp], check=True)
+            env = dict(os.environ, GIT_DIR=str(Path(tmp) / '.git'), GIT_WORK_TREE=tmp, EXTRACT_LOG_NESTED_RUN='1')
+            result = subprocess.run(
+                [sys.executable, '-B', str(Path(__file__)), '-k', 'RedactionTest'],
+                capture_output=True, text=True, env=env,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
 
 
 class RedactionTest(unittest.TestCase):
