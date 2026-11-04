@@ -14,3 +14,4 @@ new ADR that supersedes it and set the old one's status to
 | [0002](0002-self-host-pyodide.md)                      | Self-host the Pyodide runtime                                  | Proposed                               |
 | [0003](0003-browser-ast-and-cached-recommendations.md) | Browser-side AST analysis and cached recommendations           | Accepted (Umair; no teammate sign-off) |
 | [0004](0004-unified-learning-notifications.md)         | Unified learning notifications (in-app + email, one scheduler) | Accepted (Umair; no teammate sign-off) |
+| [0006](0006-spaced-review-schedule.md)                 | Spaced review: persisted per-problem 1 / 3 / 7 day schedule    | Accepted (Umair; no teammate sign-off) |

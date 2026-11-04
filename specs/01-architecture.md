@@ -107,6 +107,13 @@ real work for the streak (`streak.md` AC4a/AC4b); null means saved before it exi
 `User.profileVisibility` (`ProfileVisibility`, default `PRIVATE`) hold the
 public-profile settings (`public-profile-settings.md`). No new tables.
 
+### M9C — spaced review
+
+`ProblemReview` (table `problem_reviews`, one row per user × problem) tracks the
+fixed 1 / 3 / 7 day review cycle (`spaced-review.md`, ADR-0006): successful reviews so
+far (0–3), the UTC due date and timestamps; no score or text. Due-review reminders reuse
+`learning_notifications` and `notification_deliveries` under their own kind and channel.
+
 ### M7.1 — code features on attempts
 
 `Attempt.codeFeatures` (`Json?`, nullable, no default) holds a versioned,

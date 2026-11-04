@@ -7,6 +7,9 @@ import { currentLearnerId, currentUserIdSafe } from '@/server/auth/session'
 import { assertOwnedBy } from '@/lib/auth/ownership'
 import { saveAttemptInput } from '@/lib/learning/save-attempt-input'
 import { isMeaningfulAttempt } from '@/lib/streak/attempt-meaning'
+import { reviewEvidenceHolds } from '@/lib/reviews/review-evidence'
+import { trackReviewPass } from '@/server/reviews/reviews'
+import { PROBLEMS } from '@/lib/trace/problems'
 import { linkedReplayWrites } from '@/lib/learning/replay-writes'
 import {
 	BACKFILL_MAX_BATCH,
@@ -67,14 +70,28 @@ export const saveAttempt = validatedAction({
 		// retried (nested test-result rows are one atomic write, so a failed try left
 		// nothing); any other error propagates. A submission is never lost over an
 		// optional extra.
+		const meaningful = isMeaningfulAttempt(input.problemSlug, input.source)
 		const attempt = await writeWithOptionalColumns(
 			{
-				meaningful: isMeaningfulAttempt(input.problemSlug, input.source),
+				meaningful,
 				...(features == null ? {} : { codeFeatures: features })
 			},
-			(extras) => db.attempt.create({ data: { ...attemptData, ...extras }, select: { id: true } }),
+			(extras) =>
+				db.attempt.create({
+					data: { ...attemptData, ...extras },
+					select: { id: true, createdAt: true }
+				}),
 			(column, error) => captureError(error, { area: `attempt-${column}-migration-pending` })
 		)
+
+		// Spaced review (M9C): a pass the server finds consistent starts, or — once due —
+		// completes, this problem's review cycle. Never fails the submission.
+		const problem = Object.hasOwn(PROBLEMS, input.problemSlug)
+			? PROBLEMS[input.problemSlug]
+			: undefined
+		if (problem != null && reviewEvidenceHolds(problem, input, meaningful)) {
+			await trackReviewPass(userId, input.problemSlug, attempt.createdAt)
+		}
 
 		const existing = await db.problemProgress.findUnique({
 			where: { userId_problemSlug: { userId, problemSlug: input.problemSlug } }

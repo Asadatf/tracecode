@@ -31,6 +31,8 @@ model User {
 	replaySessions  ReplaySession[]
 	learningEvents  LearningEvent[]
 	problemProgress ProblemProgress[]
+	// M9C spaced review (prisma/schema/reviews.prisma).
+	problemReviews  ProblemReview[]
 
 	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
 	recommendationCache RecommendationCache?

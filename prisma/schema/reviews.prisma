@@ -1,0 +1,40 @@
+// M9C spaced review: one row per learner and problem, tracking where that problem is
+// in a fixed three-review cycle (specs/features/spaced-review.md, ADR-0006). The
+// schedule is a plain habit nudge — 1 day after a solve, then 3, then 7 after each
+// successful review — NOT a retention model and not a mastery score.
+//
+// `Attempt` stays the evidence; this row only remembers the stage and the next due
+// day, so a stage can never be advanced twice by a duplicate request (the advance is
+// one conditional UPDATE on the stage the caller saw). All days are UTC dates.
+//
+// User-scoped, so its create migration must be followed by the sanctioned
+// hand-written `ALTER TABLE … ENABLE ROW LEVEL SECURITY` (no policy, never FORCE —
+// docs/rules/migrations.md); `pnpm check:rls` keeps CI red until it exists.
+
+model ProblemReview {
+	userId      String @db.Uuid
+	problemSlug String
+
+	// Successful reviews so far: 0, 1, 2 or 3. The review now pending is
+	// `reviewsDone + 1`; 3 means the cycle is complete.
+	reviewsDone Int @default(0)
+	// The UTC date the pending review falls due. Kept (unchanged) once complete.
+	dueDay      DateTime @db.Date
+
+	enrolledAt     DateTime  @default(now()) @db.Timestamptz(6)
+	lastReviewedAt DateTime? @db.Timestamptz(6)
+	// Set when the third review succeeds.
+	completedAt    DateTime? @db.Timestamptz(6)
+	// When a due-review reminder covering the pending review was delivered. Cleared
+	// whenever the stage advances, so each stage is announced at most once.
+	remindedAt     DateTime? @db.Timestamptz(6)
+
+	updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@id([userId, problemSlug])
+	// The reminder job's scan: pending reviews that are due and not yet announced.
+	@@index([dueDay])
+	@@map("problem_reviews")
+}

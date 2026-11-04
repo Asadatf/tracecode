@@ -425,6 +425,22 @@
 		}
 	},
 	"Dashboard": {
+		"reviews": {
+			"heading": "Due for review",
+			"stage": "Review {stage} of {total}",
+			"dueToday": "Due today",
+			"overdue": "{count, plural, one {Overdue by # day} other {Overdue by # days}}",
+			"start": "Start review",
+			"startLabel": "Start review of {title}",
+			"more": "{count, plural, one {# more review is due.} other {# more reviews are due.}}",
+			"empty": "Nothing is due for review. A problem you solve comes back for review after 1 day, then 3 days, then 7 days.",
+			"unavailable": "Reviews are unavailable right now.",
+			"loading": "Loading reviews",
+			"calloutLabel": "Due for review",
+			"calloutOne": "{title} is due for review.",
+			"calloutMany": "{title} and {others, plural, one {# other} other {# others}} are due for review.",
+			"note": "A review is a scheduled reminder to solve a problem again from a fresh start. Completing it does not measure what you remember."
+		},
 		"metaTitle": "Dashboard | TraceCode",
 		"eyebrow": "Learning workspace",
 		"heading": "Overview",

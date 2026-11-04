@@ -180,6 +180,9 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 - **AC29** — GIVEN a signed-in learner THEN the Overview shows a "Practice activity"
   contribution graph card between the summary strip and the Progress card
   (`activity-heatmap.md`); it loads independently and never delays the page.
+- **AC30** — GIVEN a signed-in learner THEN the Overview shows a "Due for review" card
+  after the summary strip and a labelled due-review pointer beside "Up next"
+  (`spaced-review.md` AC5, AC6); both load independently of the page.
 
 ## Data / API
 
@@ -235,6 +238,7 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 
 ## Changelog
 
+- 2026-11-05 — added the Due for review card and callout (AC30; M9C).
 - 2026-11-05 — added the Practice activity card (AC29; M9A.2).
 - 2026-11-03 — created (Draft).
 - 2026-11-03 — centre column reorganised: "Progress" (one row per attempted
