@@ -37,6 +37,19 @@ describe('public profile data path', () => {
 		assert.doesNotMatch(data, /export (async )?function loadStatsFor|export const loadStatsFor/)
 	})
 
+	it('never turns a failure into "unavailable" silently: it is reported', () => {
+		const settings = read('./profile.ts')
+		assert.match(settings, /reportProfileFailure\('profile-settings', error\)/)
+		assert.match(data, /reportProfileFailure\('public-profile-stats', error\)/)
+		assert.match(data, /reportProfileFailure\('public-profile-lookup', error\)/)
+		assert.doesNotMatch(settings, /catch \{/)
+		assert.doesNotMatch(data, /catch \{/)
+		const report = read('./report.ts')
+		assert.match(report, /captureError\(error, \{ area \}\)/)
+		assert.match(report, /log\.error\(/)
+		assert.doesNotMatch(report, /DATABASE_URL|DIRECT_URL|process\.env/)
+	})
+
 	it('has no write path at all: its store can only look a public profile up', () => {
 		assert.match(data, /Pick<ProfileStore, 'findPublic'>/)
 		assert.doesNotMatch(data, /\bupdate\b|findOwner|updateProfileQuery|ownerSettingsQuery/)

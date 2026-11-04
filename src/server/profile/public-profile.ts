@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { db } from '@/server/db/client'
+import { reportProfileFailure } from './report'
 import { readWithColumnFallback } from '@/lib/learning/optional-columns'
 import {
 	legacyQualifyingRunsCountQuery,
@@ -37,7 +38,7 @@ const store: Pick<ProfileStore, 'findPublic'> = {
 
 // Cached per request so the page and its metadata share one lookup.
 export const resolvePublicProfile = cache((rawUsername: string): Promise<PublicProfileLookup> =>
-	resolve(store, rawUsername)
+	resolve(store, rawUsername, (error) => reportProfileFailure('public-profile-lookup', error))
 )
 
 export type PublicProfileStatsResult =
@@ -88,7 +89,8 @@ const loadStatsFor = cache(async (userId: string): Promise<PublicProfileStatsRes
 				today
 			})
 		}
-	} catch {
+	} catch (error) {
+		reportProfileFailure('public-profile-stats', error)
 		return { status: 'unavailable' }
 	}
 })

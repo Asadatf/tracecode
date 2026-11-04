@@ -95,12 +95,15 @@ export type PublicProfileLookup =
 
 export async function resolvePublicProfile(
 	store: Pick<ProfileStore, 'findPublic'>,
-	rawUsername: string
+	rawUsername: string,
+	// Lets the caller report the failure (the result is still `unavailable`).
+	onError?: (error: unknown) => void
 ): Promise<PublicProfileLookup> {
 	try {
 		const owner = await lookupPublicProfile(store, rawUsername)
 		return owner == null ? { status: 'not_found' } : { status: 'found', owner }
-	} catch {
+	} catch (error) {
+		onError?.(error)
 		return { status: 'unavailable' }
 	}
 }

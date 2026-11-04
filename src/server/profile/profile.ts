@@ -1,5 +1,6 @@
 import 'server-only'
 import { db } from '@/server/db/client'
+import { reportProfileFailure } from './report'
 import { currentLearnerId, currentUserIdSafe } from '@/server/auth/session'
 import {
 	ownerSettingsQuery,
@@ -43,7 +44,10 @@ export async function getProfileSettings(): Promise<ProfileSettingsView> {
 			username: row?.username ?? null,
 			visibility: row?.profileVisibility ?? 'PRIVATE'
 		}
-	} catch {
+	} catch (error) {
+		// Still "unavailable" for the learner, but never silent: a stale Prisma client
+		// or a missing column must be visible to whoever runs the server.
+		reportProfileFailure('profile-settings', error)
 		return { authenticated: true, available: false }
 	}
 }
