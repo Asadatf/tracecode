@@ -1,6 +1,6 @@
 # Feature: Tracy, the context-aware AI Tutor (M8)
 
-Status: In progress (user-agreed 2026-11-04; no teammate sign-off)
+Status: In progress (user-agreed 2026-11-04; signed off by Asad 2026-11-04)
 Owner: Umair
 Related: `specs/00-product.md` § Core loop, `specs/features/practice-workspace-layout.md`
 (AC16–AC27: the panel, layout and reset), ADR-0005, `docs/rules/ai-usage.md`
@@ -216,7 +216,7 @@ streaks (M9), adaptive interventions (M11).
 - [x] Markdown renderer and fence tolerance; guide; fullscreen width
 - [x] Unit tests; Playwright for the panel, guide and reset; mocked signed-in flows
 - [ ] Real tracked-call check against a disposable database (`/ai-usage-check`)
-- [ ] Teammate sign-off; move to Agreed
+- [x] Teammate sign-off (Asad, 2026-11-04)
 
 ## Changelog
 

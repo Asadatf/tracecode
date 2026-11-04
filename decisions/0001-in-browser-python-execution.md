@@ -1,7 +1,7 @@
 # 0001. Run and trace code in the browser
 
 Date: 2026-10-29
-Status: Proposed
+Status: Accepted (built in M1–M3; Umair and Asad, 2026-11-04)
 
 ## Context
 
