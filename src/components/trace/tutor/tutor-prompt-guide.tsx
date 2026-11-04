@@ -23,29 +23,18 @@ export type { PromptCategory } from '@/lib/tutor/prompt-categories'
 // so the data is unit-testable under `node --test` without loading this TSX
 // file (the test loader does not do JSX).
 
-export function TutorPromptGuide({
-	open,
-	onClose,
-	anchorId
-}: {
-	open: boolean
-	onClose: () => void
-	// The id of the button that toggled this popover — used to restore
-	// focus on close.
-	anchorId: string
-}) {
+export function TutorPromptGuide({ open, onClose }: { open: boolean; onClose: () => void }) {
 	const dialogRef = useRef<HTMLDivElement>(null)
 	const titleRef = useRef<HTMLHeadingElement>(null)
 
-	// Focus the heading when opened; return focus to the trigger on close.
+	// Focus the heading when the dialog opens. Returning focus to the info button
+	// is done by whoever closes the dialog (see closeGuide in tutor-panel.tsx), not
+	// from this effect's cleanup: under React StrictMode (dev) a cleanup also runs
+	// once right after mount, and a focus move there steals focus back from the
+	// heading the moment the dialog opens.
 	useEffect(() => {
-		if (!open) return
-		titleRef.current?.focus()
-		return () => {
-			// On teardown restore focus to the trigger.
-			requestAnimationFrame(() => document.getElementById(anchorId)?.focus())
-		}
-	}, [open, anchorId])
+		if (open) titleRef.current?.focus()
+	}, [open])
 
 	// Close on Escape and keep Tab inside the dialog.
 	function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
