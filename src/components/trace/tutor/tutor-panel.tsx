@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { cn } from '@/lib/cn'
-import { CloseIcon, ExpandIcon, ShrinkIcon, SparkleIcon } from '@/components/ui/icons'
+import { CloseIcon, ExpandIcon, InfoIcon, ShrinkIcon, SparkleIcon } from '@/components/ui/icons'
 import { MAX_QUESTIONS_PER_CONVERSATION } from '@/lib/tutor/types'
 import { TutorComposer } from './tutor-composer'
 import { TutorConversation } from './tutor-conversation'
+import { TutorPromptGuide } from './tutor-prompt-guide'
 import type { TutorPanelProps } from './tutor-types'
 import styles from './tutor.module.css'
 
@@ -36,6 +37,9 @@ export function TutorPanel({
 	const panelRef = useRef<HTMLDivElement>(null)
 	const headingRef = useRef<HTMLHeadingElement>(null)
 	const modal = mode !== 'docked'
+	// Prompt-guide popover. Purely client state: opening it never calls
+	// the API or consumes a question (M8 UX addition).
+	const [guideOpen, setGuideOpen] = useState(false)
 
 	useEffect(() => {
 		if (open) headingRef.current?.focus()
@@ -91,6 +95,18 @@ export function TutorPanel({
 					</h2>
 					<span className={styles.subtitle}>{TUTOR_ROLE}</span>
 				</div>
+				<button
+					id="tutor-guide-trigger"
+					type="button"
+					className={styles.iconButton}
+					aria-label={guideOpen ? 'Close prompt guide' : 'How to ask Tracy'}
+					aria-expanded={guideOpen}
+					aria-controls="tutor-guide-panel"
+					aria-haspopup="dialog"
+					onClick={() => setGuideOpen((o) => !o)}
+				>
+					<InfoIcon size={16} />
+				</button>
 				<span className={styles.grow} />
 				{mode === 'phone' ? null : (
 					<button
@@ -111,6 +127,16 @@ export function TutorPanel({
 					<CloseIcon size={16} />
 				</button>
 			</div>
+
+			{guideOpen && (
+				<div id="tutor-guide-panel">
+					<TutorPromptGuide
+						open={guideOpen}
+						onClose={() => setGuideOpen(false)}
+						anchorId="tutor-guide-trigger"
+					/>
+				</div>
+			)}
 
 			<div className={styles.context} aria-label="Current problem">
 				<span className={styles.contextLabel}>Working on</span>
