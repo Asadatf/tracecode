@@ -1,209 +1,225 @@
-# Feature: Context-aware AI Tutor (M8)
+# Feature: Tracy, the context-aware AI Tutor (M8)
 
-Status: Draft
+Status: In progress (user-agreed 2026-11-04; no teammate sign-off)
 Owner: Umair
 Related: `specs/00-product.md` § Core loop, `specs/features/practice-workspace-layout.md`
-(AC16–AC24), `docs/rules/ai-usage.md`
+(AC16–AC27: the panel, layout and reset), ADR-0005, `docs/rules/ai-usage.md`
 
 ## Why
 
 Learners get stuck on the same classes of mistake the catalog already knows
-about — off-by-one, missing edge cases, nested loops where a single pass
-would do. The curated hint ladder explains the specification, and the
-replay shows what happened, but neither answers the learner's own wording
-of "why doesn't this work?". M8 adds a tutor that reads the problem, the
-learner's current code, the latest grading result and the selected replay
-step and answers in a Socratic voice, grounded in that evidence rather
-than in free-form model recall.
+about: off-by-one errors, missing edge cases, nested loops where one pass would
+do. The curated hint ladder explains the specification and the replay shows what
+happened, but neither answers the learner's own question in their own words.
+Tracy reads the problem, the learner's current code, the latest grading result
+and the selected replay step, and answers in a patient, Socratic voice grounded
+in that evidence rather than in free-form model recall.
 
-It is a pedagogical assistant, not a code generator: it names
-misconceptions, explains complexity, and progressively discloses toward a
-solution only when the learner asks for one.
+Tracy is a pedagogical assistant, not a code generator. She names mistakes and
+misconceptions, teaches the concepts behind a problem from first principles,
+explains complexity, and discloses a solution progressively, only as far as the
+learner asks.
 
 ## User stories
 
-- As a stuck learner, I want to ask the tutor why my code fails one
-  specific test, so that I can see the mistake without being handed the
-  answer.
-- As a learner inspecting a replay step, I want the tutor to reference the
-  variables I can actually see, so that its explanation lines up with the
-  evidence in the pane.
-- As a privacy-conscious learner, I want my code only sent when I
-  deliberately ask a question, so that opening the panel does not ship my
-  work to a third party.
-- As an operator, I want the tutor's provider to be swappable, so that
-  moving from OpenAI to OpenRouter later is a configuration change, not a
-  rewrite.
+- As a stuck learner, I want to ask why my code fails a specific test, so that I
+  can see the mistake without being handed the answer.
+- As a learner inspecting a replay step, I want Tracy to refer to the variables I
+  can see, so that her explanation lines up with the evidence on screen.
+- As a learner new to a concept, I want it taught from first principles with a
+  small example, so that I understand it rather than copy it.
+- As a privacy-conscious learner, I want my code sent only when I ask a question,
+  so that opening the panel does not ship my work to a third party.
+- As an operator, I want the provider to be swappable, so that moving to
+  OpenRouter later is configuration plus one adapter, not a rewrite.
+
+## Scope
+
+In: the `POST /api/tutor` streaming endpoint, the provider adapter, curated
+problem knowledge, the system prompt, the Tracy panel behaviour (conversation,
+streaming, Stop, retry, the 15-question limit, persistence, Markdown rendering,
+the "How to ask Tracy" guide), and usage accounting. The panel's layout
+(placement, sizing, maximize, reset) is specified in
+`practice-workspace-layout.md`.
+
+Out: persistent server-side chat history, vector search or RAG, diagrams and
+visualizations (M10), tutor-driven edits to the editor, daily or monthly quotas
+(the 15-question cap is a per-chat UX limit, not billing), spaced repetition and
+streaks (M9), adaptive interventions (M11).
 
 ## Acceptance criteria
 
-- **AC1** — GIVEN an authenticated learner on `/practice/<slug>` AND the
-  Tutor is closed THEN no network request is made to the AI provider, AND
-  the learner's current code has not been transmitted. _Privacy boundary._
-- **AC2** — GIVEN the learner sends a question THEN the request is
-  authenticated server-side against Supabase (not the request body), the
-  problem slug is validated against `PROBLEMS`, and the payload is
-  rejected with a 400 if either check fails.
-- **AC3** — GIVEN a successful tutor exchange THEN the provider call is
-  recorded in `ai_usage` with `feature: 'tutor_chat'`, `provider: 'openai'`
-  (or whichever `AI_TUTOR_PROVIDER` names) and the configured model, with
-  cost priced at write time.
-- **AC4** — GIVEN the tutor is called with a problem id THEN the system
-  prompt includes that problem's curated knowledge (concepts,
-  misconceptions, complexity, hint strategy) from
-  `src/lib/tutor/problem-knowledge.ts`, AND the knowledge map covers every
-  slug in `PROBLEMS` (checked by a unit test).
-- **AC5** — GIVEN the learner has run tests OR has a selected replay step
-  WHEN they ask a question THEN the request payload includes the latest
-  pass/fail counts, the failed-test inputs (bounded), and the current
-  replay step's line + locals, extracted from state the workspace already
-  holds. GIVEN no run has happened THEN the payload omits execution
-  evidence rather than fabricating it.
-- **AC6** — GIVEN a successful assistant reply THEN the question counter
-  advances by 1, visibly, up to 15. GIVEN the counter is at 15 THEN the
-  composer disables and a "Start new chat" affordance appears.
-- **AC7** — GIVEN a failed request (network, 429, 5xx, timeout, auth,
-  malformed response) THEN no question is consumed, the error is
-  actionable ("Try again"), the conversation is preserved, and the retry
-  does not duplicate the learner message.
-- **AC8** — GIVEN a browser refresh WHEN the learner returns THEN their
-  conversation for `(user, problem)` is restored from `sessionStorage`,
-  including the counter.
-- **AC9** — GIVEN the learner signs out THEN every `tracecode.tutor.*`
-  sessionStorage entry is cleared before the signed-out tab proceeds.
-  Logging back in (same tab) shows no prior transcripts.
-- **AC10** — GIVEN the learner switches problem THEN the panel loads the
-  other problem's conversation, keeping each namespace independent.
-- **AC11** — GIVEN the panel is closed and reopened, OR panes are
-  resized, OR tabs are switched THEN the conversation is not lost.
-- **AC12** — GIVEN the provider is unavailable (missing key, upstream
-  down) THEN the tutor returns a typed `unavailable` result, the learner
-  can keep coding, running, replaying, and no partial assistant message
-  is persisted.
-- **AC13** — GIVEN the request body, the recent history sent to the
-  provider is bounded (message count and total character budget);
-  learner-supplied text cannot override the tutor's system instructions
-  (injected marker + role boundary).
-- **AC15** — GIVEN a question that asks the tutor to teach a concept or
-  prerequisite from first principles THEN the tutor teaches from the
-  curated knowledge (or well-established general programming knowledge
-  for prerequisites not explicitly listed) using a small example,
-  analogy, or short pseudocode; connects the topic back to the current
-  problem in one or two sentences; does NOT write the full solution for
-  the current problem while teaching the underlying topic; names time
-  and space complexity accurately when relevant.
-- **AC14** — GIVEN a concurrent send while a request is pending THEN the
-  second send is rejected client-side by a synchronous ref guard (the
-  composer is also disabled, but the ref is what wins a same-tick race
-  that React state cannot). The 15-question limit is a UX cap, not a
-  security or billing control; the server-side per-user rate limit (20
-  req/min) is the independent cost ceiling, per the "Security
-  distinction" section of this spec.
+### Privacy and security
+
+- **AC1** — GIVEN a signed-in learner on `/practice/<slug>` WHEN Tracy is closed,
+  opened, resized or maximized, or the guide is opened or copied from, THEN no
+  request is made to `/api/tutor` and no code leaves the browser. A request is
+  made only when the learner sends a question.
+- **AC2** — GIVEN a request to `POST /api/tutor` THEN the user is identified from
+  the verified server session (never the body), the body is validated with Zod
+  (field and size bounds), the problem slug must exist in `PROBLEMS`, and a
+  per-user rate limit applies. Failures return a JSON error with the right
+  status (401, 400, 429) and no stream. The provider key is read only on the
+  server and is never returned, logged or stored.
+- **AC3** — GIVEN a guest THEN Tracy shows a sign-in notice and the composer is
+  disabled; the rest of Practice is unaffected.
+
+### Context and teaching quality
+
+- **AC4** — GIVEN any problem in `PROBLEMS` THEN curated teaching knowledge
+  exists for it (concepts, prerequisites, both strategies with complexity,
+  misconceptions, common errors, edge cases, hint strategy, Python notes, teaching
+  guidance). A unit test fails if a problem has none.
+- **AC5** — GIVEN a question THEN the request carries only bounded, relevant
+  context: the current code, the latest run summary, up to three failed tests
+  (inputs looked up from the catalog by test id, values formatted to readable
+  Python), the selected replay step (line, source line, locals), the revealed
+  hint level, and a flag when the code changed since the last run. Nothing is
+  fabricated: absent evidence is stated as absent, and a syntax error produces no
+  replay or variables.
+- **AC6** — GIVEN the system prompt THEN it (a) separates observed evidence,
+  reasoned interpretation and general programming knowledge; (b) defines the
+  progressive ladder: L1 a conceptual hint about the learner's own
+  implementation (explains the mistake and its cause from the evidence, without
+  the exact fix), L2 a strategic hint, L3 targeted implementation guidance, L4 a
+  complete worked solution only on an explicit request; (c) treats optimization
+  as a separate axis, so a conceptual hint never returns the optimized algorithm;
+  (d) allows topic teaching from first principles, including prerequisites not
+  listed for the problem, without writing the problem's solution; (e) requires
+  accurate Python terminology (a `list` is a dynamic array); (f) asks for no em
+  dashes in explanatory prose, as a style preference that never edits code,
+  quotes, inputs, problem statements or execution evidence; (g) specifies fenced
+  code on its own lines. There is no output-rewriting or solution-leak filter.
+
+### Streaming, completion and failure
+
+- **AC7** — GIVEN a question is sent THEN the reply is streamed from OpenAI
+  (`gpt-4o-mini`) through the provider adapter, forwarded as NDJSON events
+  (`start`, `delta`, then exactly one of `done`, `aborted`, `error`), and shown as
+  it arrives. A subtle "Tracy is thinking" indicator shows until the first text.
+  Deltas are batched once per animation frame; there is no fixed typing delay. The
+  conversation follows the newest text only while the learner is near the bottom,
+  and never forces a learner who scrolled up back down.
+- **AC8** — GIVEN a stream THEN it counts as a finished reply only if the provider
+  declared the end (a `finish_reason` or `[DONE]`) and the server sent `done`. A
+  body that simply stops, a server `aborted`, a content-filter stop, a read error
+  or an empty reply is NOT a success: nothing is saved, no question is counted,
+  and the learner sees "The reply was cut off before it finished" (or the matching
+  message) with a retry. A model reaching its output cap is a provider-declared
+  end and counts as finished.
+- **AC9** — GIVEN Tracy is replying WHEN the learner presses Stop (a button that
+  replaces Send) THEN the request is aborted, the partial text is discarded, the
+  question is not counted, and the panel shows "Stopped. That question was not
+  counted." with a Retry button and the question text. Retry resends the same
+  question without retyping and without a duplicate message.
+- **AC10** — GIVEN a network failure, timeout, provider error, rate limit or
+  missing key THEN the learner sees a clear, actionable message, the conversation
+  and editor are untouched, no question is consumed, and the failed question can
+  be retried. Practice keeps working without Tracy.
+- **AC11** — GIVEN a send is in flight THEN a second send cannot start (a
+  synchronous guard, not only a disabled button).
+
+### Conversation lifecycle
+
+- **AC12** — GIVEN the conversation THEN the question counter shows "N / 15
+  questions used". It increases by exactly one, and only when a reply finished
+  (AC8). At 15 the transcript stays readable, the composer is disabled, and
+  "Start new chat" is offered. Starting a new chat discards the previous
+  transcript, resets the counter to 0 and keeps the current problem.
+- **AC13** — GIVEN `sessionStorage` THEN each (user, problem) pair has its own
+  conversation, restored after a refresh or navigating away and back, and cleared
+  (all `tracecode.tutor.*` keys, nothing else) on sign-out. Stored data is
+  validated before use; invalid or oversized data and storage failures degrade to
+  an empty conversation without breaking Practice. Chats are never stored on the
+  server.
+- **AC14** — GIVEN the learner switches problem or starts a new chat during a
+  reply THEN that request is aborted and its response is ignored: it can never
+  add a message, change the counter or change the status of a different
+  conversation. The workspace is keyed by problem, so each problem starts with a
+  fresh instance.
+
+### Rendering and presentation
+
+- **AC15** — GIVEN an assistant reply THEN Markdown is rendered (paragraphs,
+  headings, lists, bold, inline code, fenced code) through React, with no raw HTML
+  from the model. Fenced code is read-only, syntax highlighted for Python,
+  indentation preserved, scrolls horizontally inside the narrow column, and has a
+  Copy button. The renderer also accepts, only when unambiguous: an indented
+  fence, a one-line fence (` ```python x = 1``` `), code on the opening line after
+  a known language, and a closing fence glued to the last line. An unterminated
+  fence (a stream in flight) renders as code to the end of the text. Content
+  inside valid blocks is never altered. Learner messages are shown verbatim.
+- **AC16** — GIVEN the header THEN an information button beside the title opens
+  the dialog "How to ask Tracy (guide)", separate from the conversation. It lists
+  six categories with an example prompt and a Copy button each (Learn a topic, Get
+  a conceptual hint, Understand failed tests, Explore execution, Optimize my
+  solution, Review my solution), states that Tracy uses the relevant context
+  available in the Practice Workspace when a question is sent, and that test or
+  execution questions need a run first. Copy only copies; it never sends or fills
+  the composer. Opening it costs no question and makes no request. It is a modal
+  dialog: Escape closes it (not Tracy), Tab stays inside, focus returns to the
+  button. Its copy has no em dashes.
+- **AC17** — GIVEN the panel is maximized on a wide screen THEN the conversation
+  and composer are capped at 960px and centred; the compact panel is unchanged.
+- **AC18** — GIVEN the product name THEN the toolbar button reads "Ask Tracy", the
+  header "Tracy" with the subtitle "AI Tutor", assistant messages are labelled
+  "Tracy", and the empty state greets "Hi, I'm Tracy!". Internal identifiers (the
+  route, component names, the `tutor_chat` usage feature) keep the "tutor" name.
+
+### Usage and cost
+
+- **AC19** — GIVEN a stream THEN exactly one `ai_usage` row is written with
+  `feature: 'tutor_chat'`, priced at write time. A finished reply with
+  provider-reported usage is an `ok` row with the real token counts. A cut-off,
+  failed or stopped stream with no provider usage is an `error` row with no
+  tokens. Counts and costs are never estimated; a model with no rate is NULL, not 0. Both `gpt-4o-mini` and its dated served id are mapped. Output is capped at
+  600 tokens, a stream at 30 seconds. Messages and code are never logged or put in
+  `meta`.
 
 ## Data / API
 
-### Route
-
-`POST /api/tutor` — authenticated. Zod input:
-
-```ts
-{
-  problemSlug: string,
-  conversationId: string,
-  messages: [{ role: 'user' | 'assistant', text: string }],  // bounded
-  context: {
-    code?: string,              // bounded
-    runSummary?: { passed: number; total: number; status: RunStatus },
-    failedTests?: [{ id, args, expected, actual?, error? }],  // bounded
-    replay?: { line: number; locals: Record<string, string> }  // bounded
-  }
-}
-```
-
-Response:
-
-```ts
-{ ok: true, reply: string }
-| { ok: false, reason: 'rate_limited' | 'unavailable' | 'invalid' | 'timeout', message: string }
-```
-
-### AI provider adapter
-
-`src/server/ai/tutor-provider.ts` (provider-independent):
-
-- `TutorPrompt` = system + context block + message history
-- `TutorProviderResult` = `{ ok, text, usage? } | { ok: false, reason }`
-- Selected via `AI_TUTOR_PROVIDER` (default `openai`), implemented by
-  `src/server/ai/openai.ts`.
-
-The adapter never returns OpenAI-shaped responses to tutor handler code;
-both implementations map to `TutorProviderResult`.
-
-### Tracking
-
-`src/server/ai/openai.ts` wraps `fetch` through `trackAiCall` (see
-`docs/rules/ai-usage.md`). `gpt-4o-mini` is registered in
-`OPENROUTER_SLUGS` as `openai/gpt-4o-mini` so pricing works and
-`check:ai-models` stays green.
-
-### Client
-
-- Conversation store: `sessionStorage` key
-  `tracecode.tutor.<userId>.<problemSlug>` with a versioned envelope
-  (`{ v: 1, conversationId, messages, counter, createdAt }`).
-- Logout clears every `tracecode.tutor.*` key before the server action
-  redirects.
-- Hook `useTutor(userId, problem, context)` owns send/retry/newChat/limit.
-
-### Analytics
-
-None added. The `ai_usage` row carries `feature: 'tutor_chat'`; aggregate
-spend is read from there.
+- No Prisma change. `ai_usage` already carries the usage rows.
+- `POST /api/tutor` body: `{ problemSlug, conversationId, messages[], context }`
+  (bounds in `src/lib/tutor/types.ts`). Success is `application/x-ndjson`; any
+  precondition failure is `application/json` `{ ok: false, reason, message }`.
+- Provider adapter: `src/server/ai/tutor-provider.ts` (provider-independent
+  contract with a streaming handle: deltas, a single completion, abort),
+  `openai.ts` (the only OpenAI call and the only `trackAiCall` for it),
+  `openai-protocol.ts` (pure SSE parsing, completion verdict, usage mapping).
+  Configured by `AI_TUTOR_PROVIDER` (default `openai`), `AI_TUTOR_MODEL` (default
+  `gpt-4o-mini`) and `OPENAI_API_KEY`. OpenRouter is a typed stub.
+- Client: `src/lib/tutor/exchange.ts` (protocol and outcome),
+  `conversation-flow.ts` (what an outcome does to the conversation),
+  `conversation-store.ts` (`sessionStorage`), `markdown.ts` (parser).
+- Analytics: none added.
 
 ## Edge cases
 
-- First visit, no run yet: the context payload has no execution evidence.
-  The system prompt tells the tutor to acknowledge the absence and offer
-  conceptual guidance.
-- Replay step selected but no failed test: `replay` is populated,
-  `failedTests` is omitted; neither side invents the other.
-- Syntax error: `runSummary.status === 'syntax_error'` and the failing
-  test list is empty; the system prompt forbids claiming a runtime trace
-  for a program that never ran.
-- Very long code (>8 KB) or very long failing arguments: clamped before
-  sending; the prompt says "code excerpt (truncated)" so the tutor does
-  not assume it saw everything.
-- The learner refreshes mid-request: the pending message is reset client-
-  side; the counter was not yet advanced, so no question was consumed.
-- The learner opens the panel in a second tab: each tab has its own
-  sessionStorage. Both tabs start fresh conversations; this is a tab
-  property, not a bug.
-- A new chat on the same problem reuses the problem knowledge but does
-  not carry prior messages — the server is stateless and the client stores
-  only one active conversation per `(user, problem)`.
-
-## Out of scope
-
-- Persistent server-side chat history (sessionStorage only for M8).
-- Vector embeddings / RAG / pgvector / document search.
-- Tutor-driven code edits applied to the editor.
-- Multi-turn streaming (we read the full response then render).
-- Daily/monthly quotas. The 15-question cap is per-conversation UX, not
-  billing.
-- Spaced repetition, streaks, learning paths (M9).
+- No run yet: the request omits run evidence; Tracy is told it is absent.
+- Syntax error: `status: syntax_error`, no failed tests, no replay, no variables.
+- Selected replay step but no failed test: replay is sent alone.
+- Very long code or arguments: clamped, and the prompt says so.
+- Refresh mid-reply: the in-flight reply is lost and nothing was counted.
+- Two tabs: each has its own `sessionStorage`, so separate conversations.
+- The server rate limit is per instance (in memory); on a multi-instance deploy a
+  learner can exceed it across instances. OpenAI's own limits and the per-call
+  output cap bound the cost. Redis was deliberately not added for this milestone.
+- Provider keys are required only on the server; if unset, Tracy reports it is
+  not configured and Practice continues.
 
 ## Tasks
 
-- [x] Add curated knowledge for all six catalog problems.
-- [x] Register `gpt-4o-mini` in `OPENROUTER_SLUGS`.
-- [x] Provider-agnostic `tutor-provider.ts` + OpenAI implementation
-      wrapped in `trackAiCall`.
-- [x] `POST /api/tutor` via `createApiRoute`, authenticated, Zod input.
-- [x] In-memory per-user rate limit.
-- [x] `sessionStorage` conversation store + logout clear.
-- [x] Client hook `useTutor`; rewire the panel.
-- [x] Unit tests for context assembly, knowledge coverage, limit logic.
+- [x] Provider adapter, OpenAI streaming, usage accounting
+- [x] Curated knowledge for every problem; system prompt
+- [x] `/api/tutor` streaming route with auth, validation, rate limit
+- [x] Conversation store, hook, Stop and retry, 15-question limit
+- [x] Markdown renderer and fence tolerance; guide; fullscreen width
+- [x] Unit tests; Playwright for the panel, guide and reset; mocked signed-in flows
+- [ ] Real tracked-call check against a disposable database (`/ai-usage-check`)
+- [ ] Teammate sign-off; move to Agreed
 
 ## Changelog
 
-- 2026-11-04 — created.
+- 2026-11-04 — created; refined the same day to streaming, Stop and retry,
+  completion rules, Tracy branding, the guide, fence tolerance and the usage
+  rules above (user).

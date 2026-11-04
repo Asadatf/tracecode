@@ -6,17 +6,17 @@ Decisions with real trade-offs get an ADR in `decisions/`.
 
 ## Stack
 
-| Layer          | Choice                                                          | Why / ADR                                    |
-| -------------- | --------------------------------------------------------------- | -------------------------------------------- |
-| App            | Next.js 16 App Router + React 19 (template)                     | —                                            |
-| Data           | Postgres (Supabase) via Prisma only                             | `docs/rules/database.md`                     |
-| Auth           | Supabase Auth                                                   | `docs/rules/auth.md`                         |
-| Server state   | TanStack Query                                                  | `docs/rules/state-management.md`             |
-| Editor         | CodeMirror 6, lazy-loaded on the problem page only _(proposed)_ | Smaller than Monaco; no heavy initial bundle |
-| Code execution | Python via Pyodide in a Web Worker, in the browser _(proposed)_ | ADR-0001                                     |
-| Tracing        | `sys.settrace` inside the worker, emits a step list             | ADR-0001                                     |
-| Hints          | _(open)_ hand-authored in seed data, or AI via `src/server/ai/` | `docs/rules/ai-usage.md` if AI               |
-| Analytics      | PostHog typed taxonomy                                          | `docs/rules/analytics.md`                    |
+| Layer          | Choice                                                                              | Why / ADR                                    |
+| -------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| App            | Next.js 16 App Router + React 19 (template)                                         | —                                            |
+| Data           | Postgres (Supabase) via Prisma only                                                 | `docs/rules/database.md`                     |
+| Auth           | Supabase Auth                                                                       | `docs/rules/auth.md`                         |
+| Server state   | TanStack Query                                                                      | `docs/rules/state-management.md`             |
+| Editor         | CodeMirror 6, lazy-loaded on the problem page only _(proposed)_                     | Smaller than Monaco; no heavy initial bundle |
+| Code execution | Python via Pyodide in a Web Worker, in the browser _(proposed)_                     | ADR-0001                                     |
+| Tracing        | `sys.settrace` inside the worker, emits a step list                                 | ADR-0001                                     |
+| Hints          | Hand-authored ladders in the catalog; Tracy (AI tutor) streams via `src/server/ai/` | ADR-0005, `docs/rules/ai-usage.md`           |
+| Analytics      | PostHog typed taxonomy                                                              | `docs/rules/analytics.md`                    |
 
 ## Execution and trace pipeline
 
@@ -157,6 +157,24 @@ learners itself):
 | `unsubscribeEmailAction({ token })`                                                         | Confirm-first unsubscribe page; token turns email off only         |
 | `POST /api/notifications/unsubscribe?token=`                                                | RFC 8058 one-click (List-Unsubscribe-Post); always 200             |
 | `GET /api/cron/learning-reminders`                                                          | Daily scheduler, `CRON_SECRET`; counts only in the response        |
+
+### M8 — Tracy, the AI Tutor
+
+A streaming, authenticated tutor endpoint. No new tables: chats live only in the
+browser's `sessionStorage`, and spend is recorded in the existing `ai_usage`
+table (`feature: 'tutor_chat'`). Behaviour is in `features/contextual-ai-tutor.md`;
+the trade-offs are in ADR-0005.
+
+| Entry point                       | Purpose                                                                                                                                                                           |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/tutor`                 | Authenticated, validated, rate-limited. Streams the reply as NDJSON (`start`, `delta`*, then one of `done`, `aborted`, `error`). Precondition failures return JSON with a status. |
+| `src/server/ai/tutor-provider.ts` | Provider-independent contract (`TutorPrompt`, a streaming handle with deltas, one completion, abort) and the provider switch                                                      |
+| `src/server/ai/openai.ts`         | The only OpenAI call; one `trackAiCall` per stream (real usage only, error rows for cut-off or stopped streams)                                                                   |
+| `src/server/tutor/handler.ts`     | Context assembly: curated knowledge, bounded evidence, system prompt                                                                                                              |
+
+Environment: `OPENAI_API_KEY` (server only), `AI_TUTOR_PROVIDER` (default
+`openai`), `AI_TUTOR_MODEL` (default `gpt-4o-mini`; must be mapped in
+`OPENROUTER_SLUGS`).
 
 ## API contracts (draft)
 
