@@ -1,0 +1,36 @@
+/* TraceCode semantic learning colors: one vocabulary across the editor, the
+   execution replay and Tracy.
+
+   These are NOT new hues. Each role reuses a color the Practice Workspace
+   already ships (the Python syntax theme in practice.module.css and the
+   brand emerald), so the same idea looks the same everywhere:
+
+     loop       purple   the editor's keyword color (`for`, `while`, `in`)
+     variable   blue     the editor's builtin/function blue, and the replay's
+                         first pointer blue (#287dba on light surfaces)
+     literal    orange   the editor's number color
+     goal       emerald  the brand accent (targets, expected values, solved)
+     topic      neutral  graphite chip; a topic is named by its text, so it
+                         deliberately carries no hue
+
+   Two variants per role because the workspace mixes surfaces:
+     -on-dark   for the graphite editor, replay source and the Tracy panel
+     -on-light  for the light replay cards (darker, for contrast on #f3f6f3)
+
+   Meaning is never carried by color alone: every use pairs the color with a
+   text label or a visible shape (a labelled panel, a name = value chip, a
+   left rule). Apply these only where the role is certain from structured
+   data (a loop reported by the trace, a local variable the trace recorded,
+   a recorded value). Never to free text, and never inferred from names. */
+
+:root {
+	--tc-sem-loop-on-dark: #caa8ff;
+	--tc-sem-variable-on-dark: #83c9ff;
+	--tc-sem-literal-on-dark: #ffbd80;
+	--tc-sem-goal-on-dark: #58d7a2;
+
+	--tc-sem-loop-on-light: #6b3fb0;
+	--tc-sem-variable-on-light: #1d6aa5;
+	--tc-sem-literal-on-light: #a8530a;
+	--tc-sem-goal-on-light: #087a56;
+}

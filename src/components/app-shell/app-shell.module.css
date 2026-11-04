@@ -47,6 +47,9 @@
 	padding: 14px 0 14px 14px;
 	box-sizing: border-box;
 	min-width: 0;
+	/* Stack above the content column so the collapsed rail's hover labels
+	   (which overflow to the right) are drawn over the page, not behind it. */
+	z-index: 30;
 }
 .sidebarCard,
 .drawerCard {

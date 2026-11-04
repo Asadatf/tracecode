@@ -760,10 +760,23 @@
 	display: inline-block;
 	border: 1px solid transparent;
 }
+.localName {
+	color: var(--tc-sem-variable-on-light, inherit);
+	font-weight: 600;
+}
+.localValue {
+	color: var(--tc-sem-literal-on-light, inherit);
+}
 .localChanged {
 	background: #fff3d9;
 	border: 1px solid #e2b965;
 	color: #644d24;
+}
+/* "Changed this step" is its own execution-state badge (amber); keep its text
+   color rather than layering the variable/literal hues on top of it. */
+.localChanged .localName,
+.localChanged .localValue {
+	color: inherit;
 }
 .traceLoopPanel {
 	border-top: 1px solid var(--line);
@@ -783,7 +796,9 @@
 	background: #edf2ed;
 	padding: 5px 8px;
 	border-radius: 6px;
-	color: #204734;
+	color: var(--tc-sem-loop-on-light, #204734);
+	/* A left rule plus the literal "for" text: the loop role is never color alone. */
+	border-left: 3px solid var(--tc-sem-loop-on-light, #204734);
 }
 .traceLoopItem small {
 	color: #73867b;

@@ -159,7 +159,8 @@ export function ReplayView({
 							key={name}
 							className={cn(styles.local, view.changed.includes(name) && styles.localChanged)}
 						>
-							{name} = {formatValue(value)}
+							<span className={styles.localName}>{name}</span> ={' '}
+							<span className={styles.localValue}>{formatValue(value)}</span>
 						</span>
 					))
 				)}

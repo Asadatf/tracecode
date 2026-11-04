@@ -1,6 +1,14 @@
 'use client'
 
-import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import {
+	useImperativeHandle,
+	useRef,
+	useState,
+	type KeyboardEvent,
+	type PointerEvent,
+	type ReactNode,
+	type Ref
+} from 'react'
 import { cn } from '@/lib/cn'
 import {
 	ChevronDownIcon,
@@ -11,6 +19,7 @@ import {
 	ShrinkIcon
 } from '@/components/ui/icons'
 import {
+	DEFAULT_LAYOUT,
 	LAYOUT_DEFAULTS,
 	clampLeft,
 	clampTop,
@@ -25,6 +34,12 @@ import {
 import type { TutorMode } from '../tutor/tutor-types'
 import { useViewportMode } from './viewport-mode'
 import styles from './workspace.module.css'
+
+// What a parent can ask of the layout. `reset` puts every pane back to its
+// default size and un-maximizes; it changes nothing inside the panes.
+export interface WorkspaceLayoutApi {
+	reset: () => void
+}
 
 type Maximized = null | 'left' | 'code' | 'results' | 'tutor'
 type PhoneView = 'problem' | 'code' | 'results'
@@ -71,7 +86,8 @@ export function WorkspaceLayout({
 	resultsDot,
 	tutorOpen,
 	renderTutor,
-	labels
+	labels,
+	apiRef
 }: {
 	initial: LayoutState
 	leftHead: ReactNode
@@ -92,6 +108,7 @@ export function WorkspaceLayout({
 		toggleMaximize: () => void
 	}) => ReactNode
 	labels: WorkspaceLabels
+	apiRef?: Ref<WorkspaceLayoutApi>
 }) {
 	const [layout, setLayout] = useState(initial)
 	const [maximized, setMaximized] = useState<Maximized>(null)
@@ -208,6 +225,13 @@ export function WorkspaceLayout({
 					: { ...layout, tutor: LAYOUT_DEFAULTS.tutor }
 		)
 	}
+
+	useImperativeHandle(apiRef, () => ({
+		reset() {
+			setMaximized(null)
+			commit(DEFAULT_LAYOUT)
+		}
+	}))
 
 	function toggleMax(which: Exclude<Maximized, null>) {
 		setMaximized((current) => (current === which ? null : which))

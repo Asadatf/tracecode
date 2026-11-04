@@ -43,8 +43,13 @@ import { useTutor } from './tutor/use-tutor'
 import type { TutorContext as TutorRequestContext } from '@/lib/tutor/types'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
-import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
+import {
+	WorkspaceLayout,
+	type WorkspaceLabels,
+	type WorkspaceLayoutApi
+} from './workspace/workspace-layout'
 import { WorkspaceTour } from './workspace/workspace-tour'
+import './semantic-tokens.css'
 import styles from './practice.module.css'
 import wsStyles from './workspace/workspace.module.css'
 
@@ -290,6 +295,7 @@ function ProblemWorkspace({
 	useEffect(() => {
 		void warmUpEngine()
 	}, [])
+	const layoutApiRef = useRef<WorkspaceLayoutApi>(null)
 	const editorPanelRef = useRef<HTMLDivElement>(null)
 	const busyRef = useRef(false)
 	// Local attempt ids only need to be unique within this page's session.
@@ -417,6 +423,13 @@ function ProblemWorkspace({
 	function loadAttempt(source: string) {
 		setCode(source)
 		editorPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+	}
+
+	// Puts the four panes (challenge, code, results, Tracy) back to their default
+	// sizes and un-maximizes. It clears nothing: code, results, replay, History,
+	// the Tracy chat and the stopwatch are all left exactly as they are.
+	function resetLayout() {
+		layoutApiRef.current?.reset()
 	}
 
 	function closeTutor() {
@@ -667,6 +680,16 @@ function ProblemWorkspace({
 				/>
 				<button
 					type="button"
+					id="reset-practice"
+					className={wsStyles.helpButton}
+					aria-label="Reset layout"
+					title="Reset layout (pane sizes)"
+					onClick={resetLayout}
+				>
+					<ResetIcon size={18} />
+				</button>
+				<button
+					type="button"
 					className={wsStyles.helpButton}
 					aria-label="Show the workspace tour"
 					onClick={() => setTourSignal((n) => n + 1)}
@@ -677,6 +700,7 @@ function ProblemWorkspace({
 
 			<WorkspaceLayout
 				initial={initialLayout}
+				apiRef={layoutApiRef}
 				labels={LABELS}
 				resultsDot={submitted != null}
 				tutorOpen={tutorOpen}
@@ -685,6 +709,7 @@ function ProblemWorkspace({
 						context={{
 							problemTitle: problem.title,
 							difficulty: problem.difficulty,
+							topics: problem.conceptTags,
 							runSummary: submitted == null ? null : resultSummary
 						}}
 						mode={mode}
