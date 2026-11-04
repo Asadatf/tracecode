@@ -32,19 +32,56 @@ export function parseMarkdown(input: string): MdBlock[] {
 	while (i < lines.length) {
 		const line = lines[i] ?? ''
 
-		// Fenced code: ```[lang]\n ... \n```
-		const fenceMatch = line.match(/^```\s*([A-Za-z0-9+_-]*)\s*$/)
-		if (fenceMatch != null) {
-			const language = fenceMatch[1] === '' ? null : (fenceMatch[1] ?? null)
-			const body: string[] = []
+		// Malformed single-line fence: ```python x = 1``` (open and close on one
+		// line). Rendered as a code block when it is unambiguous (see
+		// splitInlineFence); surrounding words become ordinary paragraphs.
+		const inline = splitInlineFence(line)
+		if (inline != null) {
+			if (inline.before !== '') {
+				blocks.push({ kind: 'paragraph', inline: parseInline(inline.before) })
+			}
+			blocks.push({ kind: 'code', language: inline.language, source: inline.source })
+			if (inline.after !== '') {
+				blocks.push({ kind: 'paragraph', inline: parseInline(inline.after) })
+			}
 			i += 1
-			while (i < lines.length && !/^```\s*$/.test(lines[i] ?? '')) {
-				body.push(lines[i] ?? '')
+			continue
+		}
+
+		// Fenced code. Canonical form: the opening fence on its own line (with an
+		// optional language), code on the next lines, the closing fence on its own
+		// line. Also tolerated, because models emit them while streaming and in
+		// lists: an indented fence, and a known language followed by code on the
+		// opening line (```python x = 1). An unterminated fence (a stream still in
+		// flight) runs to the end of the text.
+		const open = matchOpeningFence(line)
+		if (open != null) {
+			const body: string[] = open.firstLine != null ? [open.firstLine] : []
+			let closed = false
+			i += 1
+			while (i < lines.length) {
+				const cur = lines[i] ?? ''
+				if (/^\s*```\s*$/.test(cur)) {
+					i += 1
+					closed = true
+					break
+				}
+				// A closing fence glued to the last line of code: `print(x)```.
+				const glued = cur.match(/^(.*\S)\s*```\s*$/)
+				if (glued != null && !cur.includes('```', cur.indexOf('```') + 3)) {
+					body.push(removeIndent(glued[1] ?? '', open.indent))
+					i += 1
+					closed = true
+					break
+				}
+				body.push(removeIndent(cur, open.indent))
 				i += 1
 			}
-			// Skip the closing fence (or fall through gracefully on EOF).
-			if (i < lines.length) i += 1
-			blocks.push({ kind: 'code', language, source: body.join('\n') })
+			// A stream paused right after a newline leaves one empty trailing line in
+			// an UNTERMINATED block; drop it so the code does not flicker taller.
+			// Closed blocks are never trimmed: their content is exactly as written.
+			if (!closed && body.length > 0 && body[body.length - 1] === '') body.pop()
+			blocks.push({ kind: 'code', language: open.language, source: body.join('\n') })
 			continue
 		}
 
@@ -85,7 +122,7 @@ export function parseMarkdown(input: string): MdBlock[] {
 		while (i < lines.length) {
 			const cur = lines[i] ?? ''
 			if (cur.trim() === '') break
-			if (/^```/.test(cur)) break
+			if (/^\s*```/.test(cur)) break
 			if (/^#{1,3}\s+/.test(cur)) break
 			if (/^(\s*)([-*]|\d+\.)\s+/.test(cur)) break
 			paraLines.push(cur)
@@ -95,6 +132,88 @@ export function parseMarkdown(input: string): MdBlock[] {
 	}
 
 	return blocks
+}
+
+// ── Fence helpers ────────────────────────────────────────────────────────
+// Languages Tracy is likely to name. A first word is only read as a language
+// when it is in this set, so "```array = 5```" is never misread as language
+// "array".
+const KNOWN_LANGUAGES = new Set([
+	'python',
+	'py',
+	'python3',
+	'text',
+	'txt',
+	'plaintext',
+	'bash',
+	'sh',
+	'shell',
+	'json',
+	'javascript',
+	'js',
+	'typescript',
+	'ts',
+	'sql'
+])
+
+function removeIndent(line: string, indent: number): string {
+	// Strip at most the opening fence's own indentation, never more, so code
+	// that is indented relative to the fence keeps its shape.
+	let n = 0
+	while (n < indent && n < line.length && line[n] === ' ') n += 1
+	return line.slice(n)
+}
+
+// The opening line of a fenced block, or null. Accepts the canonical
+// "```", "```python", their indented forms, and "```python <code>".
+function matchOpeningFence(
+	line: string
+): { language: string | null; indent: number; firstLine: string | null } | null {
+	const plain = line.match(/^(\s*)```\s*([A-Za-z0-9+_-]*)\s*$/)
+	if (plain != null) {
+		const lang = plain[2] ?? ''
+		return {
+			language: lang === '' ? null : lang,
+			indent: (plain[1] ?? '').length,
+			firstLine: null
+		}
+	}
+	const withCode = line.match(/^(\s*)```([A-Za-z0-9+_-]+)[ \t]+(\S.*)$/)
+	if (withCode != null && KNOWN_LANGUAGES.has((withCode[2] ?? '').toLowerCase())) {
+		// A second fence on this line is the single-line form, handled earlier.
+		if (!(withCode[3] ?? '').includes('```')) {
+			return {
+				language: withCode[2] ?? null,
+				indent: (withCode[1] ?? '').length,
+				firstLine: withCode[3] ?? ''
+			}
+		}
+	}
+	return null
+}
+
+// A line holding exactly one fence pair: text? ```[lang] code``` text?
+// Ambiguous lines (three or more fences, an empty pair, or a bare language
+// word) return null and are left as ordinary text.
+export function splitInlineFence(
+	line: string
+): { before: string; language: string | null; source: string; after: string } | null {
+	const start = line.indexOf('```')
+	if (start < 0) return null
+	const end = line.indexOf('```', start + 3)
+	if (end < 0 || line.indexOf('```', end + 3) >= 0) return null
+	const inner = line.slice(start + 3, end)
+	if (inner.trim() === '') return null
+	const m = inner.match(/^([A-Za-z0-9+_-]+)[ \t]+([\s\S]*\S)\s*$/)
+	const hasLanguage = m != null && KNOWN_LANGUAGES.has((m[1] ?? '').toLowerCase())
+	// A lone known language word ("```python```") carries no code.
+	if (!hasLanguage && KNOWN_LANGUAGES.has(inner.trim().toLowerCase())) return null
+	return {
+		before: line.slice(0, start).trim(),
+		language: hasLanguage ? (m?.[1] ?? null) : null,
+		source: hasLanguage ? (m?.[2] ?? '') : inner.trim(),
+		after: line.slice(end + 3).trim()
+	}
 }
 
 // Inline grammar, applied greedily left-to-right:

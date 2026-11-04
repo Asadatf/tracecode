@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { buildSystemPrompt } from './system-prompt'
 import { knowledgeFor } from './problem-knowledge'
@@ -138,11 +139,42 @@ describe('system prompt assembly', () => {
 		assert.match(prompt, /'show me the full solution'.*→ L4/)
 	})
 
+	it('asks for no em dashes in prose, as a style preference that never edits evidence', () => {
+		const prompt = mk('two-sum', {})
+		assert.match(prompt, /Do not use em dashes in explanatory prose/)
+		assert.match(prompt, /Prefer commas, periods, colons, parentheses, or short sentences/)
+		// Scoped: evidence, code and quotes must never be rewritten to comply.
+		assert.match(prompt, /Never alter or paraphrase code, quoted text, test inputs/)
+		assert.match(prompt, /never let it reduce technical precision/)
+	})
+
+	it('em dash rule is a prompt instruction only: nothing rewrites model output', () => {
+		const files = [
+			'../../server/tutor/handler.ts',
+			'../../server/ai/openai.ts',
+			'./markdown.ts',
+			'../../components/trace/tutor/use-tutor.ts'
+		]
+		for (const rel of files) {
+			const src = readFileSync(new URL(rel, import.meta.url), 'utf8')
+			// A filter would call replace/replaceAll/split with the em dash character.
+			assert.doesNotMatch(src, /\.(replace|replaceAll|split)\([^)]*(\u2014|\\u2014)/, rel)
+		}
+	})
+
 	it('optimization is a separate axis — a conceptual hint must not return the optimised algorithm', () => {
 		const prompt = mk('two-sum', {})
 		assert.match(prompt, /OPTIMIZATION request/)
 		assert.match(prompt, /SEPARATE category from the L1–L4 ladder/)
 		assert.match(prompt, /conceptual hint \(L1\) must NOT receive the optimised algorithm/)
+	})
+
+	it('spells out the exact fence layout: own lines, code on the next line, never inline', () => {
+		const prompt = mk('two-sum', {})
+		assert.match(prompt, /opening three backticks on their own line/)
+		assert.match(prompt, /code starting on the NEXT line/)
+		assert.match(prompt, /closing three backticks on their own line/)
+		assert.match(prompt, /never write a fence inline inside a sentence or list item/)
 	})
 
 	it('Python terminology accuracy — list is a dynamic array, not a typed array', () => {

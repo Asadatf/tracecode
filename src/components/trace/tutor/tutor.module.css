@@ -135,6 +135,16 @@
 	font-size: 12px;
 	font-weight: 600;
 }
+.topicChip {
+	/* Topics are named by their text, so the chip is neutral graphite (see
+	   semantic-tokens.css): no hue to decode, nothing to misread. */
+	padding: 1px 9px;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.06);
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 12px;
+}
 .contextRun {
 	flex-basis: 100%;
 	color: rgba(255, 255, 255, 0.7);

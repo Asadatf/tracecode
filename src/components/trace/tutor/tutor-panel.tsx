@@ -99,7 +99,7 @@ export function TutorPanel({
 					id="tutor-guide-trigger"
 					type="button"
 					className={styles.iconButton}
-					aria-label={guideOpen ? 'Close prompt guide' : 'How to ask Tracy'}
+					aria-label={guideOpen ? 'Close prompt guide' : 'How to ask Tracy (guide)'}
 					aria-expanded={guideOpen}
 					aria-controls="tutor-guide-panel"
 					aria-haspopup="dialog"
@@ -142,6 +142,11 @@ export function TutorPanel({
 				<span className={styles.contextLabel}>Working on</span>
 				<strong>{context.problemTitle}</strong>
 				<span className={styles.contextPill}>{context.difficulty}</span>
+				{(context.topics ?? []).map((topic) => (
+					<span key={topic} className={styles.topicChip}>
+						{topic}
+					</span>
+				))}
 				{context.runSummary != null ? (
 					<span className={styles.contextRun}>Latest run: {context.runSummary}</span>
 				) : null}

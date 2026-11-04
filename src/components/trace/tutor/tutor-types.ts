@@ -17,6 +17,8 @@ export interface TutorContext {
 	problemTitle: string
 	difficulty: string
 	runSummary: string | null
+	// The problem's catalog topics (e.g. arrays, hashing), shown as neutral chips.
+	topics?: readonly string[]
 }
 
 // 'docked' is a column beside the editor; 'overlay' is a drawer over the

@@ -86,7 +86,7 @@ export function TutorPromptGuide({
 		>
 			<div className={styles.guideHead}>
 				<h3 ref={titleRef} tabIndex={-1} id="tutor-guide-title" className={styles.guideTitle}>
-					How to ask Tracy
+					How to ask Tracy (guide)
 				</h3>
 				<button
 					type="button"
@@ -98,9 +98,12 @@ export function TutorPromptGuide({
 				</button>
 			</div>
 			<p className={styles.guideLead}>
-				Tracy automatically receives the relevant Practice context — the problem, your current code,
-				your latest run and any selected replay step — when you send a question. Nothing is
-				transmitted until then.
+				When you send a question, Tracy uses the relevant context available in your Practice
+				Workspace: the problem, your current code, your latest run and any selected replay step.
+				Nothing is sent until you press Send.
+			</p>
+			<p className={styles.guideLead}>
+				Questions about test results or execution need a run first. Run your code, then ask.
 			</p>
 			<ol className={styles.guideList}>
 				{PROMPT_CATEGORIES.map((category) => (

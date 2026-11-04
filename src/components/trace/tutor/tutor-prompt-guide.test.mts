@@ -29,7 +29,7 @@ describe('Tracy prompt guide — content', () => {
 		const byId = Object.fromEntries(PROMPT_CATEGORIES.map((c) => [c.id, c.example]))
 		assert.equal(
 			byId['learn-topic'],
-			'Teach me the main concept behind this problem from first principles, with a small example.'
+			'Teach me the main concept behind this problem from first principles, using a small example.'
 		)
 		assert.equal(
 			byId['get-hint'],
@@ -37,7 +37,7 @@ describe('Tracy prompt guide — content', () => {
 		)
 		assert.equal(
 			byId['understand-failed-tests'],
-			'Why are my tests failing? Explain using my current code and actual test results.'
+			'Why are my tests failing? Explain using my actual code and test results.'
 		)
 		assert.equal(
 			byId['explore-execution'],
@@ -45,7 +45,7 @@ describe('Tracy prompt guide — content', () => {
 		)
 		assert.equal(
 			byId['optimize-solution'],
-			'Explain the time and space complexity of my approach, then guide me toward an optimization without writing the code.'
+			"Explain my solution's time and space complexity, then guide me toward optimization without writing the code."
 		)
 		assert.equal(
 			byId['review-solution'],
@@ -63,9 +63,50 @@ describe('Tracy prompt guide — content', () => {
 	})
 
 	it('explains that Practice context is attached only on send', () => {
-		assert.match(guideSrc, /Tracy automatically receives the relevant Practice context/)
-		// Prettier wraps the line, so match across whitespace/newlines.
-		assert.match(guideSrc, /Nothing is\s+transmitted until then/)
+		// Prettier wraps the JSX text, so match across whitespace/newlines.
+		assert.match(guideSrc, /Tracy\s+uses\s+the\s+relevant\s+context\s+available/)
+		assert.match(guideSrc, /Nothing\s+is\s+sent\s+until\s+you\s+press\s+Send/)
+	})
+
+	it('explains that execution questions need a run first', () => {
+		assert.match(guideSrc, /need\s+a\s+run\s+first/)
+		assert.match(guideSrc, /Run\s+your\s+code,\s+then\s+ask/)
+	})
+
+	it('is titled "How to ask Tracy (guide)" in the heading and the trigger label', () => {
+		assert.match(guideSrc, /How to ask Tracy \(guide\)/)
+		assert.match(panelSrc, /'How to ask Tracy \(guide\)'/)
+	})
+
+	it('uses the exact category labels from the spec', () => {
+		assert.deepEqual(
+			PROMPT_CATEGORIES.map((c) => c.label),
+			[
+				'Learn a topic',
+				'Get a conceptual hint',
+				'Understand failed tests',
+				'Explore execution',
+				'Optimize my solution',
+				'Review my solution'
+			]
+		)
+	})
+
+	it('copies only: never writes into the composer or sends', () => {
+		assert.doesNotMatch(guideSrc, /onSend|onPick|setText|tutor\.send/)
+	})
+
+	it('guide UI copy contains no em dashes', () => {
+		for (const c of PROMPT_CATEGORIES) {
+			assert.doesNotMatch(c.label, /\u2014/)
+			assert.doesNotMatch(c.example, /\u2014/)
+		}
+		// JSX text and attributes (comments are not user-facing).
+		const jsx = guideSrc
+			.split('\n')
+			.filter((l) => !l.trim().startsWith('//'))
+			.join('\n')
+		assert.doesNotMatch(jsx, /\u2014/)
 	})
 })
 
@@ -92,8 +133,10 @@ describe('Tracy prompt guide — accessibility & isolation', () => {
 		assert.match(panelSrc, /aria-expanded=\{guideOpen\}/)
 		assert.match(panelSrc, /aria-controls="tutor-guide-panel"/)
 		assert.match(panelSrc, /aria-haspopup="dialog"/)
-		// Default label reads as "How to ask Tracy" when closed.
-		assert.match(panelSrc, /aria-label=\{guideOpen \? 'Close prompt guide' : 'How to ask Tracy'\}/)
+		assert.match(
+			panelSrc,
+			/aria-label=\{guideOpen \? 'Close prompt guide' : 'How to ask Tracy \(guide\)'\}/
+		)
 	})
 
 	it('opening the guide does NOT send a message or call the API', () => {
