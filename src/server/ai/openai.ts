@@ -15,11 +15,14 @@ import {
 	OpenAiHttpError,
 	buildBody,
 	buildStreamBody,
+	createStreamAccumulator,
+	failureForStatus,
 	mapError,
 	parseResponse,
 	splitSseChunk,
-	type SseEvent
+	usageResponseForStream
 } from './openai-protocol'
+import { disabledStream } from './disabled-stream'
 
 // The only file allowed to call OpenAI's HTTP endpoint and the only file
 // that calls `trackAiCall` for it (docs/rules/ai-usage.md; enforced by
@@ -76,7 +79,7 @@ export function askOpenAIStream(
 ): TutorProviderStream {
 	const apiKey = env.OPENAI_API_KEY
 	if (apiKey == null || apiKey === '') {
-		return disabledStreamImpl('no_api_key')
+		return disabledStream('no_api_key')
 	}
 
 	const controller = new AbortController()
@@ -96,26 +99,20 @@ export function askOpenAIStream(
 			settleCompletion = resolve
 		}
 	)
-	// Track the call through the sink: trackAiCall records ONE row, keyed
-	// on the final aggregated response shape. `completion` is what the
-	// extractor will be handed — a usage-bearing synthetic chat-completion
-	// object so the existing openai extractor in usage.ts picks it up.
+	// One tracked row per stream, written when `completion` settles.
+	// - A provider-reported usage chunk gives a real, priced row.
+	// - A failure, a cut-off stream or a cancelled request is recorded as an
+	//   `error` row with no tokens: the provider sent no usage, and a zero-token
+	//   `ok` row would claim the call was free and finished. Nothing is invented.
 	void trackAiCall({ provider: 'openai', feature: config.feature, model: config.model }, () =>
 		completion.then((final) => {
-			if (!final.ok) throw new OpenAiHttpError(final.status ?? 500)
-			return {
-				id: 'stream',
-				model: final.model,
-				choices: [{ finish_reason: final.finish === 'abort' ? 'stop' : 'stop' }],
-				usage: {
-					prompt_tokens: final.usage?.inputTokens ?? 0,
-					completion_tokens: final.usage?.outputTokens ?? 0
-				}
-			}
+			const response = usageResponseForStream(final.ok ? final : { ok: false })
+			if (response == null) throw new OpenAiHttpError(final.ok ? 499 : (final.status ?? 500))
+			return response
 		})
 	).catch(() => {
-		// trackAiCall swallows its own errors; the throw above only
-		// signals "record this as an error row".
+		// trackAiCall swallows its own errors; a throw above only means
+		// "record this call as an error row".
 	})
 
 	const deltaBuffer: string[] = []
@@ -152,11 +149,18 @@ export function askOpenAIStream(
 
 	// Drive the fetch asynchronously; the caller gets the stream handle now.
 	void (async () => {
-		let aggregatedText = ''
-		let servedModel = config.model as string
-		let usage: TutorStreamFinal['usage'] = undefined
-		let finish: 'complete' | 'abort' = 'complete'
+		const acc = createStreamAccumulator()
+		let cancelled = false
 		let errorFinal: ({ ok: false } & TutorStreamFailure) | null = null
+
+		const feed = (chunk: string) => {
+			const { events, remainder } = splitSseChunk(chunk)
+			for (const ev of events) {
+				const delta = acc.apply(ev)
+				if (delta != null) enqueueDelta(delta)
+			}
+			return remainder
+		}
 
 		try {
 			const res = await fetch(OPENAI_CHAT_URL, {
@@ -170,7 +174,7 @@ export function askOpenAIStream(
 				body: JSON.stringify(buildStreamBody(config.model, prompt))
 			})
 			if (!res.ok) {
-				errorFinal = { ok: false, ...mapStatusToFailure(res.status) }
+				errorFinal = { ok: false, ...failureForStatus(res.status) }
 			} else if (res.body == null) {
 				errorFinal = { ok: false, reason: 'invalid_response' }
 			} else {
@@ -180,22 +184,16 @@ export function askOpenAIStream(
 				while (true) {
 					const { value, done } = await reader.read()
 					if (done) break
-					carry += decoder.decode(value, { stream: true })
-					const { events, remainder } = splitSseChunk(carry)
-					carry = remainder
-					for (const ev of events) applyEvent(ev)
+					carry = feed(carry + decoder.decode(value, { stream: true }))
 				}
 				carry += decoder.decode()
-				if (carry.length > 0) {
-					const { events } = splitSseChunk(carry + '\n')
-					for (const ev of events) applyEvent(ev)
-				}
+				if (carry.length > 0) feed(carry + '\n')
 			}
 		} catch {
 			if (controller.signal.aborted) {
-				const r = (controller.signal.reason as Error | undefined)?.message
-				if (r === 'timeout') errorFinal = { ok: false, reason: 'timeout' }
-				else finish = 'abort'
+				const why = (controller.signal.reason as Error | undefined)?.message
+				if (why === 'timeout') errorFinal = { ok: false, reason: 'timeout' }
+				else cancelled = true
 			} else {
 				errorFinal = { ok: false, reason: 'network_error' }
 			}
@@ -204,34 +202,40 @@ export function askOpenAIStream(
 			finishDeltas()
 		}
 
-		function applyEvent(ev: SseEvent) {
-			if (ev.kind === 'delta') {
-				aggregatedText += ev.text
-				enqueueDelta(ev.text)
-			} else if (ev.kind === 'usage') {
-				usage = { inputTokens: ev.inputTokens, outputTokens: ev.outputTokens }
-				if (ev.model != null) servedModel = ev.model
-			}
-			// 'finish' / 'ignore' don't need action; the stream ends when
-			// the reader signals `done`.
-		}
-
 		if (errorFinal != null) {
 			settleCompletion(errorFinal)
 			return
 		}
-		if (finish === 'complete' && aggregatedText.trim().length === 0) {
-			settleCompletion({ ok: false, reason: 'invalid_response' })
+		if (cancelled) {
+			settleCompletion({
+				ok: true,
+				text: acc.text,
+				model: acc.model ?? config.model,
+				provider: 'openai',
+				usage: acc.usage,
+				finish: 'abort'
+			})
 			return
 		}
-		settleCompletion({
-			ok: true,
-			text: aggregatedText,
-			model: servedModel,
-			provider: 'openai',
-			usage,
-			finish
-		})
+		// Reached the end of the body without an error: only a provider-declared
+		// finish counts as a finished reply.
+		const verdict = acc.verdict()
+		if (verdict.kind === 'incomplete') {
+			settleCompletion({ ok: false, reason: 'incomplete_response' })
+		} else if (verdict.kind === 'blocked') {
+			settleCompletion({ ok: false, reason: 'blocked' })
+		} else if (verdict.kind === 'empty') {
+			settleCompletion({ ok: false, reason: 'invalid_response' })
+		} else {
+			settleCompletion({
+				ok: true,
+				text: acc.text,
+				model: acc.model ?? config.model,
+				provider: 'openai',
+				usage: acc.usage,
+				finish: 'complete'
+			})
+		}
 	})()
 
 	return {
@@ -240,26 +244,5 @@ export function askOpenAIStream(
 		abort: () => {
 			if (!controller.signal.aborted) controller.abort()
 		}
-	}
-}
-
-function mapStatusToFailure(status: number): TutorStreamFailure {
-	if (status === 401 || status === 403) return { reason: 'no_api_key', status }
-	if (status === 429) return { reason: 'rate_limited', status }
-	if (status >= 500) return { reason: 'server_error', status }
-	return { reason: 'invalid_response', status }
-}
-
-function disabledStreamImpl(reason: 'no_api_key'): TutorProviderStream {
-	return {
-		deltas: {
-			[Symbol.asyncIterator](): AsyncIterator<string> {
-				return {
-					next: () => Promise.resolve({ value: undefined, done: true })
-				}
-			}
-		},
-		completion: Promise.resolve({ ok: false, reason }),
-		abort: () => {}
 	}
 }

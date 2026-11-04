@@ -12,6 +12,7 @@ import {
 	type TutorPrompt,
 	type TutorProviderFailure
 } from '@/server/ai/tutor-provider'
+import { TUTOR_MAX_OUTPUT_TOKENS, TUTOR_STREAM_TIMEOUT_MS } from '@/server/ai/openai-protocol'
 import { checkRateLimit } from './rate-limit'
 import { captureError } from '@/lib/observability/capture-error'
 import { log } from '@/server/lib/logger'
@@ -53,8 +54,8 @@ export async function handleTutorRequest(
 	const result = await callTutorProvider(config, {
 		system,
 		messages,
-		maxOutputTokens: 600,
-		timeoutMs: 20_000
+		maxOutputTokens: TUTOR_MAX_OUTPUT_TOKENS,
+		timeoutMs: TUTOR_STREAM_TIMEOUT_MS
 	})
 
 	if (!result.ok) {
@@ -133,7 +134,12 @@ export async function handleTutorStreamRequest(
 
 	const system = buildSystemPrompt({ problem, knowledge, context: input.context })
 	const messages = toProviderMessages(input.messages)
-	const prompt: TutorPrompt = { system, messages, maxOutputTokens: 600, timeoutMs: 30_000 }
+	const prompt: TutorPrompt = {
+		system,
+		messages,
+		maxOutputTokens: TUTOR_MAX_OUTPUT_TOKENS,
+		timeoutMs: TUTOR_STREAM_TIMEOUT_MS
+	}
 	const config = resolveTutorConfig()
 	const providerStream = callTutorProviderStream(config, prompt, requestSignal)
 
@@ -213,6 +219,18 @@ function providerFailureResponse(reason: TutorProviderFailure | string): TutorRe
 				ok: false,
 				reason: 'empty',
 				message: 'The tutor returned an empty response. Try rewording your question.'
+			}
+		case 'incomplete_response':
+			return {
+				ok: false,
+				reason: 'network',
+				message: 'The reply was cut off before it finished. Try again.'
+			}
+		case 'blocked':
+			return {
+				ok: false,
+				reason: 'empty',
+				message: 'Tracy could not answer that as worded. Try rephrasing your question.'
 			}
 		case 'network_error':
 		default:

@@ -1,6 +1,13 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildStreamBody, parseSseBlock, splitSseChunk, type SseEvent } from './openai-protocol'
+import {
+	buildStreamBody,
+	createStreamAccumulator,
+	failureForStatus,
+	parseSseBlock,
+	splitSseChunk,
+	type SseEvent
+} from './openai-protocol'
 
 // Streaming contract (M8 streaming pass). The PURE parser is where
 // malformed chunks, split-across-boundaries chunks, and the usage-only
@@ -104,5 +111,71 @@ describe('buildStreamBody', () => {
 		assert.equal(body.stream, true)
 		assert.deepEqual(body.stream_options, { include_usage: true })
 		assert.equal(body.model, 'gpt-4o-mini')
+	})
+})
+
+// The stream is finished only when the provider says so. A body that merely
+// stops is a cut-off reply and must never be saved as an answer.
+describe('stream completion verdict', () => {
+	const feed = (body: string) => {
+		const acc = createStreamAccumulator()
+		for (const ev of splitSseChunk(body).events) acc.apply(ev)
+		return acc
+	}
+	const delta = (t: string) => `data: {"choices":[{"delta":{"content":"${t}"}}]}\n`
+
+	it('finish_reason "stop" completes the reply', () => {
+		const acc = feed(delta('Hi') + 'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n')
+		assert.deepEqual(acc.verdict(), { kind: 'complete', finishReason: 'stop' })
+		assert.equal(acc.text, 'Hi')
+	})
+
+	it('[DONE] alone also completes it', () => {
+		assert.equal(feed(delta('Hi') + 'data: [DONE]\n').verdict().kind, 'complete')
+	})
+
+	it('"length" is a provider-declared end (the output cap), so it is complete', () => {
+		const acc = feed(delta('Hi') + 'data: {"choices":[{"delta":{},"finish_reason":"length"}]}\n')
+		assert.deepEqual(acc.verdict(), { kind: 'complete', finishReason: 'length' })
+	})
+
+	it('text that just stops, with no finish and no [DONE], is incomplete', () => {
+		assert.equal(feed(delta('Half an ans')).verdict().kind, 'incomplete')
+	})
+
+	it('a cut-off before any text is incomplete, not empty', () => {
+		assert.equal(feed('').verdict().kind, 'incomplete')
+	})
+
+	it('finished with no text is empty', () => {
+		assert.equal(feed('data: [DONE]\n').verdict().kind, 'empty')
+	})
+
+	it('a content filter stop is blocked, not a finished reply', () => {
+		const acc = feed(
+			delta('Hi') + 'data: {"choices":[{"delta":{},"finish_reason":"content_filter"}]}\n'
+		)
+		assert.equal(acc.verdict().kind, 'blocked')
+	})
+
+	it('real usage is kept when the provider sends it, and absent when it does not', () => {
+		const withUsage = feed(
+			delta('Hi') +
+				'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n' +
+				'data: {"model":"gpt-4o-mini-2024-07-18","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":4}}\n'
+		)
+		assert.deepEqual(withUsage.usage, { inputTokens: 10, outputTokens: 4 })
+		assert.equal(withUsage.model, 'gpt-4o-mini-2024-07-18')
+		const without = feed(delta('Hi') + 'data: [DONE]\n')
+		assert.equal(without.usage, undefined, 'no usage is invented')
+	})
+})
+
+describe('provider status normalization', () => {
+	it('maps statuses to safe reasons without any body text', () => {
+		assert.deepEqual(failureForStatus(401), { reason: 'no_api_key', status: 401 })
+		assert.deepEqual(failureForStatus(429), { reason: 'rate_limited', status: 429 })
+		assert.deepEqual(failureForStatus(503), { reason: 'server_error', status: 503 })
+		assert.deepEqual(failureForStatus(400), { reason: 'invalid_response', status: 400 })
 	})
 })

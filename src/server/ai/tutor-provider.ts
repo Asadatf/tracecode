@@ -2,6 +2,7 @@ import 'server-only'
 import { env } from '@/lib/env'
 import { OPENROUTER_SLUGS, type TrackedModel } from '@/server/lib/ai-usage/models'
 import { askOpenAI, askOpenAIStream } from './openai'
+import { disabledStream } from './disabled-stream'
 
 // Provider-independent adapter for the AI Tutor (specs/features/
 // contextual-ai-tutor.md). The tutor handler holds only this contract; the
@@ -28,6 +29,8 @@ export type TutorProviderFailure =
 	| 'server_error' // 5xx
 	| 'timeout'
 	| 'invalid_response' // 2xx with no usable text
+	| 'incomplete_response' // the stream ended without the provider finishing the reply
+	| 'blocked' // the provider stopped the reply on purpose (content filter)
 	| 'network_error' // fetch rejected / connection issue
 
 export type TutorProviderResult =
@@ -128,21 +131,5 @@ export function callTutorProviderStream(
 			// Stub in M8. Mirrors callTutorProvider: an exhaustive switch
 			// keeps a future provider addition honest.
 			return disabledStream('no_api_key')
-	}
-}
-
-// A degenerate stream that yields nothing and resolves immediately to the
-// given failure. Used when the provider is not configured, and by tests.
-export function disabledStream(reason: TutorProviderFailure): TutorProviderStream {
-	return {
-		deltas: {
-			[Symbol.asyncIterator](): AsyncIterator<string> {
-				return {
-					next: () => Promise.resolve({ value: undefined, done: true })
-				}
-			}
-		},
-		completion: Promise.resolve({ ok: false, reason }),
-		abort: () => {}
 	}
 }

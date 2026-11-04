@@ -629,6 +629,13 @@
 .errorBox button:hover {
 	background: rgba(255, 255, 255, 0.08);
 }
+.retryQuote {
+	flex-basis: 100%;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 12px;
+	font-style: italic;
+	overflow-wrap: anywhere;
+}
 .limitBox {
 	display: flex;
 	flex-wrap: wrap;

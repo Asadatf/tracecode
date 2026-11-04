@@ -34,6 +34,27 @@ describe('Tutor — fullscreen presentation', () => {
 		assert.match(css, /\.panelMax[\s\S]*?margin-right:\s*auto/)
 	})
 
+	it('the rule that carries the width cap lists every fullscreen content block', () => {
+		// Parse the real rule, not a loose regex: the selector list and the
+		// declarations must live in the SAME block (a stray insertion once split them).
+		const block = css.match(/(\.panelMax \.conversation[^{]*)\{([^}]*)\}/)
+		assert.ok(block != null, 'fullscreen rule exists')
+		const [, selectors, body] = block
+		for (const name of ['conversation', 'composer', 'context', 'notice', 'errorBox', 'limitBox']) {
+			assert.ok(selectors!.includes(`.panelMax .${name}`), `${name} is capped in fullscreen`)
+		}
+		assert.match(body!, /max-width:\s*960px/)
+		assert.match(body!, /margin-left:\s*auto/)
+		assert.match(body!, /margin-right:\s*auto/)
+	})
+
+	it('the compact .limitBox and .retryQuote carry no fullscreen width cap', () => {
+		for (const name of ['limitBox', 'retryQuote']) {
+			const own = [...css.matchAll(new RegExp(`(^|\\n)\\.${name} \\{([^}]*)\\}`, 'g'))]
+			for (const m of own) assert.doesNotMatch(m[2]!, /max-width/, `.${name} must not cap width`)
+		}
+	})
+
 	it('the width cap applies to the conversation AND the composer at minimum', () => {
 		// The rule targets .conversation and .composer specifically — not
 		// the whole .panel — so the pane's background still fills the

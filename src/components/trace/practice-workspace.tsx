@@ -105,7 +105,11 @@ export function PracticeWorkspace({
 	const problem = PROBLEMS[slug]
 	if (problem == null) return null
 	return (
+		// Keyed by slug so switching problems always starts a fresh workspace (editor,
+		// results, replay and the Tracy chat), whether or not the router would have
+		// reused the instance. Nothing from one problem can leak into the next.
 		<ProblemWorkspace
+			key={problem.slug}
 			problem={problem}
 			isAuthenticated={isAuthenticated}
 			userId={userId}

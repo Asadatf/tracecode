@@ -81,7 +81,7 @@ export function TutorPanel({
 			className={cn(styles.panel, maximized && styles.panelMax)}
 			role={modal ? 'dialog' : 'complementary'}
 			aria-modal={modal ? true : undefined}
-			aria-label={`${TUTOR_NAME} — ${TUTOR_ROLE}`}
+			aria-label={`${TUTOR_NAME}, ${TUTOR_ROLE}`}
 			data-maximized={maximized ? 'true' : 'false'}
 			onKeyDown={onKeyDown}
 		>
@@ -162,11 +162,21 @@ export function TutorPanel({
 			{errored && (
 				<div className={styles.errorBox} role="alert">
 					<span>{tutor.status.kind === 'error' ? tutor.status.message : ''}</span>
-					{tutor.status.kind === 'error' && tutor.status.retryable && (
+					{tutor.status.kind === 'error' && tutor.status.retryable && tutor.retryText != null && (
 						<button type="button" onClick={tutor.retry}>
 							Try again
 						</button>
 					)}
+				</div>
+			)}
+
+			{tutor.status.kind === 'stopped' && tutor.retryText != null && (
+				<div className={styles.errorBox} role="status">
+					<span>Stopped. That question was not counted.</span>
+					<button type="button" onClick={tutor.retry}>
+						Retry
+					</button>
+					<span className={styles.retryQuote}>{tutor.retryText}</span>
 				</div>
 			)}
 

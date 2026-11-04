@@ -162,6 +162,101 @@ export function splitSseChunk(buffer: string): { events: SseEvent[]; remainder: 
 	return { events, remainder }
 }
 
+// Folds a stream's events into one verdict. The ONLY way a stream counts as
+// complete is the provider saying so: a `finish_reason` on a choice, or the
+// `[DONE]` sentinel. A body that simply stops (a dropped connection, a proxy
+// closing early) has neither, and is reported as incomplete so a truncated
+// reply is never saved as a finished answer.
+export type StreamVerdict =
+	| { kind: 'complete'; finishReason: string }
+	| { kind: 'incomplete' }
+	| { kind: 'empty' }
+	// The provider stopped on purpose without finishing the answer (a content
+	// filter). Distinct from a cut connection, but equally not a finished reply.
+	| { kind: 'blocked'; finishReason: string }
+
+export function createStreamAccumulator() {
+	let text = ''
+	let finishReason: string | null = null
+	let sawDone = false
+	let usage: { inputTokens: number; outputTokens: number } | undefined
+	let model: string | undefined
+	return {
+		apply(event: SseEvent): string | null {
+			if (event.kind === 'delta') {
+				text += event.text
+				return event.text
+			}
+			if (event.kind === 'finish') {
+				if (event.reason === 'done') sawDone = true
+				else finishReason = event.reason
+			} else if (event.kind === 'usage') {
+				usage = { inputTokens: event.inputTokens, outputTokens: event.outputTokens }
+				if (event.model != null) model = event.model
+			}
+			return null
+		},
+		verdict(): StreamVerdict {
+			if (finishReason === 'content_filter') return { kind: 'blocked', finishReason }
+			if (finishReason == null && !sawDone) return { kind: 'incomplete' }
+			if (text.trim().length === 0) return { kind: 'empty' }
+			return { kind: 'complete', finishReason: finishReason ?? 'stop' }
+		},
+		get text() {
+			return text
+		},
+		get usage() {
+			return usage
+		},
+		get model() {
+			return model
+		}
+	}
+}
+
+// What a finished stream tells the usage tracker. Returns the response shape the
+// shared OpenAI extractor reads (src/server/lib/ai-usage/usage.ts), or null when
+// the call must be recorded as an `error` row.
+//
+// Only a reply the provider finished AND reported real token counts for becomes
+// a priced `ok` row. A cut-off stream, a failure and a learner's Stop all carry
+// no provider usage; recording them as `ok` with zero tokens would claim the
+// call was complete and free, so they are recorded as errors with no tokens
+// instead. Counts are never estimated or invented.
+export function usageResponseForStream(final: {
+	ok: boolean
+	model?: string
+	finish?: 'complete' | 'abort'
+	usage?: { inputTokens: number; outputTokens: number }
+}): Record<string, unknown> | null {
+	if (!final.ok || final.usage == null) return null
+	return {
+		id: 'stream',
+		model: final.model,
+		choices: [{ finish_reason: 'stop' }],
+		usage: {
+			prompt_tokens: final.usage.inputTokens,
+			completion_tokens: final.usage.outputTokens
+		}
+	}
+}
+
+// Provider HTTP status to a normalized failure reason (never the body).
+export function failureForStatus(status: number): {
+	reason: 'no_api_key' | 'rate_limited' | 'server_error' | 'invalid_response'
+	status: number
+} {
+	if (status === 401 || status === 403) return { reason: 'no_api_key', status }
+	if (status === 429) return { reason: 'rate_limited', status }
+	if (status >= 500) return { reason: 'server_error', status }
+	return { reason: 'invalid_response', status }
+}
+
+// The tutor's cost bounds, named once so the handler and the provider cannot
+// drift apart (they previously disagreed on the timeout).
+export const TUTOR_MAX_OUTPUT_TOKENS = 600
+export const TUTOR_STREAM_TIMEOUT_MS = 30_000
+
 export function buildStreamBody(model: string, prompt: TutorPrompt): Record<string, unknown> {
 	return {
 		...buildBody(model, prompt),
