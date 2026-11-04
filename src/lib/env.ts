@@ -58,6 +58,14 @@ const envSchema = z.object({
 	// unpriced). Empty string means "use the default".
 	OPENROUTER_MODEL: z.string().optional().or(z.literal('')),
 
+	// M8 Context-Aware AI Tutor. Unset OPENAI_API_KEY → the tutor is simply
+	// disabled (the endpoint returns `unavailable`, the UI says so, Practice
+	// otherwise works). Provider is selectable so a future OpenRouter-backed
+	// tutor is a config change, not a rewrite; today only 'openai' is wired.
+	OPENAI_API_KEY: z.string().optional(),
+	AI_TUTOR_PROVIDER: z.enum(['openai', 'openrouter']).optional(),
+	AI_TUTOR_MODEL: z.string().optional().or(z.literal('')),
+
 	// Resend, for M7.5B daily reminder emails. An email is sent only when ALL three
 	// are set and REMINDER_FROM_EMAIL's domain equals RESEND_VERIFIED_DOMAIN
 	// (src/lib/notifications/email-config.ts) — a key alone never sends. Unset →

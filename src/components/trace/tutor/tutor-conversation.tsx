@@ -1,35 +1,70 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/cn'
 import { SparkleIcon } from '@/components/ui/icons'
-import type { TutorMessage } from './tutor-types'
+import type { TutorMessage } from '@/lib/tutor/types'
+import { MarkdownView } from './markdown-view'
 import styles from './tutor.module.css'
 
-// The scrolling message area. With no messages it shows the empty state; the
-// preview never fills it with sample replies.
+// The scrolling message area. Follows the latest text WHEN the learner is
+// near the bottom; if they scrolled up to re-read, they stay there. A
+// screen reader announces new messages via aria-live.
+
+const STICK_THRESHOLD_PX = 64
+
 export function TutorConversation({
 	messages,
-	connected
+	sending,
+	streaming,
+	streamingReply,
+	available
 }: {
 	messages: readonly TutorMessage[]
-	connected: boolean
+	sending: boolean
+	streaming: boolean
+	streamingReply: string | null
+	available: boolean
 }) {
+	const scrollRef = useRef<HTMLDivElement>(null)
+	// Whether the user is "stuck to the bottom". Starts true; flips to
+	// false the instant they scroll away; flips back when they scroll
+	// within STICK_THRESHOLD_PX of the bottom again.
+	const stickRef = useRef(true)
+
+	function onScroll() {
+		const node = scrollRef.current
+		if (node == null) return
+		const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight
+		stickRef.current = distanceFromBottom < STICK_THRESHOLD_PX
+	}
+
+	useEffect(() => {
+		const node = scrollRef.current
+		if (node == null) return
+		if (stickRef.current) node.scrollTop = node.scrollHeight
+	}, [messages.length, sending, streamingReply])
+
 	return (
 		<div
+			ref={scrollRef}
 			className={styles.conversation}
 			role="log"
 			aria-live="polite"
-			aria-label="Conversation with the AI Tutor"
+			aria-label="Conversation with Tracy"
 			tabIndex={0}
+			onScroll={onScroll}
 		>
 			{messages.length === 0 ? (
 				<div className={styles.empty}>
 					<span className={styles.emptyIcon} aria-hidden="true">
 						<SparkleIcon size={22} />
 					</span>
-					<h3>No conversation yet</h3>
+					<h3>Hi, I&apos;m Tracy!</h3>
 					<p>
-						{connected
-							? 'Ask about this problem, or pick a suggestion below.'
-							: 'When AI tutoring is available, this is where you will ask questions about the problem, get hints and have a failing test explained.'}
+						{available
+							? 'I can help you understand your code, debug mistakes, and learn the concepts behind this problem. Nothing is sent until you press Send.'
+							: 'Sign in to chat with Tracy. I can help you understand your code, debug mistakes, and learn the concepts behind this problem — only when you ask.'}
 					</p>
 				</div>
 			) : (
@@ -40,11 +75,41 @@ export function TutorConversation({
 							className={cn(styles.message, message.role === 'user' && styles.messageUser)}
 						>
 							<span className={styles.messageRole}>
-								{message.role === 'user' ? 'You' : 'AI Tutor'}
+								{message.role === 'user' ? 'You' : 'Tracy'}
 							</span>
-							<p>{message.text}</p>
+							{/* The learner's own text is rendered verbatim (React escapes
+							    it). Only assistant replies — which may use Markdown — go
+							    through the renderer. This keeps a user who pastes "**x**"
+							    seeing their exact message back. */}
+							{message.role === 'user' ? (
+								<p className={styles.messageBody}>{message.text}</p>
+							) : (
+								<MarkdownView source={message.text} />
+							)}
 						</li>
 					))}
+					{streamingReply != null && streamingReply.length > 0 && (
+						<li className={styles.message} aria-label="Tracy is replying">
+							<span className={styles.messageRole}>Tracy</span>
+							<MarkdownView source={streamingReply} />
+						</li>
+					)}
+					{sending && streamingReply == null && (
+						<li className={styles.sending} aria-live="polite">
+							Tracy is thinking
+							<span className={styles.typingDot} aria-hidden="true" />
+							<span className={styles.typingDot} aria-hidden="true" />
+							<span className={styles.typingDot} aria-hidden="true" />
+						</li>
+					)}
+					{streaming && streamingReply != null && streamingReply.length === 0 && (
+						<li className={styles.sending} aria-live="polite">
+							Tracy is replying
+							<span className={styles.typingDot} aria-hidden="true" />
+							<span className={styles.typingDot} aria-hidden="true" />
+							<span className={styles.typingDot} aria-hidden="true" />
+						</li>
+					)}
 				</ol>
 			)}
 		</div>

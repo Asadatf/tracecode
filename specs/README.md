@@ -105,6 +105,7 @@ Update this table in the same PR that changes a status.
 | [`features/streak.md`](features/streak.md)                                       | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/dashboard-page.md`](features/dashboard-page.md)                       | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/practice-workspace-layout.md`](features/practice-workspace-layout.md) | Agreed (Umair; no teammate sign-off)           | Umair       |
+| [`features/contextual-ai-tutor.md`](features/contextual-ai-tutor.md)             | In progress (no teammate sign-off)             | Umair       |
 | [`features/problems-page.md`](features/problems-page.md)                         | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/learning-statistics.md`](features/learning-statistics.md)             | Draft                                          | Umair       |
 | [`features/learning-recommendations.md`](features/learning-recommendations.md)   | In progress (M7.1 built; no teammate sign-off) | Umair       |
@@ -112,6 +113,7 @@ Update this table in the same PR that changes a status.
 | [ADR-0001](../decisions/0001-in-browser-python-execution.md)                     | Proposed                                       | Team        |
 | [ADR-0002](../decisions/0002-self-host-pyodide.md)                               | Proposed                                       | Team        |
 | [ADR-0003](../decisions/0003-browser-ast-and-cached-recommendations.md)          | Accepted (Umair; no teammate sign-off)         | Team        |
+| [ADR-0005](../decisions/0005-tracy-provider-adapter-streaming-session-chat.md)   | Accepted (Umair; no teammate sign-off)         | Team        |
 
 **Open decisions** (bottom of `00-product.md`): track ownership; hints
 hand-authored vs. AI-generated (and which provider); the "mastered" rule;

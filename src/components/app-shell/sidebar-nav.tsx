@@ -1,7 +1,7 @@
 'use client'
 
 import { Link } from '@/i18n/routing'
-import { signOutAction } from '@/server/actions/auth'
+import { SignOutForm } from '@/components/auth/sign-out-form'
 import { CodeIcon, DashboardIcon, SettingsIcon, SignOutIcon } from '@/components/ui/icons'
 import styles from './app-shell.module.css'
 
@@ -70,7 +70,7 @@ export function SidebarNav({
 						})}
 						{groupIndex === groups.length - 1 ? (
 							<li>
-								<form action={signOutAction}>
+								<SignOutForm>
 									<button
 										type="submit"
 										className={styles.signOutIcon}
@@ -79,7 +79,7 @@ export function SidebarNav({
 									>
 										<SignOutIcon size={20} />
 									</button>
-								</form>
+								</SignOutForm>
 							</li>
 						) : null}
 					</ul>

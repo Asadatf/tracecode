@@ -39,10 +39,17 @@ import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
 import { TeachingPanel } from './teaching-panel'
 import { TutorPanel } from './tutor/tutor-panel'
+import { useTutor } from './tutor/use-tutor'
+import type { TutorContext as TutorRequestContext } from '@/lib/tutor/types'
 import { Stopwatch } from './workspace/stopwatch'
 import { TabList, panelId, tabId, type TabItem } from './workspace/tab-list'
-import { WorkspaceLayout, type WorkspaceLabels } from './workspace/workspace-layout'
+import {
+	WorkspaceLayout,
+	type WorkspaceLabels,
+	type WorkspaceLayoutApi
+} from './workspace/workspace-layout'
 import { WorkspaceTour } from './workspace/workspace-tour'
+import './semantic-tokens.css'
 import styles from './practice.module.css'
 import wsStyles from './workspace/workspace.module.css'
 
@@ -87,18 +94,25 @@ function allPassed(result: RunResult): boolean {
 export function PracticeWorkspace({
 	slug,
 	isAuthenticated = false,
+	userId = null,
 	initialLayout
 }: {
 	slug: string
 	isAuthenticated?: boolean
+	userId?: string | null
 	initialLayout: LayoutState
 }) {
 	const problem = PROBLEMS[slug]
 	if (problem == null) return null
 	return (
+		// Keyed by slug so switching problems always starts a fresh workspace (editor,
+		// results, replay and the Tracy chat), whether or not the router would have
+		// reused the instance. Nothing from one problem can leak into the next.
 		<ProblemWorkspace
+			key={problem.slug}
 			problem={problem}
 			isAuthenticated={isAuthenticated}
+			userId={userId}
 			initialLayout={initialLayout}
 		/>
 	)
@@ -132,8 +146,11 @@ const LABELS: WorkspaceLabels = {
 	viewResults: 'Results',
 	challenge: 'Challenge',
 	results: 'Results',
-	tutor: 'AI Tutor',
-	resizeTutor: 'Resize code and AI Tutor panes'
+	// User-facing labels for the layout. Internal identifiers (component
+	// names, API route, DB columns) still use "tutor" — this is a
+	// branding-only rename to "Tracy" (M8 final refinement).
+	tutor: 'Tracy',
+	resizeTutor: 'Resize code and Tracy panes'
 }
 
 // Long inputs (a 20 000-character string, a 10 000-element list) are clipped in
@@ -148,10 +165,12 @@ function clip(text: string): string {
 function ProblemWorkspace({
 	problem,
 	isAuthenticated,
+	userId,
 	initialLayout
 }: {
 	problem: ProblemDefinition
 	isAuthenticated: boolean
+	userId: string | null
 	initialLayout: LayoutState
 }) {
 	const router = useRouter()
@@ -168,9 +187,111 @@ function ProblemWorkspace({
 	const [replayStep, setReplayStep] = useState(0)
 	const [tourSignal, setTourSignal] = useState(0)
 	const [cursor, setCursor] = useState({ line: 1, column: 1 })
-	// The AI Tutor preview is closed on every visit; opening it never touches the
+	// The AI Tutor is closed on every visit; opening it never touches the
 	// editor, the results or the replay, which all live in this component.
+	// Nothing is sent to the AI provider until the learner presses Send
+	// (specs/features/contextual-ai-tutor.md AC1 — privacy boundary).
 	const [tutorOpen, setTutorOpen] = useState(false)
+
+	// Assemble the evidence payload only at send time: the hook holds a ref
+	// to this function and calls it inside `send`, so a keystroke in the
+	// editor does not re-trigger anything on the panel.
+	const buildTutorContext = (): TutorRequestContext => {
+		const ctx: TutorRequestContext = { code }
+		if (submitted != null) {
+			ctx.runSummary = {
+				status: submitted.result.status,
+				passed: submitted.result.tests.filter((t) => t.passed).length,
+				total: submitted.result.tests.length
+			}
+			ctx.stale = submitted.source !== code
+			// TestResult carries no args — look them up from the catalog by testId
+			// (args are static per problem, so this never fabricates inputs).
+			// `expected` / `actual` are Values (engine wire shape); format them to
+			// Python-readable strings so the tutor sees `True` / `[0, 2]` not the
+			// raw `{kind:'bool', value:true}` envelope.
+			const argsById = new Map(problem.tests.map((t) => [t.id, t.args]))
+			const failed = submitted.result.tests
+				.filter((t) => !t.passed)
+				.slice(0, 3)
+				.map((t) => ({
+					id: t.testId,
+					args: argsById.get(t.testId) ?? [],
+					expected: formatValue(t.expected),
+					actual: t.actual !== undefined ? formatValue(t.actual) : undefined,
+					error: t.error != null ? { type: t.error.type, message: t.error.message } : undefined
+				}))
+			if (failed.length > 0) ctx.failedTests = failed as TutorRequestContext['failedTests']
+		}
+		if (replay != null && replay.trace.steps.length > 0) {
+			const step = replay.trace.steps[Math.min(replayStep, replay.trace.steps.length - 1)]
+			if (step != null) {
+				const locals: Record<string, string> = {}
+				for (const [name, val] of Object.entries(step.locals).slice(0, 12)) {
+					try {
+						locals[name] = formatValue(val)
+					} catch {
+						locals[name] = String(val)
+					}
+				}
+				ctx.replay = {
+					line: step.line,
+					locals,
+					sourceLine: replay.trace.source[step.line - 1] ?? undefined
+				}
+			}
+		}
+		return ctx
+	}
+
+	const tutor = useTutor({
+		userId: userId ?? null,
+		problemSlug: problem.slug,
+		buildContext: buildTutorContext
+	})
+
+	// Suggestions depend on live state: show "Explain my failing test" only
+	// when the last run actually has a failure.
+	const tutorSuggestions = (() => {
+		const list: { id: string; label: string; prompt: string }[] = []
+		if (submitted != null && submitted.result.tests.some((t) => !t.passed)) {
+			list.push({
+				id: 'explain-failure',
+				label: 'Explain my failing test',
+				prompt:
+					'Why is my current code failing the tests? Use my actual code and the failing test cases.'
+			})
+		}
+		if (replay != null) {
+			list.push({
+				id: 'walk-step',
+				label: 'Walk me through this replay step',
+				prompt:
+					'Walk me through the selected replay step. What does this line do, and are the variables where you would expect?'
+			})
+		}
+		list.push({
+			id: 'approach',
+			label: 'Hint about my approach',
+			prompt:
+				'Can you give me a conceptual hint about my approach without giving away the solution?'
+		})
+		// Topic teaching chip. The tutor must teach the concepts behind the
+		// current problem from first principles when asked (M8 topic-teaching
+		// clarification); surfacing a concrete prompt makes that visible without
+		// forcing the learner to phrase it themselves. The topic is chosen from
+		// the problem's own `conceptTags`, which are what the catalog already
+		// labels it with.
+		const topic = problem.conceptTags[0]
+		if (topic != null) {
+			list.push({
+				id: 'teach-topic',
+				label: `Teach me about ${topic}`,
+				prompt: `Can you teach me about ${topic} from first principles? Use a small example or short pseudocode, and after the explanation briefly connect it back to this problem — without writing the full solution.`
+			})
+		}
+		return list
+	})()
 
 	// Start the Python download as the page opens (fail-and-replay AC1), so the
 	// first Run doesn't wait on it. Fire-and-forget: a failed warm-up just
@@ -178,6 +299,7 @@ function ProblemWorkspace({
 	useEffect(() => {
 		void warmUpEngine()
 	}, [])
+	const layoutApiRef = useRef<WorkspaceLayoutApi>(null)
 	const editorPanelRef = useRef<HTMLDivElement>(null)
 	const busyRef = useRef(false)
 	// Local attempt ids only need to be unique within this page's session.
@@ -305,6 +427,13 @@ function ProblemWorkspace({
 	function loadAttempt(source: string) {
 		setCode(source)
 		editorPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+	}
+
+	// Puts the four panes (challenge, code, results, Tracy) back to their default
+	// sizes and un-maximizes. It clears nothing: code, results, replay, History,
+	// the Tracy chat and the stopwatch are all left exactly as they are.
+	function resetLayout() {
+		layoutApiRef.current?.reset()
 	}
 
 	function closeTutor() {
@@ -543,7 +672,7 @@ function ProblemWorkspace({
 					aria-controls="pane-tutor"
 					onClick={() => (tutorOpen ? closeTutor() : setTutorOpen(true))}
 				>
-					<SparkleIcon size={16} /> AI Tutor
+					<SparkleIcon size={16} /> Ask Tracy
 				</button>
 				<Stopwatch
 					labels={{
@@ -553,6 +682,16 @@ function ProblemWorkspace({
 						reset: 'Reset stopwatch'
 					}}
 				/>
+				<button
+					type="button"
+					id="reset-practice"
+					className={wsStyles.helpButton}
+					aria-label="Reset layout"
+					title="Reset layout (pane sizes)"
+					onClick={resetLayout}
+				>
+					<ResetIcon size={18} />
+				</button>
 				<button
 					type="button"
 					className={wsStyles.helpButton}
@@ -565,6 +704,7 @@ function ProblemWorkspace({
 
 			<WorkspaceLayout
 				initial={initialLayout}
+				apiRef={layoutApiRef}
 				labels={LABELS}
 				resultsDot={submitted != null}
 				tutorOpen={tutorOpen}
@@ -573,6 +713,7 @@ function ProblemWorkspace({
 						context={{
 							problemTitle: problem.title,
 							difficulty: problem.difficulty,
+							topics: problem.conceptTags,
 							runSummary: submitted == null ? null : resultSummary
 						}}
 						mode={mode}
@@ -580,6 +721,8 @@ function ProblemWorkspace({
 						maximized={maximized}
 						onToggleMaximize={toggleMaximize}
 						onClose={closeTutor}
+						tutor={tutor}
+						suggestions={tutorSuggestions}
 					/>
 				)}
 				leftHead={

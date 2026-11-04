@@ -1,9 +1,9 @@
 import { Suspense } from 'react'
-import { signOutAction } from '@/server/actions/auth'
 import { cn } from '@/lib/cn'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { AccountMenu } from '@/components/account-menu'
+import { SignOutForm } from '@/components/auth/sign-out-form'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 import styles from './application.module.css'
 
@@ -34,11 +34,11 @@ export async function ApplicationHeader({
 					<Suspense fallback={<span className="size-9" aria-hidden="true" />}>
 						<NotificationBellSlot />
 					</Suspense>
-					<form action={signOutAction}>
+					<SignOutForm>
 						<button type="submit" className={styles.signOut}>
 							{t('signOut')}
 						</button>
-					</form>
+					</SignOutForm>
 					<AccountMenu
 						isSettings={current === 'settings'}
 						email={account.email}
