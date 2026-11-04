@@ -1,7 +1,7 @@
 # 0004. Unified learning notifications: in-app + email from one daily scheduler
 
 Date: 2026-11-02
-Status: Accepted (Umair; no teammate sign-off yet)
+Status: Accepted (Umair; signed off by Asad 2026-11-04)
 
 ## Context
 

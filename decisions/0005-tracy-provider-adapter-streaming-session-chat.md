@@ -1,7 +1,7 @@
 # 0005. Tracy: a provider adapter, NDJSON streaming and session-only chats
 
 Date: 2026-11-04
-Status: Accepted (Umair; no teammate sign-off yet)
+Status: Accepted (Umair; signed off by Asad 2026-11-04)
 
 ## Context
 

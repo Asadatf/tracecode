@@ -94,26 +94,27 @@ supersedes it, and mark the old one `Superseded by NNNN`.
 
 Update this table in the same PR that changes a status.
 
-| Spec / ADR                                                                       | Status                                         | Owner       |
-| -------------------------------------------------------------------------------- | ---------------------------------------------- | ----------- |
-| [`00-product.md`](00-product.md)                                                 | Draft                                          | Team        |
-| [`01-architecture.md`](01-architecture.md)                                       | Draft                                          | Team        |
-| [`02-trace-contract.md`](02-trace-contract.md)                                   | Draft                                          | Track A + B |
-| [`features/fail-and-replay.md`](features/fail-and-replay.md)                     | Draft                                          | Track A + B |
-| [`features/home-page.md`](features/home-page.md)                                 | In progress                                    | Asad        |
-| [`features/progress-page.md`](features/progress-page.md)                         | Superseded (retired; see streak.md)            | Asad        |
-| [`features/streak.md`](features/streak.md)                                       | Agreed (Umair; no teammate sign-off)           | Umair       |
-| [`features/dashboard-page.md`](features/dashboard-page.md)                       | Agreed (Umair; no teammate sign-off)           | Umair       |
-| [`features/practice-workspace-layout.md`](features/practice-workspace-layout.md) | Agreed (Umair; no teammate sign-off)           | Umair       |
-| [`features/contextual-ai-tutor.md`](features/contextual-ai-tutor.md)             | In progress (no teammate sign-off)             | Umair       |
-| [`features/problems-page.md`](features/problems-page.md)                         | Agreed (Umair; no teammate sign-off)           | Umair       |
-| [`features/learning-statistics.md`](features/learning-statistics.md)             | Draft                                          | Umair       |
-| [`features/learning-recommendations.md`](features/learning-recommendations.md)   | In progress (M7.1 built; no teammate sign-off) | Umair       |
-| [`features/curated-problem-pack.md`](features/curated-problem-pack.md)           | In progress (no teammate sign-off)             | Umair       |
-| [ADR-0001](../decisions/0001-in-browser-python-execution.md)                     | Proposed                                       | Team        |
-| [ADR-0002](../decisions/0002-self-host-pyodide.md)                               | Proposed                                       | Team        |
-| [ADR-0003](../decisions/0003-browser-ast-and-cached-recommendations.md)          | Accepted (Umair; no teammate sign-off)         | Team        |
-| [ADR-0005](../decisions/0005-tracy-provider-adapter-streaming-session-chat.md)   | Accepted (Umair; no teammate sign-off)         | Team        |
+| Spec / ADR                                                                       | Status                                          | Owner       |
+| -------------------------------------------------------------------------------- | ----------------------------------------------- | ----------- |
+| [`00-product.md`](00-product.md)                                                 | Draft                                           | Team        |
+| [`01-architecture.md`](01-architecture.md)                                       | Draft                                           | Team        |
+| [`02-trace-contract.md`](02-trace-contract.md)                                   | Draft                                           | Track A + B |
+| [`features/fail-and-replay.md`](features/fail-and-replay.md)                     | Draft                                           | Track A + B |
+| [`features/home-page.md`](features/home-page.md)                                 | In progress                                     | Asad        |
+| [`features/progress-page.md`](features/progress-page.md)                         | Superseded (retired; see streak.md)             | Asad        |
+| [`features/streak.md`](features/streak.md)                                       | Agreed (Umair; signed off by Asad 2026-11-04)   | Umair       |
+| [`features/dashboard-page.md`](features/dashboard-page.md)                       | Agreed (Umair; signed off by Asad 2026-11-04)   | Umair       |
+| [`features/practice-workspace-layout.md`](features/practice-workspace-layout.md) | Agreed (Umair; signed off by Asad 2026-11-04)   | Umair       |
+| [`features/contextual-ai-tutor.md`](features/contextual-ai-tutor.md)             | In progress (signed off by Asad 2026-11-04)     | Umair       |
+| [`features/problems-page.md`](features/problems-page.md)                         | Agreed (Umair; signed off by Asad 2026-11-04)   | Umair       |
+| [`features/learning-statistics.md`](features/learning-statistics.md)             | Draft                                           | Umair       |
+| [`features/learning-recommendations.md`](features/learning-recommendations.md)   | In progress (M7.1 built; no teammate sign-off)  | Umair       |
+| [`features/curated-problem-pack.md`](features/curated-problem-pack.md)           | In progress (signed off by Asad 2026-11-04)     | Umair       |
+| [ADR-0001](../decisions/0001-in-browser-python-execution.md)                     | Accepted                                        | Team        |
+| [ADR-0002](../decisions/0002-self-host-pyodide.md)                               | Accepted                                        | Team        |
+| [ADR-0003](../decisions/0003-browser-ast-and-cached-recommendations.md)          | Accepted (Umair; signed off by Asad 2026-11-04) | Team        |
+| [ADR-0004](../decisions/0004-unified-learning-notifications.md)                  | Accepted (Umair; signed off by Asad 2026-11-04) | Team        |
+| [ADR-0005](../decisions/0005-tracy-provider-adapter-streaming-session-chat.md)   | Accepted (Umair; signed off by Asad 2026-11-04) | Team        |
 
 **Open decisions** (bottom of `00-product.md`): track ownership; hints
 hand-authored vs. AI-generated (and which provider); the "mastered" rule;

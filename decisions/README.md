@@ -8,9 +8,10 @@ An ADR is never edited to change its decision. To reverse one, write a
 new ADR that supersedes it and set the old one's status to
 `Superseded by NNNN`.
 
-| ADR                                                    | Title                                                          | Status                                 |
-| ------------------------------------------------------ | -------------------------------------------------------------- | -------------------------------------- |
-| [0001](0001-in-browser-python-execution.md)            | Run and trace code in the browser                              | Proposed                               |
-| [0002](0002-self-host-pyodide.md)                      | Self-host the Pyodide runtime                                  | Proposed                               |
-| [0003](0003-browser-ast-and-cached-recommendations.md) | Browser-side AST analysis and cached recommendations           | Accepted (Umair; no teammate sign-off) |
-| [0004](0004-unified-learning-notifications.md)         | Unified learning notifications (in-app + email, one scheduler) | Accepted (Umair; no teammate sign-off) |
+| ADR                                                           | Title                                                          | Status                                          |
+| ------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------- |
+| [0001](0001-in-browser-python-execution.md)                   | Run and trace code in the browser                              | Accepted                                        |
+| [0002](0002-self-host-pyodide.md)                             | Self-host the Pyodide runtime                                  | Accepted                                        |
+| [0003](0003-browser-ast-and-cached-recommendations.md)        | Browser-side AST analysis and cached recommendations           | Accepted (Umair; signed off by Asad 2026-11-04) |
+| [0004](0004-unified-learning-notifications.md)                | Unified learning notifications (in-app + email, one scheduler) | Accepted (Umair; signed off by Asad 2026-11-04) |
+| [0005](0005-tracy-provider-adapter-streaming-session-chat.md) | Tracy: provider adapter, NDJSON streaming, session-only chats  | Accepted (Umair; signed off by Asad 2026-11-04) |

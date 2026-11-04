@@ -1,6 +1,6 @@
 # Feature: Practice workspace layout
 
-Status: Agreed (user, 2026-11-03; no teammate sign-off)
+Status: Agreed (user, 2026-11-03; signed off by Asad 2026-11-04)
 Owner: Umair
 Related: `fail-and-replay.md`, `dashboard-page.md` (AC17a), `auth-access.md`,
 `contextual-ai-tutor.md`;

@@ -1,6 +1,6 @@
 # Feature: Learner dashboard (`/dashboard`)
 
-Status: Agreed (user, 2026-11-03; no teammate sign-off)
+Status: Agreed (user, 2026-11-03; signed off by Asad 2026-11-04)
 Owner: Umair
 Related: `specs/00-product.md` § How users see progress, `progress-page.md`,
 `settings-navigation.md`, `auth-access.md`, `home-page.md` (visual theme)

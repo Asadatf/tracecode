@@ -1,6 +1,6 @@
 # Feature: Streak flame and navigation cleanup
 
-Status: Agreed (Umair; no teammate sign-off)
+Status: Agreed (Umair; signed off by Asad 2026-11-04)
 Owner: Umair
 Related: `specs/features/dashboard-page.md`, `specs/features/problems-page.md`,
 `specs/features/progress-page.md`

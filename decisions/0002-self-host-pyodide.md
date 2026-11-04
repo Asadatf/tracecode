@@ -1,7 +1,7 @@
 # 0002. Self-host the Pyodide runtime
 
 Date: 2026-11-01
-Status: Proposed
+Status: Accepted (built in M1–M3; Umair and Asad, 2026-11-04)
 
 ## Context
 

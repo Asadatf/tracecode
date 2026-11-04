@@ -1,6 +1,6 @@
 # Feature: Problems page (`/problems`)
 
-Status: Agreed (user, 2026-11-03; no teammate sign-off)
+Status: Agreed (user, 2026-11-03; signed off by Asad 2026-11-04)
 Owner: Umair
 Related: `dashboard-page.md` (the shell), `home-page.md` (AC6–AC8, the landing
 table), `auth-access.md`
