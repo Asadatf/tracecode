@@ -85,3 +85,71 @@ test('the boundary is exact: 23:59 UTC and 00:00 UTC are different days', () => 
 	assert.deepEqual(active, ['2026-11-09', '2026-11-10'])
 	assert.equal(computeStreak(active, today).current, 2)
 })
+
+// M9A.1: what earns a day, end to end through the pure rules. `meaningful` is the
+// server's verdict stored on the attempt; undefined/null is a legacy attempt.
+const at = (iso: string, status = 'completed', meaningful?: boolean | null) => ({
+	createdAt: iso,
+	status,
+	meaningful
+})
+
+test('a solve, a failing genuine run, and a reattempt of a solved problem all qualify', () => {
+	// Qualification is independent of allPassed and of whether the problem was solved
+	// before: only status and the server's meaningful verdict are consulted.
+	assert.deepEqual(activeDaysOf([at('2026-11-08T09:00:00Z', 'completed', true)]), ['2026-11-08'])
+	assert.deepEqual(activeDaysOf([at('2026-11-09T09:00:00Z', 'completed', true)]), ['2026-11-09'])
+})
+
+test('untouched or whitespace/comment-only runs do not qualify; legacy attempts still do', () => {
+	assert.deepEqual(activeDaysOf([at('2026-11-08T09:00:00Z', 'completed', false)]), [])
+	assert.deepEqual(activeDaysOf([at('2026-11-08T09:00:00Z', 'completed', null)]), ['2026-11-08'])
+	assert.deepEqual(activeDaysOf([at('2026-11-08T09:00:00Z', 'completed', undefined)]), [
+		'2026-11-08'
+	])
+})
+
+test('a meaningful run that did not complete never qualifies', () => {
+	for (const status of ['syntax_error', 'timeout', 'engine_error']) {
+		assert.deepEqual(activeDaysOf([at('2026-11-08T09:00:00Z', status, true)]), [], status)
+	}
+})
+
+test('many qualifying runs on one UTC date are one day; the midnight boundary splits days', () => {
+	assert.deepEqual(
+		activeDaysOf([
+			at('2026-11-08T00:00:00.000Z', 'completed', true),
+			at('2026-11-08T12:00:00Z', 'completed', true),
+			at('2026-11-08T23:59:59.999Z', 'completed', true),
+			at('2026-11-09T00:00:00.000Z', 'completed', true)
+		]),
+		['2026-11-08', '2026-11-09']
+	)
+})
+
+test('a starter-only run on a day cannot rescue a streak, and a real run alongside it still counts', () => {
+	const rows = [
+		at('2026-11-08T09:00:00Z', 'completed', true),
+		at('2026-11-09T09:00:00Z', 'completed', false),
+		at('2026-11-10T09:00:00Z', 'completed', true),
+		at('2026-11-10T10:00:00Z', 'completed', false)
+	]
+	const stats = computeStreak(activeDaysOf(rows), '2026-11-10')
+	assert.deepEqual(stats, { current: 1, longest: 1, active: false })
+})
+
+test('three consecutive qualifying days light the flame; a missed day breaks it but keeps the longest', () => {
+	const run = (...offsets: number[]) =>
+		activeDaysOf(offsets.map((o) => at(`${addDays(today, o)}T09:00:00Z`, 'completed', true)))
+	assert.deepEqual(computeStreak(run(-2, -1, 0), today), { current: 3, longest: 3, active: true })
+	assert.deepEqual(computeStreak(run(-5, -4, -3, -2, 0), today), {
+		current: 1,
+		longest: 4,
+		active: false
+	})
+	assert.deepEqual(computeStreak(run(-6, -5, -4, -3), today), {
+		current: 0,
+		longest: 4,
+		active: false
+	})
+})

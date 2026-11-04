@@ -3,7 +3,8 @@ import { db } from '@/server/db/client'
 import { currentUserIdSafe } from '@/server/auth/session'
 import { recentAttemptsQuery } from '@/lib/learning/recent-attempts-query'
 import { firstAttemptsQuery, toFirstAttempts } from '@/lib/learning/first-attempts-query'
-import { streakAttemptsQuery } from '@/lib/streak/streak-query'
+import { legacyStreakAttemptsQuery, streakAttemptsQuery } from '@/lib/streak/streak-query'
+import { readWithColumnFallback } from '@/lib/learning/optional-columns'
 import { activeDaysOf, computeStreak, utcDay, type StreakStats } from '@/lib/streak/streak'
 
 // Read a learner's persisted progress. A plain server-only helper (NOT a
@@ -129,6 +130,16 @@ export type StreakSummary =
 			activeDays: string[]
 	  } & StreakStats)
 
+// Falls back to the pre-`meaningful` read when that column's migration has not
+// been applied yet, so a deploy that lands first never blanks the flame.
+function streakRows(userId: string, today: string) {
+	return readWithColumnFallback(
+		'meaningful',
+		() => db.attempt.findMany(streakAttemptsQuery(userId, today)),
+		() => db.attempt.findMany(legacyStreakAttemptsQuery(userId, today))
+	)
+}
+
 // The toolbar flame (specs/features/streak.md). Derived from saved attempts, never
 // stored or estimated, so it can only show what the learner actually did. Signed
 // out, or the database unreachable: no numbers at all, and the flame stays neutral.
@@ -137,7 +148,7 @@ export async function getStreakSummary(): Promise<StreakSummary> {
 	if (userId == null) return { authenticated: false }
 	try {
 		const today = utcDay(new Date())
-		const rows = await db.attempt.findMany(streakAttemptsQuery(userId, today))
+		const rows = await streakRows(userId, today)
 		const activeDays = activeDaysOf(rows)
 		return {
 			authenticated: true,

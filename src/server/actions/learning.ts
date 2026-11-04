@@ -5,7 +5,8 @@ import { validatedAction } from './validated-action'
 import { db, Prisma } from '@/server/db/client'
 import { currentLearnerId, currentUserIdSafe } from '@/server/auth/session'
 import { assertOwnedBy } from '@/lib/auth/ownership'
-import { jsonSchema } from '@/lib/trace/contract'
+import { saveAttemptInput } from '@/lib/learning/save-attempt-input'
+import { isMeaningfulAttempt } from '@/lib/streak/attempt-meaning'
 import { linkedReplayWrites } from '@/lib/learning/replay-writes'
 import {
 	BACKFILL_MAX_BATCH,
@@ -14,7 +15,7 @@ import {
 } from '@/lib/learning/code-feature-queries'
 import { featuresForWrite, storedCodeFeaturesSchema } from '@/lib/trace/code-features'
 import { captureError } from '@/lib/observability/capture-error'
-import { isMissingColumnError } from '@/lib/learning/missing-column'
+import { writeWithOptionalColumns } from '@/lib/learning/optional-columns'
 
 // Persistence for authenticated learners. Browser-reported pass/fail is stored
 // as TELEMETRY, not authoritative grading (ADR-0001). When no one is signed in,
@@ -25,31 +26,8 @@ function jsonIn(value: unknown): Prisma.InputJsonValue {
 	return value as Prisma.InputJsonValue
 }
 
-const testResultInput = z.object({
-	testId: z.string(),
-	passed: z.boolean(),
-	expected: jsonSchema,
-	actual: jsonSchema.optional(),
-	errorType: z.string().optional(),
-	errorMessage: z.string().optional()
-})
-
 export const saveAttempt = validatedAction({
-	input: z.object({
-		problemSlug: z.string(),
-		source: z.string(),
-		status: z.string(),
-		testsPassed: z.number().int().nonnegative(),
-		testsTotal: z.number().int().nonnegative(),
-		allPassed: z.boolean(),
-		// M7.1: parsed in the browser by the worker's `ast` message. Optional —
-		// absent when the source did not parse or the worker was unavailable. Left
-		// as `unknown` here on purpose and validated by featuresForWrite below: a
-		// value that fails the strict schema is dropped, never allowed to reject
-		// the attempt (and its test results) it arrived with.
-		codeFeatures: z.unknown().optional(),
-		tests: z.array(testResultInput)
-	}),
+	input: saveAttemptInput,
 	handler: async (input) => {
 		const userId = await currentLearnerId()
 		if (userId == null) return { persisted: false as const }
@@ -81,26 +59,22 @@ export const saveAttempt = validatedAction({
 			}
 		}
 		// Only the id is used; not reading the row back keeps this write independent
-		// of columns it does not set. Without features the INSERT never names
-		// `codeFeatures`, so it is exactly the pre-M7 write.
-		async function createAttempt(codeFeatures: typeof features) {
-			return db.attempt.create({
-				data: codeFeatures == null ? attemptData : { ...attemptData, codeFeatures },
-				select: { id: true }
-			})
-		}
-		let attempt: { id: string }
-		try {
-			attempt = await createAttempt(features)
-		} catch (error) {
-			// The code can be deployed a moment before the `codeFeatures` migration has
-			// run. A submission is never lost over an optional extra: report it and
-			// save the attempt exactly as before M7. (The nested test-result rows are
-			// part of the same atomic write, so the failed first try left nothing.)
-			if (features == null || !isMissingColumnError(error)) throw error
-			captureError(error, { area: 'attempt-code-features-migration-pending' })
-			attempt = await createAttempt(null)
-		}
+		// of columns it does not set. `meaningful` is the server's own verdict (never
+		// the browser's) and feeds the streak only; the attempt is saved either way,
+		// because starter-only runs are still honest evidence for recommendations.
+		// Either optional column may land after this code: on PostgreSQL's
+		// undefined-column error for exactly that column it is dropped and the write
+		// retried (nested test-result rows are one atomic write, so a failed try left
+		// nothing); any other error propagates. A submission is never lost over an
+		// optional extra.
+		const attempt = await writeWithOptionalColumns(
+			{
+				meaningful: isMeaningfulAttempt(input.problemSlug, input.source),
+				...(features == null ? {} : { codeFeatures: features })
+			},
+			(extras) => db.attempt.create({ data: { ...attemptData, ...extras }, select: { id: true } }),
+			(column, error) => captureError(error, { area: `attempt-${column}-migration-pending` })
+		)
 
 		const existing = await db.problemProgress.findUnique({
 			where: { userId_problemSlug: { userId, problemSlug: input.problemSlug } }
