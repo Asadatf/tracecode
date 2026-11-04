@@ -53,9 +53,11 @@ learner's consecutive-day practice, derived only from what they really saved.
 
 ## Data / API
 
-`getStreakSummary()` selects `createdAt`, `status` and `meaningful` of the
-learner's completed, not-`meaningful = false` attempts in the last 730 days (a
-longer streak reads as the window), scoped to the session user. The streak itself
+`getStreakSummary()` is built on the shared activity read
+(`specs/features/activity-heatmap.md`): `createdAt`, `status`, `meaningful`,
+`problemSlug` and `allPassed` of the learner's completed, not-`meaningful = false`
+attempts in the last 730 days (a longer streak reads as the window), scoped to the
+session user, so the flame and the contribution graph use the same days. The streak itself
 is still derived, never stored. One nullable column is added, `Attempt.meaningful`
 (written by `saveAttempt`; null for older rows). If the column's migration has not
 run yet, writes and the streak read fall back to the previous behaviour instead

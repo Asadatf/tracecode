@@ -177,10 +177,13 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
   without one), including the problem that panel recommends so every
   problem the learner has not started is accounted for. "View all problems" links to `/problems`. Below 520px the summary
   metrics stay three across and the cards stack with no horizontal overflow.
+- **AC29** — GIVEN a signed-in learner THEN the Overview shows a "Practice activity"
+  contribution graph card between the summary strip and the Progress card
+  (`activity-heatmap.md`); it loads independently and never delays the page.
 
 ## Data / API
 
-- No Prisma or schema changes. The progress rows gain `lastAttemptAt` (the existing `updatedAt`, which only
+- No Prisma models are added (M9A.2 adds one `Attempt` index for the activity read, `activity-heatmap.md`). The progress rows gain `lastAttemptAt` (the existing `updatedAt`, which only
   `saveAttempt` writes) and one read-only aggregate, `getFirstAttemptDates`,
   gives each problem's first attempt (AC27). Reads `getLearningProgress()` and
   `buildProgressView()` only (same loaders as `/progress`), plus
@@ -232,6 +235,7 @@ total`), Attempted and Runs from `buildProgressView(...).summary`. No value
 
 ## Changelog
 
+- 2026-11-05 — added the Practice activity card (AC29; M9A.2).
 - 2026-11-03 — created (Draft).
 - 2026-11-03 — centre column reorganised: "Progress" (one row per attempted
   problem, with a detail modal) and "Explore problems" replace the Recent runs

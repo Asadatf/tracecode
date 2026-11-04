@@ -19,6 +19,10 @@
 	/* On a phone the widget comes after the two cards. */
 	order: 5;
 }
+.activity {
+	order: 2;
+	min-width: 0;
+}
 .yours {
 	order: 3;
 }

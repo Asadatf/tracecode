@@ -3,9 +3,8 @@ import { db } from '@/server/db/client'
 import { currentUserIdSafe } from '@/server/auth/session'
 import { recentAttemptsQuery } from '@/lib/learning/recent-attempts-query'
 import { firstAttemptsQuery, toFirstAttempts } from '@/lib/learning/first-attempts-query'
-import { legacyStreakAttemptsQuery, streakAttemptsQuery } from '@/lib/streak/streak-query'
-import { readWithColumnFallback } from '@/lib/learning/optional-columns'
-import { activeDaysOf, computeStreak, utcDay, type StreakStats } from '@/lib/streak/streak'
+import { computeStreak, type StreakStats } from '@/lib/streak/streak'
+import { getActivitySummary } from '@/server/learning/activity'
 
 // Read a learner's persisted progress. A plain server-only helper (NOT a
 // component), so its try/catch is free of the React Compiler's constraints.
@@ -130,34 +129,21 @@ export type StreakSummary =
 			activeDays: string[]
 	  } & StreakStats)
 
-// Falls back to the pre-`meaningful` read when that column's migration has not
-// been applied yet, so a deploy that lands first never blanks the flame.
-function streakRows(userId: string, today: string) {
-	return readWithColumnFallback(
-		'meaningful',
-		() => db.attempt.findMany(streakAttemptsQuery(userId, today)),
-		() => db.attempt.findMany(legacyStreakAttemptsQuery(userId, today))
-	)
-}
-
 // The toolbar flame (specs/features/streak.md). Derived from saved attempts, never
 // stored or estimated, so it can only show what the learner actually did. Signed
 // out, or the database unreachable: no numbers at all, and the flame stays neutral.
 export async function getStreakSummary(): Promise<StreakSummary> {
-	const userId = await currentUserIdSafe()
-	if (userId == null) return { authenticated: false }
-	try {
-		const today = utcDay(new Date())
-		const rows = await streakRows(userId, today)
-		const activeDays = activeDaysOf(rows)
-		return {
-			authenticated: true,
-			available: true,
-			today,
-			activeDays,
-			...computeStreak(activeDays, today)
-		}
-	} catch {
-		return { authenticated: true, available: false }
+	// The same cached read as the contribution graph (one query per request), so the
+	// flame, its calendar and the graph are built from identical days.
+	const activity = await getActivitySummary()
+	if (!activity.authenticated) return { authenticated: false }
+	if (!activity.available) return { authenticated: true, available: false }
+	const activeDays = activity.days.map((entry) => entry.day)
+	return {
+		authenticated: true,
+		available: true,
+		today: activity.today,
+		activeDays,
+		...computeStreak(activeDays, activity.today)
 	}
 }

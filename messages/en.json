@@ -283,6 +283,19 @@
 		"emptyUnread": "You're all caught up.",
 		"settings": "Notification settings"
 	},
+	"Activity": {
+		"heading": "Practice activity",
+		"gridLabel": "Practice activity over the last 12 months",
+		"summary": "{attempts, plural, =0 {No practice in the last 12 months} one {# run} other {# runs}}{attempts, plural, =0 {} other { on {days, plural, one {# day} other {# days}} in the last 12 months}}",
+		"cellEmpty": "{date}: no practice",
+		"cellActive": "{date}: {attempts, plural, one {# run} other {# runs}} on {problems, plural, one {# problem} other {# problems}}, {solved, plural, =0 {none solved} other {# solved}}",
+		"less": "Less",
+		"more": "More",
+		"empty": "No practice yet. Run your own code on a problem and your first day appears here.",
+		"disclaimer": "Each square is a UTC day, shaded by the runs you completed that day. It shows practice activity, not skill or a verified result.",
+		"unavailable": "Practice activity is unavailable right now.",
+		"loading": "Loading practice activity"
+	},
 	"Streak": {
 		"heading": "Your streak",
 		"open": "Streak details",

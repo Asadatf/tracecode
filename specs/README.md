@@ -102,6 +102,7 @@ Update this table in the same PR that changes a status.
 | [`features/fail-and-replay.md`](features/fail-and-replay.md)                     | Draft                                          | Track A + B |
 | [`features/home-page.md`](features/home-page.md)                                 | In progress                                    | Asad        |
 | [`features/progress-page.md`](features/progress-page.md)                         | Superseded (retired; see streak.md)            | Asad        |
+| [`features/activity-heatmap.md`](features/activity-heatmap.md)                   | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/streak.md`](features/streak.md)                                       | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/dashboard-page.md`](features/dashboard-page.md)                       | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/practice-workspace-layout.md`](features/practice-workspace-layout.md) | Agreed (Umair; no teammate sign-off)           | Umair       |

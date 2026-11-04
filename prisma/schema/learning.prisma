@@ -40,6 +40,9 @@ model Attempt {
 	replays     ReplaySession[]
 
 	@@index([userId, problemSlug])
+	// M9A.2: the activity/streak read filters one learner's attempts by a date window
+	// and orders by createdAt (src/lib/activity/activity-query.ts).
+	@@index([userId, createdAt])
 	@@map("attempts")
 }
 
