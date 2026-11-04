@@ -296,6 +296,40 @@
 		"unavailable": "Practice activity is unavailable right now.",
 		"loading": "Loading practice activity"
 	},
+	"PublicProfile": {
+		"meta": {
+			"title": "{username} on TraceCode",
+			"description": "{username} has solved {solved, plural, one {# problem} other {# problems}} on TraceCode, with a longest practice streak of {longest, plural, one {# day} other {# days}}.",
+			"descriptionBasic": "{username}'s learning profile on TraceCode: practice activity and topics practised."
+		},
+		"home": "TraceCode home",
+		"cta": "Practise on TraceCode",
+		"tagline": "TraceCode learner",
+		"share": {
+			"copy": "Copy link",
+			"copied": "Copied",
+			"copiedNote": "Profile link copied.",
+			"failed": "Couldn't copy. Select the link and copy it by hand."
+		},
+		"stats": {
+			"solved": "Problems solved",
+			"solvedOf": "of {total}",
+			"runs": "Practice runs",
+			"current": "Current streak",
+			"longest": "Longest streak",
+			"days": "{count, plural, one {day} other {days}}"
+		},
+		"empty": "{username} hasn't recorded any practice yet.",
+		"activity": "Practice activity",
+		"topics": {
+			"heading": "Topics",
+			"summary": "{practised} of {total} topics practised. Each bar shows problems solved in that topic."
+		},
+		"loading": "Loading profile statistics",
+		"unavailable": "This profile's statistics can't be loaded right now. Try again in a moment.",
+		"unavailablePage": "This page can't be loaded right now. Try again in a moment.",
+		"footnote": "Recorded by TraceCode as this learner practises, from runs in their browser. It shows what someone has practised, not a verified skill assessment."
+	},
 	"Streak": {
 		"heading": "Your streak",
 		"open": "Streak details",

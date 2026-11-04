@@ -7,11 +7,9 @@ import {
 	updateProfileQuery
 } from '@/lib/profile/profile-queries'
 import {
-	lookupPublicProfile,
 	updateProfile,
 	type ProfileStore,
-	type ProfileUpdateResult,
-	type PublicProfileOwner
+	type ProfileUpdateResult
 } from '@/lib/profile/profile-service'
 import type { ProfileSettings, ProfileSettingsInput } from '@/lib/profile/profile-settings'
 
@@ -55,16 +53,3 @@ export async function updateProfileSettings(
 ): Promise<ProfileUpdateResult> {
 	return updateProfile(await currentLearnerId(), store, input)
 }
-
-// The narrow lookup M9A.4 will use for a public profile page. A lookup failure is
-// "not found", never an error page that would reveal anything.
-export async function findPublicProfile(rawUsername: string): Promise<PublicProfileOwner | null> {
-	try {
-		return await lookupPublicProfile(store, rawUsername)
-	} catch {
-		return null
-	}
-}
-
-export { toPublicProfileView } from '@/lib/profile/profile-service'
-export type { PublicProfileOwner } from '@/lib/profile/profile-service'

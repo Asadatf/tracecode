@@ -70,7 +70,7 @@ export interface PublicProfileOwner {
 // Null for a malformed, unknown, unset OR private username alike, so it cannot be
 // used to discover which private accounts exist.
 export async function lookupPublicProfile(
-	store: ProfileStore,
+	store: Pick<ProfileStore, 'findPublic'>,
 	rawUsername: string
 ): Promise<PublicProfileOwner | null> {
 	const checked = checkUsername(rawUsername)
@@ -82,4 +82,25 @@ export async function lookupPublicProfile(
 // The only thing about a public profile that is safe to send to a browser so far.
 export function toPublicProfileView(owner: PublicProfileOwner): { username: string } {
 	return { username: owner.username }
+}
+
+// How a profile address resolves, for the page. `unavailable` is only for a storage
+// failure, which happens identically whichever username was asked for, so it tells a
+// visitor nothing about any account. Private, unset, malformed and nonexistent all
+// give the same `not_found`.
+export type PublicProfileLookup =
+	| { status: 'found'; owner: PublicProfileOwner }
+	| { status: 'not_found' }
+	| { status: 'unavailable' }
+
+export async function resolvePublicProfile(
+	store: Pick<ProfileStore, 'findPublic'>,
+	rawUsername: string
+): Promise<PublicProfileLookup> {
+	try {
+		const owner = await lookupPublicProfile(store, rawUsername)
+		return owner == null ? { status: 'not_found' } : { status: 'found', owner }
+	} catch {
+		return { status: 'unavailable' }
+	}
 }

@@ -1,6 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { activityAttemptsQuery, legacyActivityAttemptsQuery } from './activity-query.ts'
+import {
+	activityAttemptsQuery,
+	legacyActivityAttemptsQuery,
+	legacyQualifyingRunsCountQuery,
+	qualifyingRunsCountQuery
+} from './activity-query.ts'
 import { STREAK_WINDOW_DAYS, addDays } from '../streak/streak.ts'
 
 test('the activity query is scoped to the user, to completed attempts, and to a bounded window', () => {
@@ -36,4 +41,14 @@ test('the pre-migration fallback never names the meaningful column', () => {
 	assert.equal(JSON.stringify(query).includes('meaningful'), false)
 	assert.equal(query.where.userId, 'u')
 	assert.equal(query.where.status, 'completed')
+})
+
+test('the all-time run count follows the same rule, scoped to the given learner', () => {
+	const query = qualifyingRunsCountQuery('user-9')
+	assert.equal(query.where.userId, 'user-9')
+	assert.equal(query.where.status, 'completed')
+	assert.deepEqual(query.where.OR, [{ meaningful: null }, { meaningful: true }])
+	const legacy = legacyQualifyingRunsCountQuery('user-9')
+	assert.equal(legacy.where.userId, 'user-9')
+	assert.equal(JSON.stringify(legacy).includes('meaningful'), false)
 })

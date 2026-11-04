@@ -24,17 +24,30 @@ export type ActivitySummary =
 			days: DailyActivity[]
 	  }
 
+// The activity days for ONE learner, given explicitly. Only server code that has
+// already resolved who the learner is may call it: the signed-in learner (below) or
+// a public profile's resolved owner (src/server/profile/public-profile.ts). It never
+// reads the session, and no request input reaches it.
+export async function loadActivityDays(userId: string, today: string): Promise<DailyActivity[]> {
+	const rows = await readWithColumnFallback(
+		'meaningful',
+		() => db.attempt.findMany(activityAttemptsQuery(userId, today)),
+		() => db.attempt.findMany(legacyActivityAttemptsQuery(userId, today))
+	)
+	return buildDailyActivity(rows)
+}
+
 export const getActivitySummary = cache(async (): Promise<ActivitySummary> => {
 	const userId = await currentUserIdSafe()
 	if (userId == null) return { authenticated: false }
 	try {
 		const today = utcDay(new Date())
-		const rows = await readWithColumnFallback(
-			'meaningful',
-			() => db.attempt.findMany(activityAttemptsQuery(userId, today)),
-			() => db.attempt.findMany(legacyActivityAttemptsQuery(userId, today))
-		)
-		return { authenticated: true, available: true, today, days: buildDailyActivity(rows) }
+		return {
+			authenticated: true,
+			available: true,
+			today,
+			days: await loadActivityDays(userId, today)
+		}
 	} catch {
 		return { authenticated: true, available: false }
 	}

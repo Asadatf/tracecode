@@ -45,3 +45,20 @@ export function legacyActivityAttemptsQuery(userId: string, today: string) {
 		orderBy: { createdAt: 'asc' as const }
 	}
 }
+
+// All-time count of the learner's qualifying runs (the same rule as the activity
+// read, with no date window), for the public profile's "practice runs" total.
+export function qualifyingRunsCountQuery(userId: string) {
+	return {
+		where: {
+			userId,
+			status: 'completed',
+			OR: [{ meaningful: null }, { meaningful: true }]
+		}
+	}
+}
+
+// The same count before the `meaningful` column's migration has run.
+export function legacyQualifyingRunsCountQuery(userId: string) {
+	return { where: { userId, status: 'completed' } }
+}
