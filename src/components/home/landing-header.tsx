@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
-import { signOutAction } from '@/server/actions/auth'
+import { SignOutForm } from '@/components/auth/sign-out-form'
 import { headerNav } from '@/lib/home/header-nav'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
 import { SignOutIcon } from '@/components/ui/icons'
@@ -51,12 +51,12 @@ export async function LandingHeader() {
 										{account.email}
 									</p>
 								)}
-								<form action={signOutAction}>
+								<SignOutForm>
 									<button type="submit" className={styles.accountSignOut}>
 										<SignOutIcon size={16} />
 										{t('signOut')}
 									</button>
-								</form>
+								</SignOutForm>
 							</div>
 						</details>
 					</div>

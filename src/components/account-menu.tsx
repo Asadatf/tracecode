@@ -3,6 +3,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Link } from '@/i18n/routing'
 import { signOutAction } from '@/server/actions/auth'
+import { clearAllTutorConversations } from '@/lib/tutor/conversation-store'
 import { Avatar } from '@/components/avatar'
 import styles from './application.module.css'
 
@@ -49,6 +50,7 @@ export function AccountMenu({
 					<DropdownMenu.Item
 						className={styles.menuItem}
 						onSelect={() => {
+							clearAllTutorConversations()
 							void signOutAction()
 						}}
 					>

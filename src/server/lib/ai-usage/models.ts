@@ -45,6 +45,15 @@ export const OPENROUTER_SLUGS = {
 	'claude-haiku-4-5-20251001': 'anthropic/claude-haiku-4.5',
 	'gpt-5.4': 'openai/gpt-5.4',
 	'gpt-5.4-mini': 'openai/gpt-5.4-mini',
+	// M8 AI Tutor default. Called directly through OpenAI (src/server/ai/openai.ts),
+	// but priced through OpenRouter's rate card like every other model — the
+	// slug is OpenRouter's, the attribution column (provider) is 'openai'.
+	// Both the floating alias AND the dated id OpenAI serves it under must be
+	// registered: trackAiCall records the served model id (see sink.ts), so a
+	// call made with 'gpt-4o-mini' is written as 'gpt-4o-mini-2024-07-18', and
+	// an unmapped served id prices as NULL.
+	'gpt-4o-mini': 'openai/gpt-4o-mini',
+	'gpt-4o-mini-2024-07-18': 'openai/gpt-4o-mini',
 	'gemini-3.8-flash': 'google/gemini-3.8-flash',
 	// Free model for M7 learning recommendations (docs/rules/ai-usage.md). Key and
 	// slug are identical because an OpenRouter call reports back the OpenRouter id

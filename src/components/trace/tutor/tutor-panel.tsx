@@ -1,20 +1,28 @@
 'use client'
 
 import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { cn } from '@/lib/cn'
 import { CloseIcon, ExpandIcon, ShrinkIcon, SparkleIcon } from '@/components/ui/icons'
+import { MAX_QUESTIONS_PER_CONVERSATION } from '@/lib/tutor/types'
 import { TutorComposer } from './tutor-composer'
 import { TutorConversation } from './tutor-conversation'
 import type { TutorPanelProps } from './tutor-types'
 import styles from './tutor.module.css'
 
+// Branding: the user-facing name is "Tracy" with "AI Tutor" as a subtitle.
+// Internal names (component, API route, DB columns, env vars) stay as
+// `TutorPanel` / `/api/tutor` / `ai_usage.feature = 'tutor_chat'` — see the
+// M8 spec; the rebrand is user-facing only.
+const TUTOR_NAME = 'Tracy'
+const TUTOR_ROLE = 'AI Tutor'
+
 const FOCUSABLE =
 	'button:not([disabled]), [href], textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-// The on-demand AI Tutor (practice-workspace-layout AC16–AC24): a preview of the
-// interface only. It is honest about that: a "Not connected" badge, a notice,
-// disabled controls and an empty conversation. Escape closes it (or restores it
-// first when maximized); as a drawer or full-screen panel it behaves as a dialog
-// and keeps Tab inside until it is closed.
+// The real, wired-up AI Tutor panel (M8). Preserves the existing panel
+// shell, keyboard model (Esc restores or closes, Tab trapped inside a drawer
+// or phone-mode modal) and the privacy stance: no network request is made
+// from here on open — only on send.
 export function TutorPanel({
 	context,
 	mode,
@@ -22,16 +30,13 @@ export function TutorPanel({
 	maximized,
 	onToggleMaximize,
 	onClose,
-	connected = false,
-	messages = [],
-	onSend,
-	onAction
+	tutor,
+	suggestions = []
 }: TutorPanelProps) {
 	const panelRef = useRef<HTMLDivElement>(null)
 	const headingRef = useRef<HTMLHeadingElement>(null)
 	const modal = mode !== 'docked'
 
-	// Opening moves focus to the panel's heading, so a keyboard user lands inside it.
 	useEffect(() => {
 		if (open) headingRef.current?.focus()
 	}, [open])
@@ -58,29 +63,40 @@ export function TutorPanel({
 		}
 	}
 
+	const sending = tutor.status.kind === 'sending'
+	const streaming = tutor.status.kind === 'streaming'
+	const errored = tutor.status.kind === 'error'
+
+	// Fullscreen presentation: when the Tutor is maximized on desktop the
+	// pane can get very wide; a chat reading 2 000 px across is harsh. The
+	// `panelMax` class constrains conversation/composer content to a
+	// comfortable 960 px, centred — the compact docked panel is untouched.
 	return (
 		<div
 			ref={panelRef}
-			className={styles.panel}
+			className={cn(styles.panel, maximized && styles.panelMax)}
 			role={modal ? 'dialog' : 'complementary'}
 			aria-modal={modal ? true : undefined}
-			aria-label="AI Tutor"
+			aria-label={`${TUTOR_NAME} — ${TUTOR_ROLE}`}
+			data-maximized={maximized ? 'true' : 'false'}
 			onKeyDown={onKeyDown}
 		>
 			<div className={styles.header}>
 				<span className={styles.mark} aria-hidden="true">
 					<SparkleIcon size={16} />
 				</span>
-				<h2 ref={headingRef} tabIndex={-1} className={styles.title}>
-					AI Tutor
-				</h2>
-				<span className={styles.badge}>Not connected</span>
+				<div className={styles.titleWrap}>
+					<h2 ref={headingRef} tabIndex={-1} className={styles.title}>
+						{TUTOR_NAME}
+					</h2>
+					<span className={styles.subtitle}>{TUTOR_ROLE}</span>
+				</div>
 				<span className={styles.grow} />
 				{mode === 'phone' ? null : (
 					<button
 						type="button"
 						className={styles.iconButton}
-						aria-label={maximized ? 'Restore AI Tutor size' : 'Maximize AI Tutor'}
+						aria-label={maximized ? `Restore ${TUTOR_NAME} size` : `Maximize ${TUTOR_NAME}`}
 						onClick={onToggleMaximize}
 					>
 						{maximized ? <ShrinkIcon size={16} /> : <ExpandIcon size={16} />}
@@ -89,7 +105,7 @@ export function TutorPanel({
 				<button
 					type="button"
 					className={styles.iconButton}
-					aria-label="Close AI Tutor"
+					aria-label={`Close ${TUTOR_NAME}`}
 					onClick={onClose}
 				>
 					<CloseIcon size={16} />
@@ -105,15 +121,55 @@ export function TutorPanel({
 				) : null}
 			</div>
 
-			{connected ? null : (
+			{!tutor.available && (
 				<p className={styles.notice} role="note">
-					<strong>AI tutoring isn’t connected yet.</strong> This is a preview of the panel. Nothing
-					you type here is sent anywhere, and there are no AI replies.
+					<strong>Sign in to chat with {TUTOR_NAME}.</strong> Your code and latest run are sent only
+					when you ask a question.
 				</p>
 			)}
 
-			<TutorConversation messages={messages} connected={connected} />
-			<TutorComposer connected={connected} onSend={onSend} onAction={onAction} />
+			{errored && (
+				<div className={styles.errorBox} role="alert">
+					<span>{tutor.status.kind === 'error' ? tutor.status.message : ''}</span>
+					{tutor.status.kind === 'error' && tutor.status.retryable && (
+						<button type="button" onClick={tutor.retry}>
+							Try again
+						</button>
+					)}
+				</div>
+			)}
+
+			{tutor.limitReached && (
+				<div className={styles.limitBox} role="note">
+					<span>
+						You&apos;ve asked all {MAX_QUESTIONS_PER_CONVERSATION} questions in this chat. Start a
+						new chat for this problem.
+					</span>
+					<button type="button" className={styles.newChat} onClick={tutor.startNew}>
+						Start new chat
+					</button>
+				</div>
+			)}
+
+			<TutorConversation
+				messages={tutor.messages}
+				sending={sending}
+				streaming={streaming}
+				streamingReply={tutor.streamingReply}
+				available={tutor.available}
+			/>
+			<TutorComposer
+				canSend={tutor.canSend}
+				sending={sending}
+				limitReached={tutor.limitReached}
+				questionsRemaining={tutor.questionsRemaining}
+				questionsUsed={tutor.questionsUsed}
+				maxQuestions={MAX_QUESTIONS_PER_CONVERSATION}
+				suggestions={suggestions}
+				onSend={tutor.send}
+				canStop={tutor.canStop}
+				onStop={tutor.stop}
+			/>
 		</div>
 	)
 }

@@ -1,6 +1,5 @@
-// The contract the AI Tutor panel is built against, so a future integration
-// (the problem-specific tutor, M8) only has to supply these props. Nothing here
-// calls a model or a server: today the panel is a non-functional preview.
+// Panel-level props. The conversation state itself lives in useTutor (sibling
+// file); this contract is what the practice workspace hands to the panel.
 
 export type TutorRole = 'user' | 'assistant'
 
@@ -12,12 +11,11 @@ export interface TutorMessage {
 
 export type TutorAction = 'ask' | 'hint' | 'explain-failure'
 
-// What the learner is working on, shown in the panel header. Read from state the
-// workspace already holds; it is displayed, never sent anywhere.
+// What the learner is working on, shown in the panel header and sent with
+// each question by `useTutor` through a `buildContext` callback.
 export interface TutorContext {
 	problemTitle: string
 	difficulty: string
-	// e.g. "0 / 3 passed", or null before the first run.
 	runSummary: string | null
 }
 
@@ -32,10 +30,10 @@ export interface TutorPanelProps {
 	maximized: boolean
 	onToggleMaximize: () => void
 	onClose: () => void
-	// False until a tutor is wired in. While false the composer and the suggested
-	// actions are disabled and the panel says so; it never shows a made-up reply.
-	connected?: boolean
-	messages?: readonly TutorMessage[]
-	onSend?: (text: string) => void
-	onAction?: (action: TutorAction) => void
+	// A hook returned by useTutor. Keeping the panel decoupled from fetch
+	// means its tests can pass a stub.
+	tutor: import('./use-tutor').UseTutor
+	// Suggestions that depend on the current workspace state (e.g. "Explain
+	// my failing test" only shows up once a run has happened).
+	suggestions?: readonly { id: string; label: string; prompt: string }[]
 }

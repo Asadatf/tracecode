@@ -49,7 +49,8 @@ export default async function PracticePage({
 	// client-side; attempts stay local). Every other problem needs an account:
 	// enforced here, on the server, not just by hiding links
 	// (specs/features/auth-access.md AC3/AC4).
-	const isAuthenticated = (await currentUserIdSafe()) != null
+	const userId = await currentUserIdSafe()
+	const isAuthenticated = userId != null
 	if (practiceAccess(slug, isAuthenticated) === 'sign-in') {
 		redirect({ href: authHref('login', `/practice/${slug}`), locale: await getLocale() })
 	}
@@ -63,6 +64,7 @@ export default async function PracticePage({
 		<PracticeWorkspace
 			slug={slug}
 			isAuthenticated={isAuthenticated}
+			userId={userId}
 			initialLayout={initialLayout}
 		/>
 	)
