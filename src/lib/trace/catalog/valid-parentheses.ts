@@ -2,7 +2,8 @@ import { type ProblemDefinition } from '../problem'
 
 // LeetCode 20 contract: 1 ≤ len ≤ 10⁴, only ()[]{}. The deeply nested test is
 // capped at 2 000 pairs so a quadratic baseline still finishes inside the 5 s
-// run budget in Pyodide; the long flat test uses the full 10⁴ characters.
+// run budget in Pyodide, and so is the deep wrong-closer test (t25); the long
+// flat tests use the full 10⁴ characters.
 const DEPTH = 2000
 const NESTED = '('.repeat(DEPTH) + ')'.repeat(DEPTH)
 
@@ -49,7 +50,7 @@ export const validParentheses = {
 		{ id: 't22', args: [NESTED], expected: true },
 		{ id: 't23', args: ['()'.repeat(5000)], expected: true },
 		{ id: 't24', args: ['('.repeat(DEPTH - 1) + ']' + ')'.repeat(DEPTH - 1)], expected: false },
-		{ id: 't25', args: ['('.repeat(5000) + ')'.repeat(4999) + ']'], expected: false },
+		{ id: 't25', args: ['('.repeat(DEPTH) + ')'.repeat(DEPTH - 1) + ']'], expected: false },
 		{ id: 't26', args: ['()'.repeat(4999) + '('], expected: false }
 	],
 	correctnessHints: [
