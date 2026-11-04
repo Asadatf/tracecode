@@ -453,6 +453,31 @@
 		"saving": "Saving…",
 		"cadence": "Frequency",
 		"daily": "Daily",
+		"publicProfile": {
+			"heading": "Public profile",
+			"description": "Choose a username and whether other people can see your learning profile.",
+			"username": "Username",
+			"usernameHelp": "{min}–{max} characters: lowercase letters, numbers and hyphens. It is how people will find your profile, so pick something you are happy to share.",
+			"public": "Make my profile public",
+			"publicHelp": "When public, anyone with your profile link will be able to see your username, your practice streaks and activity graph, how many problems you have solved and the topics you have practised. Your email, your code, your Tracy conversations and your detailed analytics are never shown. Off unless you turn it on.",
+			"statePrivate": "Your profile is private. Nobody else can see it. Profile pages are not live yet, so nothing is shown to anyone whichever you choose.",
+			"statePublic": "Your profile is set to public. Profile pages are not live yet, so nothing is shown to anyone until they launch.",
+			"save": "Save",
+			"saving": "Saving…",
+			"saved": "Saved.",
+			"errors": {
+				"too_short": "Use at least {min} characters.",
+				"too_long": "Use at most {max} characters.",
+				"invalid_chars": "Use only lowercase letters, numbers and hyphens.",
+				"hyphen_edge": "Start and end with a letter or a number.",
+				"hyphen_double": "Don't use two hyphens in a row.",
+				"reserved": "That name is reserved. Choose another.",
+				"taken": "That username is already taken. Choose another.",
+				"username_required": "Choose a username before making your profile public.",
+				"unauthenticated": "Sign in again to save your profile.",
+				"failed": "Couldn't save. Try again."
+			}
+		},
 		"reminders": {
 			"heading": "Learning reminders",
 			"description": "Choose how TraceCode nudges you to keep practising.",

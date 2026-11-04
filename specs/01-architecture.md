@@ -98,6 +98,15 @@ enum ProgressStatus { ATTEMPTED SOLVED MASTERED }
 
 All tables get RLS enabled with no policies (`docs/rules/auth.md`).
 
+### M9A — streak qualification, activity and public-profile settings
+
+`Attempt.meaningful` (`Boolean?`, no default) is the server's verdict that a run is
+real work for the streak (`streak.md` AC4a/AC4b); null means saved before it existed.
+`Attempt @@index([userId, createdAt])` serves the activity read
+(`activity-heatmap.md`). `User.username` (`String?`, unique, stored normalised) and
+`User.profileVisibility` (`ProfileVisibility`, default `PRIVATE`) hold the
+public-profile settings (`public-profile-settings.md`). No new tables.
+
 ### M7.1 — code features on attempts
 
 `Attempt.codeFeatures` (`Json?`, nullable, no default) holds a versioned,
