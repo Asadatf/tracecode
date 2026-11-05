@@ -9,6 +9,9 @@ sticks".
 [![CI](https://github.com/Asadatf/tracecode/actions/workflows/ci.yml/badge.svg)](https://github.com/Asadatf/tracecode/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+**Try it:** [tracecode-beta.vercel.app](https://tracecode-beta.vercel.app). Start with
+[Two Sum](https://tracecode-beta.vercel.app/practice/two-sum), no account needed.
+
 ## The problem
 
 Practice sites tell you _that_ your code failed ("expected `[1, 2]`, got
