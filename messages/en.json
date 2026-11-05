@@ -283,6 +283,53 @@
 		"emptyUnread": "You're all caught up.",
 		"settings": "Notification settings"
 	},
+	"Activity": {
+		"heading": "Practice activity",
+		"gridLabel": "Practice activity over the last 12 months",
+		"summary": "{attempts, plural, =0 {No practice in the last 12 months} one {# run} other {# runs}}{attempts, plural, =0 {} other { on {days, plural, one {# day} other {# days}} in the last 12 months}}",
+		"cellEmpty": "{date}: no practice",
+		"cellActive": "{date}: {attempts, plural, one {# run} other {# runs}} on {problems, plural, one {# problem} other {# problems}}, {solved, plural, =0 {none solved} other {# solved}}",
+		"less": "Less",
+		"more": "More",
+		"empty": "No practice yet. Run your own code on a problem and your first day appears here.",
+		"disclaimer": "Each square is a UTC day, shaded by the runs you completed that day. It shows practice activity, not skill or a verified result.",
+		"unavailable": "Practice activity is unavailable right now.",
+		"loading": "Loading practice activity"
+	},
+	"PublicProfile": {
+		"meta": {
+			"title": "{username} on TraceCode",
+			"description": "{username} has solved {solved, plural, one {# problem} other {# problems}} on TraceCode, with a longest practice streak of {longest, plural, one {# day} other {# days}}.",
+			"descriptionBasic": "{username}'s learning profile on TraceCode: practice activity and topics practised."
+		},
+		"home": "TraceCode home",
+		"cta": "Practise on TraceCode",
+		"tagline": "TraceCode learner",
+		"share": {
+			"copy": "Copy link",
+			"copied": "Copied",
+			"copiedNote": "Profile link copied.",
+			"failed": "Couldn't copy. Select the link and copy it by hand."
+		},
+		"stats": {
+			"solved": "Problems solved",
+			"solvedOf": "of {total}",
+			"runs": "Practice runs",
+			"current": "Current streak",
+			"longest": "Longest streak",
+			"days": "{count, plural, one {day} other {days}}"
+		},
+		"empty": "{username} hasn't recorded any practice yet.",
+		"activity": "Practice activity",
+		"topics": {
+			"heading": "Topics",
+			"summary": "{practised} of {total} topics practised. Each bar shows problems solved in that topic."
+		},
+		"loading": "Loading profile statistics",
+		"unavailable": "This profile's statistics can't be loaded right now. Try again in a moment.",
+		"unavailablePage": "This page can't be loaded right now. Try again in a moment.",
+		"footnote": "Recorded by TraceCode as this learner practises, from runs in their browser. It shows what someone has practised, not a verified skill assessment."
+	},
 	"Streak": {
 		"heading": "Your streak",
 		"open": "Streak details",
@@ -378,6 +425,22 @@
 		}
 	},
 	"Dashboard": {
+		"reviews": {
+			"heading": "Due for review",
+			"stage": "Review {stage} of {total}",
+			"dueToday": "Due today",
+			"overdue": "{count, plural, one {Overdue by # day} other {Overdue by # days}}",
+			"start": "Start review",
+			"startLabel": "Start review of {title}",
+			"more": "{count, plural, one {# more review is due.} other {# more reviews are due.}}",
+			"empty": "Nothing is due for review. A problem you solve comes back for review after 1 day, then 3 days, then 7 days.",
+			"unavailable": "Reviews are unavailable right now.",
+			"loading": "Loading reviews",
+			"calloutLabel": "Due for review",
+			"calloutOne": "{title} is due for review.",
+			"calloutMany": "{title} and {others, plural, one {# other} other {# others}} are due for review.",
+			"note": "A review is a scheduled reminder to solve a problem again from a fresh start. Completing it does not measure what you remember."
+		},
 		"metaTitle": "Dashboard | TraceCode",
 		"eyebrow": "Learning workspace",
 		"heading": "Overview",
@@ -440,6 +503,31 @@
 		"saving": "Saving…",
 		"cadence": "Frequency",
 		"daily": "Daily",
+		"publicProfile": {
+			"heading": "Public profile",
+			"description": "Choose a username and whether other people can see your learning profile.",
+			"username": "Username",
+			"usernameHelp": "{min}–{max} characters: lowercase letters, numbers and hyphens. It is how people will find your profile, so pick something you are happy to share.",
+			"public": "Make my profile public",
+			"publicHelp": "When public, anyone with your profile link will be able to see your username, your practice streaks and activity graph, how many problems you have solved and the topics you have practised. Your email, your code, your Tracy conversations and your detailed analytics are never shown. Off unless you turn it on.",
+			"statePrivate": "Your profile is private. Nobody else can see it. Profile pages are not live yet, so nothing is shown to anyone whichever you choose.",
+			"statePublic": "Your profile is set to public. Profile pages are not live yet, so nothing is shown to anyone until they launch.",
+			"save": "Save",
+			"saving": "Saving…",
+			"saved": "Saved.",
+			"errors": {
+				"too_short": "Use at least {min} characters.",
+				"too_long": "Use at most {max} characters.",
+				"invalid_chars": "Use only lowercase letters, numbers and hyphens.",
+				"hyphen_edge": "Start and end with a letter or a number.",
+				"hyphen_double": "Don't use two hyphens in a row.",
+				"reserved": "That name is reserved. Choose another.",
+				"taken": "That username is already taken. Choose another.",
+				"username_required": "Choose a username before making your profile public.",
+				"unauthenticated": "Sign in again to save your profile.",
+				"failed": "Couldn't save. Try again."
+			}
+		},
 		"reminders": {
 			"heading": "Learning reminders",
 			"description": "Choose how TraceCode nudges you to keep practising.",

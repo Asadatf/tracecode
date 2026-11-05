@@ -17,12 +17,22 @@ model User {
 	updatedAt   DateTime     @default(now()) @updatedAt @db.Timestamptz(6)
 	adminMember AdminMember?
 
+	// M9A.3: public developer-profile settings (prisma/schema/profile.prisma). Both
+	// are opt-in: `username` is null until the owner picks one, and every account —
+	// existing ones included — starts PRIVATE, so nobody is exposed by this migration.
+	// `username` is always stored normalised (lowercase, URL-safe: src/lib/profile/
+	// username.ts), so this plain unique index IS the case-insensitive uniqueness.
+	username          String?           @unique
+	profileVisibility ProfileVisibility @default(PRIVATE)
+
 	// Learning domain (prisma/schema/learning.prisma). Virtual back-relations —
 	// no column on users; the FK columns live on the child tables.
 	attempts        Attempt[]
 	replaySessions  ReplaySession[]
 	learningEvents  LearningEvent[]
 	problemProgress ProblemProgress[]
+	// M9C spaced review (prisma/schema/reviews.prisma).
+	problemReviews  ProblemReview[]
 
 	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
 	recommendationCache RecommendationCache?

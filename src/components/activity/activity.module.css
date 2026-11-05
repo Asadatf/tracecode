@@ -1,0 +1,167 @@
+/* The contribution graph. Colours come from the app's tokens (so light and dark
+   both work): inactive days are a neutral wash of the text colour, and the four
+   active levels step from a light to a full accent green. */
+.root {
+	--cell: 12px;
+	--gap: 3px;
+	--label-w: 30px;
+	--l0: color-mix(in srgb, var(--text) 8%, var(--surface));
+	--l1: color-mix(in srgb, var(--accent) 28%, var(--surface));
+	--l2: color-mix(in srgb, var(--accent) 52%, var(--surface));
+	--l3: color-mix(in srgb, var(--accent) 76%, var(--surface));
+	--l4: var(--accent);
+	min-width: 0;
+}
+
+/* On a narrow screen the graph scrolls inside its own box (newest weeks in view)
+   instead of the page. */
+.scroller {
+	overflow-x: auto;
+	padding-bottom: 4px;
+}
+.frame {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: max-content;
+}
+
+.months {
+	display: flex;
+	gap: var(--gap);
+	margin-left: calc(var(--label-w) + var(--gap));
+	color: var(--text-muted);
+	font-size: 11px;
+	line-height: 14px;
+}
+.monthCell {
+	flex: none;
+	width: var(--cell);
+	overflow: visible;
+	white-space: nowrap;
+}
+
+.body {
+	display: flex;
+	gap: var(--gap);
+}
+.weekdays {
+	display: flex;
+	flex-direction: column;
+	gap: var(--gap);
+	width: var(--label-w);
+	color: var(--text-muted);
+	font-size: 11px;
+}
+.weekdayCell {
+	height: var(--cell);
+	line-height: var(--cell);
+}
+
+.grid {
+	display: flex;
+	flex-direction: column;
+	gap: var(--gap);
+}
+.row {
+	display: flex;
+	gap: var(--gap);
+}
+.cell,
+.blank,
+.legendCell {
+	flex: none;
+	width: var(--cell);
+	height: var(--cell);
+	border-radius: 3px;
+}
+.blank {
+	background: transparent;
+}
+.cell,
+.legendCell {
+	background: var(--l0);
+	outline: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+	outline-offset: -1px;
+}
+.cell[data-level='1'],
+.legendCell[data-level='1'] {
+	background: var(--l1);
+}
+.cell[data-level='2'],
+.legendCell[data-level='2'] {
+	background: var(--l2);
+}
+.cell[data-level='3'],
+.legendCell[data-level='3'] {
+	background: var(--l3);
+}
+.cell[data-level='4'],
+.legendCell[data-level='4'] {
+	background: var(--l4);
+}
+/* Today gets a ring so an empty day today is still findable. */
+.today {
+	outline: 2px solid var(--text-muted);
+	outline-offset: 0;
+}
+.cell:hover {
+	outline: 2px solid var(--border-strong);
+	outline-offset: 0;
+}
+.cell:focus-visible {
+	outline: 2px solid var(--accent-hover);
+	outline-offset: 1px;
+}
+
+.foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 16px;
+	margin-top: 10px;
+}
+.detail {
+	margin: 0;
+	min-height: 1.4em;
+	color: var(--text);
+	font-size: 13px;
+	font-weight: 600;
+}
+.legend {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: var(--text-muted);
+	font-size: 11px;
+}
+.legend span:first-child {
+	margin-right: 2px;
+}
+.legend span:last-child {
+	margin-left: 2px;
+}
+.note {
+	margin: 8px 0 0;
+	color: var(--text-muted);
+	font-size: 12.5px;
+	line-height: 1.5;
+}
+
+.skeleton {
+	height: 120px;
+	border-radius: 10px;
+	background: var(--l0);
+	animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+	50% {
+		opacity: 0.55;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.skeleton {
+		animation: none;
+	}
+}

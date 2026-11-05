@@ -1,0 +1,12 @@
+// M9A.3: whether a learner's developer profile can be seen without signing in.
+// PRIVATE is the default and the only state an account is ever put in by the
+// system; PUBLIC is set only by the owner, explicitly, from Settings. The profile
+// page itself arrives in M9A.4 — until then this only records the choice.
+//
+// The columns live on User (example.prisma) rather than a new table: users already
+// has row level security enabled with no policy, and nothing here is read through
+// anything but the server's Prisma client (docs/rules/auth.md).
+enum ProfileVisibility {
+	PRIVATE
+	PUBLIC
+}

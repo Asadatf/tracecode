@@ -1,5 +1,10 @@
 import { PROBLEMS } from '@/lib/trace/problems'
 import { parseReminderPlan, practicePath, reminderCopy } from '@/lib/learning/reminder-plan'
+import {
+	REVIEW_REMINDER_KIND,
+	parseReviewReminder,
+	reviewReminderCopy
+} from '@/lib/reviews/review-reminder'
 
 // Prisma argument builders for the in-app inbox and preferences (M7.5B), in the
 // same style as code-feature-queries.ts: plain objects, no client import, so the
@@ -82,13 +87,33 @@ export interface NotificationView {
 // link to a practice page that would 404.
 export function toNotificationView(row: {
 	id: string
+	// The notification's kind; absent for older callers, which means a daily reminder.
+	kind?: string
 	payload: unknown
 	readAt: Date | null
 	createdAt: Date
 }): NotificationView {
+	const base = { id: row.id, createdAt: row.createdAt.toISOString(), read: row.readAt != null }
+	if (row.kind === REVIEW_REMINDER_KIND) {
+		const reminder = parseReviewReminder(row.payload)
+		if (reminder == null) {
+			return {
+				...base,
+				title: 'Reviews due',
+				body: 'Your overview lists the problems due for review.',
+				concept: null,
+				href: '/dashboard',
+				cta: 'Open overview'
+			}
+		}
+		const titles = Object.fromEntries(Object.values(PROBLEMS).map((p) => [p.slug, p.title]))
+		const concepts = Object.fromEntries(
+			Object.values(PROBLEMS).map((p) => [p.slug, p.conceptTags[0]])
+		)
+		return { ...base, ...reviewReminderCopy(reminder, titles, concepts) }
+	}
 	const plan = parseReminderPlan(row.payload)
 	const problem = plan ? PROBLEMS[plan.problemSlug] : undefined
-	const base = { id: row.id, createdAt: row.createdAt.toISOString(), read: row.readAt != null }
 	if (plan == null || problem == null) {
 		return {
 			...base,

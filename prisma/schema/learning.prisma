@@ -28,11 +28,21 @@ model Attempt {
 	// null as "no features". Validated on write (codeFeaturesSchema).
 	codeFeatures Json?
 
+	// M9A.1: the SERVER's verdict that `source` is real work for the streak, i.e.
+	// not the problem's untouched starter and not a whitespace/comment-only edit of
+	// it (src/lib/streak/attempt-meaning.ts). Never taken from the client. Null for
+	// attempts saved before this column existed — they cannot be re-judged with
+	// confidence, so they are kept as they were and still count if completed.
+	meaningful Boolean?
+
 	user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 	testResults AttemptTestResult[]
 	replays     ReplaySession[]
 
 	@@index([userId, problemSlug])
+	// M9A.2: the activity/streak read filters one learner's attempts by a date window
+	// and orders by createdAt (src/lib/activity/activity-query.ts).
+	@@index([userId, createdAt])
 	@@map("attempts")
 }
 

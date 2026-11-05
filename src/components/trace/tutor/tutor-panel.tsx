@@ -40,6 +40,12 @@ export function TutorPanel({
 	// Prompt-guide popover. Purely client state: opening it never calls
 	// the API or consumes a question (M8 UX addition).
 	const [guideOpen, setGuideOpen] = useState(false)
+	// Closing hands focus back to the info button, so a keyboard learner lands where
+	// they started. Done here, on the close action, rather than in an effect cleanup.
+	function closeGuide() {
+		setGuideOpen(false)
+		requestAnimationFrame(() => document.getElementById('tutor-guide-trigger')?.focus())
+	}
 
 	useEffect(() => {
 		if (open) headingRef.current?.focus()
@@ -103,7 +109,7 @@ export function TutorPanel({
 					aria-expanded={guideOpen}
 					aria-controls="tutor-guide-panel"
 					aria-haspopup="dialog"
-					onClick={() => setGuideOpen((o) => !o)}
+					onClick={() => (guideOpen ? closeGuide() : setGuideOpen(true))}
 				>
 					<InfoIcon size={16} />
 				</button>
@@ -130,11 +136,7 @@ export function TutorPanel({
 
 			{guideOpen && (
 				<div id="tutor-guide-panel">
-					<TutorPromptGuide
-						open={guideOpen}
-						onClose={() => setGuideOpen(false)}
-						anchorId="tutor-guide-trigger"
-					/>
+					<TutorPromptGuide open={guideOpen} onClose={closeGuide} />
 				</div>
 			)}
 
