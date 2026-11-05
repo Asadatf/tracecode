@@ -7,7 +7,9 @@ import { createTranslator } from 'next-intl'
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
 const page = read('../../app/[locale]/u/[username]/page.tsx')
+const identity = read('./profile-identity.tsx')
 const body = read('./public-profile-body.tsx')
+const header = read('./public-profile-header.tsx')
 const copy = read('./copy-profile-link.tsx')
 const skeleton = read('./profile-skeleton.tsx')
 const css = read('./profile.module.css')
@@ -16,23 +18,31 @@ const t = createTranslator({ locale: 'en', messages, namespace: 'PublicProfile' 
 
 describe('public profile — structure and accessibility', () => {
 	it('has one h1 (the username), labelled sections and a labelled brand link', () => {
-		assert.equal((page.match(/<h1\b/g) ?? []).length, 1)
-		assert.match(page, /aria-labelledby="profile-name"/)
+		assert.equal((identity.match(/<h1\b/g) ?? []).length, 1)
+		assert.equal((page.match(/<h1\b/g) ?? []).length, 0)
+		assert.match(identity, /aria-labelledby="profile-name"/)
 		assert.match(body, /aria-labelledby="profile-activity"/)
-		assert.match(body, /aria-labelledby="profile-topics"/)
-		assert.match(page, /aria-label=\{t\('home'\)\}/)
+		assert.doesNotMatch(body, /profile-topics/)
+		assert.match(header, /aria-label=\{t\('home'\)\}/)
 		assert.match(page, /<main\b/)
 	})
 
-	it('shows the statistics as a description list, with decorative bars hidden', () => {
+	it('shows the statistics as a description list', () => {
 		assert.match(body, /<dl\b/)
 		assert.ok((body.match(/<dt\b/g) ?? []).length === 4)
-		assert.match(body, /aria-hidden="true"/)
 	})
 
 	it('reuses the M9A.2 heatmap rather than building another calendar', () => {
 		assert.match(body, /from '@\/components\/activity\/activity-heatmap'/)
 		assert.doesNotMatch(body, /role="grid"/)
+	})
+
+	it('is two panels, with no redundant practise button and no explainer paragraphs', () => {
+		assert.match(identity, /styles\.identityPanel/)
+		assert.match(body, /aria-labelledby="profile-activity"/)
+		assert.doesNotMatch(page + identity + body, /cta/)
+		assert.match(body, /showDisclaimer=\{false\}/)
+		assert.equal('footnote' in messages.PublicProfile, false)
 	})
 
 	it('has loading, empty, unavailable and not-found states', () => {
@@ -82,7 +92,7 @@ describe('public profile — copy', () => {
 		)
 		assert.equal(
 			t('meta.descriptionBasic', { username: 'alice' }),
-			"alice's learning profile on TraceCode: practice activity and topics practised."
+			"alice's learning profile on TraceCode: practice activity and streaks."
 		)
 	})
 
@@ -97,7 +107,7 @@ describe('public profile — copy', () => {
 							: undefined,
 					messages.PublicProfile
 				) !== undefined
-		const keys = [page, body, copy].flatMap((source) =>
+		const keys = [page, identity, body, copy].flatMap((source) =>
 			[...source.matchAll(/\bt\('([A-Za-z.]+)'/g)].map((m) => m[1] ?? '')
 		)
 		assert.ok(keys.length >= 15)
@@ -106,11 +116,6 @@ describe('public profile — copy', () => {
 		for (const key of keys) {
 			assert.ok(has(key) || has(`meta.${key}`) || has(`share.${key}`), key)
 		}
-	})
-
-	it('says it is recorded practice, not a verified assessment', () => {
-		const note = String(messages.PublicProfile.footnote)
-		assert.ok(note.includes('not a verified skill assessment'))
 	})
 
 	it('empty profile text names the learner and invents nothing', () => {

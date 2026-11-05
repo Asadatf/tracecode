@@ -17,7 +17,7 @@
 		"nav": "Main",
 		"how": "How it works",
 		"problems": "Problems",
-		"cta": "Start practicing",
+		"dashboard": "Dashboard",
 		"signIn": "Sign in",
 		"register": "Register",
 		"account": "Account menu",
@@ -201,13 +201,6 @@
 			"empty": "No runs yet.",
 			"note": "Your last 10 runs."
 		},
-		"topics": {
-			"heading": "By topic",
-			"columns": {
-				"topic": "Topic",
-				"solved": "Solved"
-			}
-		},
 		"signedOut": {
 			"heading": "Nothing saved yet",
 			"body": "Progress is saved to your account once you're signed in. Until then, your runs on a problem page last only while that page is open.",
@@ -300,11 +293,10 @@
 		"meta": {
 			"title": "{username} on TraceCode",
 			"description": "{username} has solved {solved, plural, one {# problem} other {# problems}} on TraceCode, with a longest practice streak of {longest, plural, one {# day} other {# days}}.",
-			"descriptionBasic": "{username}'s learning profile on TraceCode: practice activity and topics practised."
+			"descriptionBasic": "{username}'s learning profile on TraceCode: practice activity and streaks."
 		},
-		"home": "TraceCode home",
-		"cta": "Practise on TraceCode",
-		"tagline": "TraceCode learner",
+		"eyebrow": "Learner profile",
+		"subtitle": "TraceCode learner",
 		"share": {
 			"copy": "Copy link",
 			"copied": "Copied",
@@ -327,8 +319,7 @@
 		},
 		"loading": "Loading profile statistics",
 		"unavailable": "This profile's statistics can't be loaded right now. Try again in a moment.",
-		"unavailablePage": "This page can't be loaded right now. Try again in a moment.",
-		"footnote": "Recorded by TraceCode as this learner practises, from runs in their browser. It shows what someone has practised, not a verified skill assessment."
+		"unavailablePage": "This page can't be loaded right now. Try again in a moment."
 	},
 	"Challenge": {
 		"metaTitle": "Daily challenge | TraceCode",

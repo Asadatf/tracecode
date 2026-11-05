@@ -132,6 +132,12 @@ test('headerNav: guests get Sign In + Register and no learner navigation', () =>
 	const guest = headerNav(false)
 	assert.deepEqual(guest.actions, ['signIn', 'register'])
 	assert.equal((guest.actions as string[]).includes('bell'), false)
+	assert.equal(guest.cta, null)
+})
+
+test('headerNav: learners get a Dashboard button, not Start practicing', () => {
+	assert.deepEqual(headerNav(true).cta, { label: 'dashboard', href: '/dashboard' })
+	assert.equal(headerNav(false).cta, null)
 })
 
 test('headerNav: learners get no Progress link, the bell and the account menu', () => {

@@ -35,7 +35,7 @@ to execute Python on the landing page.
   "Practice Python. When it fails, watch it run.", one sentence under it,
   a "Solve Two Sum" button and a "See all problems" link. A signed-out
   visitor sees "Sign in / Register" in the top bar linking to `/login`;
-  a signed-in learner sees "Start practicing" linking to `/practice/two-sum`.
+  a signed-in learner sees "Dashboard" linking to `/dashboard`.
 - **AC2** — GIVEN the home page WHEN the learner clicks "Solve Two Sum"
   THEN they land on `/practice/two-sum`.
 - **AC3** — GIVEN the home page WHEN the learner clicks "See all

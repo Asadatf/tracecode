@@ -14,6 +14,7 @@ const data = read('./public-profile.ts')
 const page = read('../../app/[locale]/u/[username]/page.tsx')
 const og = read('../../app/[locale]/u/[username]/opengraph-image.tsx')
 const body = read('../../components/profile/public-profile-body.tsx')
+const identity = read('../../components/profile/profile-identity.tsx')
 const copy = read('../../components/profile/copy-profile-link.tsx')
 const stats = read('../../lib/profile/public-profile-stats.ts')
 
@@ -82,13 +83,14 @@ describe('public profile data path', () => {
 		assert.match(page, /robotsFor\(true\)/)
 		// Not found and unavailable share one generic head; no username is echoed there.
 		assert.match(page, /lookup\.status !== 'found'\) return NOT_FOUND_METADATA/)
-		assert.match(page, /<Suspense fallback=\{<ProfileSkeleton/)
+		assert.match(page, /<Suspense\s+fallback=/)
+		assert.match(page, /<StatsSkeleton/)
 	})
 
 	it('client components receive only display values, never the owner or an id', () => {
-		assert.match(page, /<CopyProfileLink url=\{url\} \/>/)
+		assert.match(identity, /<CopyProfileLink url=\{url\} \/>/)
 		assert.doesNotMatch(copy, /owner|userId/)
-		assert.match(body, /<ActivityHeatmap days=\{stats\.days\} today=\{stats\.today\}/)
+		assert.match(body, /<ActivityHeatmap\s+days=\{stats\.days\}\s+today=\{stats\.today\}/)
 		assert.doesNotMatch(body, /<ActivityHeatmap[^>]*owner/)
 	})
 

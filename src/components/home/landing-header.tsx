@@ -31,12 +31,11 @@ export async function LandingHeader() {
 				</nav>
 				{authenticated ? (
 					<div className={styles.headerActions}>
-						<Link
-							href="/practice/two-sum"
-							className={`${styles.headerCta} ${styles.headerCtaWide}`}
-						>
-							{t('cta')}
-						</Link>
+						{nav.cta != null && (
+							<Link href={nav.cta.href} className={`${styles.headerCta} ${styles.headerCtaWide}`}>
+								{t(nav.cta.label)}
+							</Link>
+						)}
 						<Suspense fallback={null}>
 							<NotificationBellSlot />
 						</Suspense>
