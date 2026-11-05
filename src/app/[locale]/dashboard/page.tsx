@@ -10,7 +10,6 @@ import { buildProblemSummaries } from '@/lib/problems/problem-summary'
 import { getFirstAttemptDates, getLearningProgress } from '@/server/learning/progress'
 import { getRecommendation, isRecommendationAiEnabled } from '@/server/learning/recommendation'
 import { AppShell } from '@/components/app-shell/app-shell'
-import { DueReviewCallout } from '@/components/reviews/due-review-callout'
 import { DueReviewsCard } from '@/components/reviews/due-reviews-card'
 import { DueReviewsSkeleton } from '@/components/reviews/due-reviews-skeleton'
 import { ActivityHeatmapSlot } from '@/components/activity/activity-heatmap-slot'
@@ -73,6 +72,16 @@ export default async function DashboardPage() {
 					) : (
 						<>
 							<SummaryStrip summary={view.summary} />
+							{sections == null ? null : (
+								<div className={styles.pair}>
+									<div className={styles.yours}>
+										<ProgressCard items={sections.progress} />
+									</div>
+									<div className={styles.explore}>
+										<ExploreProblems items={sections.explore} />
+									</div>
+								</div>
+							)}
 							<div className={styles.reviews}>
 								<Suspense fallback={<DueReviewsSkeleton label={tr('loading')} />}>
 									<DueReviewsCard />
@@ -83,16 +92,6 @@ export default async function DashboardPage() {
 									<ActivityHeatmapSlot />
 								</Suspense>
 							</div>
-							{sections == null ? null : (
-								<>
-									<div className={styles.yours}>
-										<ProgressCard items={sections.progress} />
-									</div>
-									<div className={styles.explore}>
-										<ExploreProblems items={sections.explore} />
-									</div>
-								</>
-							)}
 						</>
 					)}
 				</div>
@@ -100,9 +99,6 @@ export default async function DashboardPage() {
 					<aside className={styles.side}>
 						<div className={`${styles.mergedCard} ${styles.float}`}>
 							<TopicPanel topics={view.topics} />
-							<Suspense fallback={null}>
-								<DueReviewCallout />
-							</Suspense>
 							{recommendation.authenticated && recommendation.available ? (
 								<PracticeNextWidget
 									recommendation={recommendation.recommendation}

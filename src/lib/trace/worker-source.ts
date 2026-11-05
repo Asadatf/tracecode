@@ -9,7 +9,9 @@ import { VALUE_LIMITS } from './contract'
 // `loading_runtime`), then run the untraced RUN_PROGRAM for a `run` request or
 // the traced TRACE_PROGRAM for a `trace` request, and post back the result. An
 // `ast` request (M7.1) runs AST_PROGRAM, which only parses the source. All
-// validation happens on the main thread against the contract. `pyodideIndexUrl`
+// `run` also posts a `test_result` as each test finishes (REPORT_TEST, called by
+// RUN_PROGRAM mid-loop), then the final `run_result`. All validation happens on the
+// main thread against the contract. `pyodideIndexUrl`
 // is absolute (see pyodideIndexUrl in trace-program.ts).
 export function buildWorkerSource(pyodideIndexUrl: string): string {
 	const limits = JSON.stringify(VALUE_LIMITS)
@@ -74,7 +76,18 @@ self.onmessage = async (event) => {
 				maxStringLength: VALUE_LIMITS.maxStringLength,
 				maxReprLength: VALUE_LIMITS.maxReprLength
 			}));
-			const output = py.runPython(RUN_PROGRAM);
+			// Called by the Python loop after each test, synchronously, so the message is on its
+			// way before the next test starts. Nothing is buffered or replayed afterwards.
+			py.globals.set('REPORT_TEST', (json) => {
+				const event = JSON.parse(json);
+				self.postMessage({ type: 'test_result', index: event.index, test: event.test });
+			});
+			let output;
+			try {
+				output = py.runPython(RUN_PROGRAM);
+			} finally {
+				py.globals.delete('REPORT_TEST');
+			}
 			self.postMessage({ type: 'run_result', result: JSON.parse(output) });
 		}
 	} catch (error) {

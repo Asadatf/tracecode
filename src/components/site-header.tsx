@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { NotificationBellSlot } from '@/components/notifications/notification-bell-slot'
+import { BrandMark } from '@/components/ui/brand-mark'
 
 // The thin top bar (specs/features/home-page.md AC1/AC3, progress-page.md).
 // No "Sign in" until there is a sign-in page (home-page.md, Decisions).
@@ -16,12 +17,7 @@ export async function SiteHeader() {
 					aria-label={t('home')}
 					className="text-text flex items-center gap-2 text-lg font-bold tracking-tight"
 				>
-					<span
-						aria-hidden="true"
-						className="bg-accent text-accent-ink grid size-7 place-items-center rounded-sm font-mono text-base font-bold"
-					>
-						⌁
-					</span>
+					<BrandMark tone="auto" width={40} />
 					tracecode
 				</Link>
 				<nav aria-label={t('nav')} className="flex flex-wrap gap-x-6 gap-y-1">

@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { BrandMark } from '@/components/ui/brand-mark'
 import { headerNav } from '@/lib/home/header-nav'
 import styles from '@/components/home/landing.module.css'
 
@@ -15,9 +16,7 @@ export async function PublicProfileHeader() {
 		<div className={styles.headerRail}>
 			<header className={styles.header}>
 				<Link href="/" aria-label={t('home')} className={styles.brand}>
-					<span aria-hidden="true" className={styles.brandMark}>
-						⌁
-					</span>
+					<BrandMark tone="dark" />
 					tracecode
 				</Link>
 				<nav aria-label={t('nav')} className={styles.nav}>

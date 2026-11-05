@@ -134,20 +134,6 @@
 	letter-spacing: -0.04em;
 	text-decoration: none;
 }
-.brandMark {
-	display: grid;
-	flex: none;
-	width: 32px;
-	height: 32px;
-	place-items: center;
-	border-radius: 9px;
-	background: var(--accent);
-	color: var(--accent-ink);
-	font-family: var(--font-mono);
-	font-size: 19px;
-	font-weight: 700;
-	letter-spacing: 0;
-}
 .sidebarNav {
 	display: flex;
 	flex: 1;

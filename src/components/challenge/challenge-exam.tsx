@@ -29,6 +29,7 @@ import {
 import practice from '@/components/trace/practice.module.css'
 import ws from '@/components/trace/workspace/workspace.module.css'
 import styles from './challenge.module.css'
+import { TraceLoader } from '@/components/ui/trace-loader'
 
 // The Daily Learning Challenge (specs/features/daily-challenge.md): the statement, a code
 // editor, a 30-minute TARGET timer, Run and ONE final Submit, and nothing that teaches or
@@ -335,6 +336,13 @@ export function ChallengeExam({
 								<span className={practice.py}>Py</span> {problem.entry}.py
 							</div>
 							<span className={styles.runStatus} role="status" aria-live="polite">
+								{(busy === 'running' || busy === 'submitting') && (
+									<TraceLoader
+										tone="dark"
+										width={32}
+										className="-my-1 mr-2 inline-block align-middle"
+									/>
+								)}
 								<b>{statusText}</b>
 							</span>
 							{open ? (
@@ -378,6 +386,10 @@ export function ChallengeExam({
 							{pending ? (
 								<div className={styles.dark} role="status" aria-live="polite">
 									<h3>{t('pendingHeading')}</h3>
+									{/* Only while a grade is actually being worked on: a saved
+									    submission that is waiting (grading off, or a grader
+									    error) is not in progress, so nothing moves for it. */}
+									{phase === 'grading' && <TraceLoader tone="dark" width={72} className="mb-2" />}
 									<p>{phase === 'grading' ? t('grading') : t('pending')}</p>
 								</div>
 							) : null}

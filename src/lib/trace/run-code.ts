@@ -3,6 +3,7 @@ import {
 	workerResponseSchema,
 	type RunRequest,
 	type RunResult,
+	type TestResult,
 	type TraceRequest,
 	type TraceResult,
 	type WorkerRequest,
@@ -44,6 +45,10 @@ export interface TraceEngineOptions {
 // vs "running" without the caller knowing about the worker protocol.
 export interface EngineCallOptions {
 	onStatus?: (phase: 'loading_runtime' | 'running') => void
+	// `runCode` only: called as each test finishes, in test order, while the run is still
+	// going (a real event from the worker, not the final result replayed). Never called
+	// after the call has settled, so a finished or timed-out run cannot report late.
+	onTestResult?: (index: number, test: TestResult) => void
 }
 
 function defaultCreateWorker(): WorkerLike {
@@ -66,6 +71,7 @@ interface ExecuteSpec<T> {
 	onTimeout: () => T
 	onEngineError: (message: string) => T
 	onStatus?: (phase: 'loading_runtime' | 'running') => void
+	onTestResult?: (index: number, test: TestResult) => void
 }
 
 export class TraceEngine {
@@ -96,7 +102,8 @@ export class TraceEngine {
 					error: { type: 'engine', message },
 					tests: []
 				}),
-				onStatus: options?.onStatus
+				onStatus: options?.onStatus,
+				onTestResult: options?.onTestResult
 			})
 		)
 	}
@@ -213,6 +220,10 @@ export class TraceEngine {
 				resolve(result)
 			}
 
+			// Tests are reported in order, one at a time; an event that is not the next one
+			// (a duplicate, a gap) is ignored rather than allowed to reorder or double count.
+			let nextTestIndex = 0
+
 			const armExecTimer = () => {
 				clearTimers()
 				execTimer = setTimeout(
@@ -225,6 +236,17 @@ export class TraceEngine {
 				const parsed = workerResponseSchema.safeParse(event.data)
 				if (!parsed.success) return
 				const response = parsed.data
+				if (response.type === 'test_result') {
+					if (response.index === nextTestIndex) {
+						nextTestIndex += 1
+						try {
+							spec.onTestResult?.(response.index, response.test)
+						} catch {
+							// A faulty progress listener must never cost the learner the run's result.
+						}
+					}
+					return
+				}
 				if (response.type === 'status') {
 					spec.onStatus?.(response.phase)
 					if (response.phase === 'running') armExecTimer()

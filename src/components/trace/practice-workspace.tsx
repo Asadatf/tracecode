@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
 import { analyzeCode, isEngineBooted, runCode, traceCode, warmUpEngine } from '@/lib/trace/run-code'
@@ -11,7 +11,7 @@ import { PROBLEMS } from '@/lib/trace/problems'
 import { isGuestPracticeSlug } from '@/lib/auth/access'
 import { optimizationPrompt, teach, type TeachingPrompt } from '@/lib/trace/teach'
 import { buildRunRequest } from '@/lib/trace/grading'
-import { splitResults } from '@/lib/trace/visible-tests'
+import { acceptTestResult, startLiveRun, type LiveRun } from '@/lib/trace/live-run'
 import {
 	isContextualHintEligible,
 	findSolvedAttempt,
@@ -38,6 +38,7 @@ import { toast } from '@/lib/toast'
 import type { LayoutState } from '@/lib/trace/workspace-layout'
 import { CodeEditor } from './code-editor'
 import { ReplayView } from './replay-view'
+import { LiveResultsBody, ResultsBody } from './results-panel'
 import { TeachingPanel } from './teaching-panel'
 import { TutorPanel } from './tutor/tutor-panel'
 import { useTutor } from './tutor/use-tutor'
@@ -53,6 +54,8 @@ import { WorkspaceTour } from './workspace/workspace-tour'
 import './semantic-tokens.css'
 import styles from './practice.module.css'
 import wsStyles from './workspace/workspace.module.css'
+import { TraceLoader } from '@/components/ui/trace-loader'
+import { BrandMark } from '@/components/ui/brand-mark'
 
 const RUN_TIMEOUT_MS = 5000
 const STAGES = ['01  Write', '02  Run', '03  Explore', '04  Improve']
@@ -177,7 +180,15 @@ function ProblemWorkspace({
 	const router = useRouter()
 	const meta = problemMeta(problem)
 	const [code, setCode] = useState(problem.starter)
-	const [submitted, setSubmitted] = useState<{ source: string; result: RunResult } | null>(null)
+	const [submitted, setSubmitted] = useState<{
+		source: string
+		result: RunResult
+		// Tests the worker reported before a run that ended without a result (timeout, engine
+		// error). Display only — a completed run's `result` is the only truth.
+		streamed?: readonly TestResult[]
+	} | null>(null)
+	// The run in progress, built from the worker's per-test events. Null when nothing is running.
+	const [liveRun, setLiveRun] = useState<LiveRun | null>(null)
 	const [attempts, setAttempts] = useState<LocalAttempt[]>([])
 	const [replayRecords, setReplayRecords] = useState<ReplayRecord[]>([])
 	const [replay, setReplay] = useState<ReplayState | null>(null)
@@ -308,6 +319,14 @@ function ProblemWorkspace({
 	const tokenRef = useRef(0)
 
 	const busy = status.busy
+
+	// Events from a run that has been left behind (the page unmounted mid-run) are ignored.
+	useEffect(
+		() => () => {
+			tokenRef.current += 1
+		},
+		[]
+	)
 
 	function labelFor(args: Json[]): string {
 		return clip(`${problem.entry}(${args.map((a) => JSON.stringify(a)).join(', ')})`)
@@ -472,13 +491,37 @@ function ProblemWorkspace({
 			return
 		}
 		const source = code
-		const result = await withEngine('Running tests…', (onStatus) =>
-			runCode(buildRunRequest(problem, source, { timeoutMs: RUN_TIMEOUT_MS }), { onStatus })
-		)
+		// The run's id is the engine token withEngine hands out; 0 means it never started.
+		const run: { id: number; live: LiveRun | null } = { id: 0, live: null }
+		const result = await withEngine('Running tests…', (onStatus) => {
+			run.id = tokenRef.current
+			run.live = startLiveRun(
+				run.id,
+				problem.tests.map((test) => test.id)
+			)
+			// Tests opens as the run begins. Nothing switches tabs again when it ends, so a tab the
+			// learner picks meanwhile is theirs to keep.
+			setResultsTab('tests')
+			layoutApiRef.current?.revealResults()
+			setLiveRun(run.live)
+			return runCode(buildRunRequest(problem, source, { timeoutMs: RUN_TIMEOUT_MS }), {
+				onStatus,
+				onTestResult: (index, test) => {
+					if (tokenRef.current !== run.id) return
+					run.live = acceptTestResult(run.live, run.id, index, test)
+					setLiveRun(run.live)
+				}
+			})
+		})
+		const streamed = run.live?.results ?? []
+		setLiveRun((current) => (current != null && current.runId === run.id ? null : current))
 		if (result == null) return
 		setReplay(null)
-		setResultsTab('tests')
-		setSubmitted({ source, result })
+		setSubmitted({
+			source,
+			result,
+			streamed: result.status === 'completed' ? undefined : streamed
+		})
 		attemptCounter.current += 1
 		const localId = `a${attemptCounter.current}`
 		const saving = persistAttempt(localId, source, result)
@@ -618,6 +661,11 @@ function ProblemWorkspace({
 		...tab,
 		dot: tab.id === 'replay' && showReplayNudge
 	}))
+	// What the results header says while tests are still executing: the events received so far.
+	const liveSummary =
+		liveRun == null
+			? null
+			: `${liveRun.results.filter((t) => t.passed).length} / ${liveRun.testIds.length} passed so far`
 	const resultSummary =
 		submitted == null
 			? 'Not run yet'
@@ -629,7 +677,7 @@ function ProblemWorkspace({
 		<div className={cn(styles.page, styles.workspacePage)} data-workspace>
 			<header className={styles.top}>
 				<Link className={styles.brand} href="/">
-					<span className={styles.mark}>⌁</span> tracecode<span className={styles.dot}>.</span>
+					<BrandMark tone="light" /> tracecode<span className={styles.dot}>.</span>
 				</Link>
 				<div className={styles.topData}>
 					<select
@@ -935,6 +983,13 @@ function ProblemWorkspace({
 							<span className={styles.py}>Py</span> {problem.entry}.py
 						</div>
 						<span className={wsStyles.status} role="status" aria-live="polite">
+							{busy && (
+								<TraceLoader
+									tone="dark"
+									width={32}
+									className="-my-1 mr-2 inline-block align-middle"
+								/>
+							)}
 							<b>{statusText}</b>
 						</span>
 						<button
@@ -997,7 +1052,7 @@ function ProblemWorkspace({
 							active={resultsTab}
 							onChange={setResultsTab}
 						/>
-						<span className={wsStyles.summary}>{resultSummary}</span>
+						<span className={wsStyles.summary}>{liveSummary ?? resultSummary}</span>
 					</>
 				}
 				resultsBody={
@@ -1015,13 +1070,16 @@ function ProblemWorkspace({
 									what your code actually did before changing it.
 								</div>
 							)}
-							{submitted == null ? (
+							{liveRun != null ? (
+								<LiveResultsBody run={liveRun} problem={problem} namedInput={namedInput} />
+							) : submitted == null ? (
 								<div className={styles.empty}>
 									Run your solution to see real Python test results.
 								</div>
 							) : (
 								<ResultsBody
 									result={submitted.result}
+									streamed={submitted.streamed}
 									problem={problem}
 									busy={busy}
 									namedInput={namedInput}
@@ -1057,152 +1115,6 @@ function ProblemWorkspace({
 				}
 			/>
 			<WorkspaceTour openSignal={tourSignal} />
-		</div>
-	)
-}
-
-function ResultsBody({
-	result,
-	problem,
-	busy,
-	namedInput,
-	onReplay
-}: {
-	result: RunResult
-	problem: ProblemDefinition
-	busy: boolean
-	namedInput: (args: Json[]) => string
-	onReplay: (test: { id: string; args: Json[] }) => void
-}) {
-	if (result.status === 'syntax_error') {
-		return (
-			<div className={styles.empty} style={{ color: '#a74332' }}>
-				Syntax error on line {result.syntaxError?.line}: {result.syntaxError?.message}
-			</div>
-		)
-	}
-	if (result.status === 'engine_error') {
-		return (
-			<div className={styles.empty} style={{ color: '#a74332' }}>
-				{result.error?.type === 'entry_not_found'
-					? `No function named ${problem.entry} was found.`
-					: (result.error?.message ?? 'Engine error.')}
-			</div>
-		)
-	}
-	if (result.status === 'timeout') {
-		return (
-			<div className={styles.empty} style={{ color: '#a74332' }}>
-				Execution timed out. Check for an infinite loop and run again.
-			</div>
-		)
-	}
-	const split = splitResults(problem, result.tests)
-	const resultLabel =
-		problem.grading?.mode === 'mutate-arg'
-			? `${problem.params[problem.grading.argIndex]?.name ?? 'argument'} after the call`
-			: 'Returned'
-	const row = (test: TestResult) => {
-		const args = problem.tests.find((t) => t.id === test.testId)?.args ?? []
-		return (
-			<ResultRow
-				key={test.testId}
-				test={test}
-				args={args}
-				busy={busy}
-				namedInput={namedInput}
-				resultLabel={resultLabel}
-				onReplay={() => onReplay({ id: test.testId, args })}
-			/>
-		)
-	}
-	return (
-		<div>
-			{split.visible.map(row)}
-			{split.checks.length > 0 && (
-				<ValidationChecks passed={split.passedChecks} failed={split.failedChecks} row={row} />
-			)}
-		</div>
-	)
-}
-
-// The validation checks beyond the small teaching set: one summary line, with every FAILING check
-// always listed, and the passing ones one press away (progressive disclosure, keyboard operable).
-function ValidationChecks({
-	passed,
-	failed,
-	row
-}: {
-	passed: TestResult[]
-	failed: TestResult[]
-	row: (test: TestResult) => React.ReactNode
-}) {
-	const [open, setOpen] = useState(false)
-	const total = passed.length + failed.length
-	return (
-		<div className={styles.checks}>
-			<button
-				type="button"
-				className={styles.checksToggle}
-				onClick={() => setOpen((value) => !value)}
-				aria-expanded={open}
-				aria-controls="validation-checks"
-			>
-				<span aria-hidden="true">{open ? '▾' : '▸'}</span>{' '}
-				<strong>
-					{failed.length === 0
-						? `${total} more validation checks passed`
-						: `${failed.length} of ${total} more validation checks failed`}
-				</strong>{' '}
-				<span className={styles.checksNote}>
-					Extra edge cases and larger inputs that also have to pass.
-				</span>
-			</button>
-			<div id="validation-checks">
-				{failed.map(row)}
-				{open && passed.map(row)}
-			</div>
-		</div>
-	)
-}
-
-function ResultRow({
-	test,
-	args,
-	busy,
-	namedInput,
-	resultLabel,
-	onReplay
-}: {
-	test: TestResult
-	args: Json[]
-	busy: boolean
-	namedInput: (args: Json[]) => string
-	resultLabel: string
-	onReplay: () => void
-}) {
-	return (
-		<div className={styles.test}>
-			<div>
-				<div className={styles.testTitle}>
-					{test.passed ? '✓' : '×'} {test.testId}
-				</div>
-				<div className={styles.testDetail}>
-					{namedInput(args)} → expected {formatValue(test.expected)}
-					<br />
-					{test.error != null
-						? `Error: ${test.error.type}: ${test.error.message}`
-						: `${resultLabel}: ${test.actual != null ? formatValue(test.actual) : '-'}`}
-				</div>
-			</div>
-			<div className={styles.testActions}>
-				<span className={cn(styles.status, test.passed ? styles.pass : styles.fail)}>
-					{test.passed ? 'Passed' : 'Failed'}
-				</span>
-				<button type="button" className={styles.btn} onClick={onReplay} disabled={busy}>
-					Replay
-				</button>
-			</div>
 		</div>
 	)
 }

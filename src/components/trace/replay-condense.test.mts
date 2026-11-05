@@ -8,6 +8,8 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\
 const read = (p: string) => strip(readFileSync(new URL(p, import.meta.url), 'utf8'))
 const replay = read('./replay-view.tsx')
 const workspace = read('./practice-workspace.tsx')
+// The results renderers live in their own file (shared by the finished and the live view).
+const results = read('./results-panel.tsx')
 const css = readFileSync(new URL('./practice.module.css', import.meta.url), 'utf8')
 
 describe('the replay folds repeats by default and everything stays reachable', () => {
@@ -72,20 +74,20 @@ describe('the replay folds repeats by default and everything stays reachable', (
 
 describe('the Practice results summarise extra validation checks without hiding failures', () => {
 	it('lists the teaching set, then one disclosure for the rest', () => {
-		assert.match(workspace, /splitResults\(problem, result\.tests\)/)
-		assert.match(workspace, /split\.visible\.map\(row\)/)
-		assert.match(workspace, /<ValidationChecks/)
+		assert.match(results, /splitResults\(problem, result\.tests\)/)
+		assert.match(results, /split\.visible\.map\(row\)/)
+		assert.match(results, /<ValidationChecks/)
 	})
 
 	it('the disclosure is a keyboard-operable button with aria-expanded', () => {
-		assert.match(workspace, /aria-expanded=\{open\}/)
-		assert.match(workspace, /aria-controls="validation-checks"/)
-		assert.match(workspace, /className=\{styles\.checksToggle\}/)
+		assert.match(results, /aria-expanded=\{open\}/)
+		assert.match(results, /aria-controls="validation-checks"/)
+		assert.match(results, /className=\{styles\.checksToggle\}/)
 	})
 
 	it('failing validation checks are always rendered; only PASSING ones wait for the press', () => {
-		assert.match(workspace, /\{failed\.map\(row\)\}/)
-		assert.match(workspace, /\{open && passed\.map\(row\)\}/)
+		assert.match(results, /\{failed\.map\(row\)\}/)
+		assert.match(results, /\{open && passed\.map\(row\)\}/)
 	})
 
 	it('pass/fail, the count and what is saved still come from every test', () => {

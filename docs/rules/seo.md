@@ -73,8 +73,9 @@ and `llmsPages()`.
   - `verification.google` and `verification.bing`: the tokens from Search
     Console and Bing Webmaster Tools (`geo.bing.verified`). Then submit
     `/sitemap.xml` in both.
-- **The look of `src/app/icon.svg`, `apple-icon.tsx` and `opengraph-image.tsx`**
-  is the brand's, not the template's placeholder.
+- **The look of the icons and `opengraph-image.tsx`** is the brand's, not the
+  template's placeholder. The icons are the files in `public/brand/`, wired up in
+  the root layout's `metadata.icons` and in `src/app/manifest.ts`.
 - **One origin.** In Vercel's Domains settings, the apex and `www` redirect
   to whichever one is canonical (`tech.origin.canonical`).
 

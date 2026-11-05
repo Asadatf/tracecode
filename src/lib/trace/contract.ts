@@ -192,6 +192,14 @@ export type WorkerRequest = z.infer<typeof workerRequestSchema>
 
 export const workerResponseSchema = z.discriminatedUnion('type', [
 	z.object({ type: z.literal('status'), phase: z.enum(['loading_runtime', 'running']) }),
+	// Additive (specs/02-trace-contract.md § `test_result` worker event): one per test,
+	// posted by the worker as that test finishes and before the final `run_result`.
+	// Progress only — `run_result` stays the one authoritative result.
+	z.object({
+		type: z.literal('test_result'),
+		index: z.number().int().nonnegative(),
+		test: testResultSchema
+	}),
 	z.object({ type: z.literal('run_result'), result: runResultSchema }),
 	z.object({ type: z.literal('trace_result'), result: traceResultSchema }),
 	z.object({ type: z.literal('ast_result'), result: astResultSchema })

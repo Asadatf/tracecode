@@ -39,10 +39,7 @@ export function LeaderboardOptIn({
 	})
 
 	return (
-		<section
-			aria-labelledby="leaderboard-optin-heading"
-			className="border-border bg-surface rounded-lg border p-6 sm:p-8"
-		>
+		<section aria-labelledby="leaderboard-optin-heading">
 			<h2 id="leaderboard-optin-heading" className="m-0 text-lg font-bold">
 				{t('heading')}
 			</h2>

@@ -378,8 +378,12 @@ test('ast: the source is parsed, never run (an infinite loop returns at once)', 
 test('ast: run, ast and trace share one worker and none disturbs the others', async ({ page }) => {
 	test.setTimeout(180_000)
 	await page.goto('/')
-	const results = await page.evaluate<
-		Array<{ type: string; result: unknown }>,
+	const { results, streamed } = await page.evaluate<
+		{
+			results: Array<{ type: string; result: unknown }>
+			// Per-test events, tagged with how many responses had arrived before them.
+			streamed: Array<{ index: number; test: unknown; responsesBefore: number }>
+		},
 		{ workerSource: string; messages: unknown[] }
 	>(
 		({ workerSource, messages }) =>
@@ -389,18 +393,33 @@ test('ast: run, ast and trace share one worker and none disturbs the others', as
 				)
 				const worker = new Worker(url)
 				const out: Array<{ type: string; result: unknown }> = []
+				const streamed: Array<{ index: number; test: unknown; responsesBefore: number }> = []
 				const timer = setTimeout(() => {
 					worker.terminate()
 					reject(new Error('worker did not respond in time'))
 				}, 170_000)
 				worker.onmessage = (event: MessageEvent) => {
-					const data = event.data as { type?: string; result?: unknown }
+					const data = event.data as {
+						type?: string
+						result?: unknown
+						index?: number
+						test?: unknown
+					}
 					if (data?.type === undefined || data.type === 'status') return
+					// Progress events are not responses: they do not advance the script.
+					if (data.type === 'test_result') {
+						streamed.push({
+							index: data.index ?? -1,
+							test: data.test,
+							responsesBefore: out.length
+						})
+						return
+					}
 					out.push({ type: data.type, result: data.result })
 					if (out.length === messages.length) {
 						clearTimeout(timer)
 						worker.terminate()
-						resolve(out)
+						resolve({ results: out, streamed })
 					} else worker.postMessage(messages[out.length])
 				}
 				worker.onerror = (event: ErrorEvent) => {
@@ -436,6 +455,17 @@ test('ast: run, ast and trace share one worker and none disturbs the others', as
 	const [run1, ast, trace, run2] = results
 	const first = runResultSchema.parse(run1?.result)
 	expect(first.tests.map((t) => t.passed)).toEqual([true, false, false])
+	// Each run streamed its three tests, in order, BEFORE its final result, and each streamed
+	// test is exactly the one in that result. ast and trace stream nothing.
+	expect(streamed.map((e) => [e.responsesBefore, e.index])).toEqual([
+		[0, 0],
+		[0, 1],
+		[0, 2],
+		[3, 0],
+		[3, 1],
+		[3, 2]
+	])
+	expect(streamed.slice(0, 3).map((e) => e.test)).toEqual(first.tests)
 	expect(astResultSchema.parse(ast?.result).status).toBe('ok')
 	assertBuggyTwoSumTrace(traceResultSchema.parse(trace?.result))
 	// Running after an ast gives exactly what running before it did.

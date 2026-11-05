@@ -6,6 +6,7 @@ import { SparkleIcon } from '@/components/ui/icons'
 import type { TutorMessage } from '@/lib/tutor/types'
 import { MarkdownView } from './markdown-view'
 import styles from './tutor.module.css'
+import { TraceLoader } from '@/components/ui/trace-loader'
 
 // The scrolling message area. Follows the latest text WHEN the learner is
 // near the bottom; if they scrolled up to re-read, they stay there. A
@@ -97,17 +98,13 @@ export function TutorConversation({
 					{sending && streamingReply == null && (
 						<li className={styles.sending} aria-live="polite">
 							Tracy is thinking
-							<span className={styles.typingDot} aria-hidden="true" />
-							<span className={styles.typingDot} aria-hidden="true" />
-							<span className={styles.typingDot} aria-hidden="true" />
+							<TraceLoader tone="dark" width={36} className="ml-2 inline-block align-middle" />
 						</li>
 					)}
 					{streaming && streamingReply != null && streamingReply.length === 0 && (
 						<li className={styles.sending} aria-live="polite">
 							Tracy is replying
-							<span className={styles.typingDot} aria-hidden="true" />
-							<span className={styles.typingDot} aria-hidden="true" />
-							<span className={styles.typingDot} aria-hidden="true" />
+							<TraceLoader tone="dark" width={36} className="ml-2 inline-block align-middle" />
 						</li>
 					)}
 				</ol>

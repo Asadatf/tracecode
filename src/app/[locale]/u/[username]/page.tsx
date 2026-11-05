@@ -6,6 +6,7 @@ import { redirect } from '@/i18n/routing'
 import { localizedPath, robotsFor } from '@/lib/seo/metadata'
 import { SITE, siteUrl } from '@/lib/seo/site'
 import { ProfileIdentity } from '@/components/profile/profile-identity'
+import { Surface } from '@/components/navigation/navigation-curtain'
 import { PublicProfileHeader } from '@/components/profile/public-profile-header'
 import { ActivitySkeleton, StatsSkeleton } from '@/components/profile/profile-skeleton'
 import { PublicProfileBody } from '@/components/profile/public-profile-body'
@@ -76,14 +77,16 @@ export default async function PublicProfilePage({
 	// was asked for, and the page does not echo the name back.
 	if (lookup.status === 'unavailable') {
 		return (
-			<div className={styles.page}>
-				<PublicProfileHeader />
-				<main className={styles.content}>
-					<p role="status" className={`${styles.panel} ${styles.note} ${styles.warn}`}>
-						{t('unavailablePage')}
-					</p>
-				</main>
-			</div>
+			<Surface tone="dark">
+				<div className={styles.page}>
+					<PublicProfileHeader />
+					<main className={styles.content}>
+						<p role="status" className={`${styles.panel} ${styles.note} ${styles.warn}`}>
+							{t('unavailablePage')}
+						</p>
+					</main>
+				</div>
+			</Surface>
 		)
 	}
 
@@ -95,22 +98,24 @@ export default async function PublicProfilePage({
 	const url = `${siteUrl()}${localizedPath(`/u/${owner.username}`, locale)}`
 
 	return (
-		<div className={styles.page}>
-			<PublicProfileHeader />
-			<main className={styles.content}>
-				<Suspense
-					fallback={
-						<>
-							<ProfileIdentity username={owner.username} url={url}>
-								<StatsSkeleton label={t('loading')} />
-							</ProfileIdentity>
-							<ActivitySkeleton />
-						</>
-					}
-				>
-					<PublicProfileBody owner={owner} url={url} />
-				</Suspense>
-			</main>
-		</div>
+		<Surface tone="dark">
+			<div className={styles.page}>
+				<PublicProfileHeader />
+				<main className={styles.content}>
+					<Suspense
+						fallback={
+							<>
+								<ProfileIdentity username={owner.username} url={url}>
+									<StatsSkeleton label={t('loading')} />
+								</ProfileIdentity>
+								<ActivitySkeleton />
+							</>
+						}
+					>
+						<PublicProfileBody owner={owner} url={url} />
+					</Suspense>
+				</main>
+			</div>
+		</Surface>
 	)
 }

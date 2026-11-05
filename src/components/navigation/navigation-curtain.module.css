@@ -1,0 +1,82 @@
+/* The navigation curtain (see navigation-curtain.tsx). It dims the page that is being
+   left, so it is translucent by design: the previous screen stays visible beneath it.
+   It never takes the pointer — navigation can be interrupted by clicking elsewhere —
+   and it is fixed, so it cannot shift the layout. */
+.curtain {
+	position: fixed;
+	inset: 0;
+	z-index: 110;
+	display: none;
+	place-items: center;
+	opacity: 0;
+	pointer-events: none;
+	/* A light blur keeps the label legible over whatever text is behind it while the page
+	   still reads through. */
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	/* Leaving: fade out at once. `display` is animated (allow-discrete) so the fade
+	   finishes before the element leaves the render tree, which also stops the loader
+	   animating while idle. */
+	transition:
+		opacity 200ms ease,
+		display 200ms allow-discrete;
+}
+
+.curtain[data-active='true'] {
+	display: grid;
+	opacity: 1;
+	/* Arriving: the fade starts after a beat. This is a visual debounce, not a delay to
+	   the navigation — the destination shows the moment it is ready — so a navigation
+	   that finishes inside it never shows the curtain at all, instead of flashing it. */
+	transition:
+		opacity 200ms ease 120ms,
+		display 200ms allow-discrete;
+}
+
+@starting-style {
+	.curtain[data-active='true'] {
+		opacity: 0;
+	}
+}
+
+/* Soft washes, not opaque ones — the previous page must read through them. Values are
+   the page's own backgrounds (--bg) at 72%, fixed because the surface is chosen by the
+   page and not by the OS colour scheme. */
+.light {
+	background: rgba(255, 255, 255, 0.72);
+	color: #4d5852;
+}
+
+.dark {
+	background: rgba(15, 20, 18, 0.72);
+	color: #a9b5ae;
+}
+
+.inner {
+	display: grid;
+	justify-items: center;
+	gap: 12px;
+}
+
+.forLight,
+.forDark {
+	display: none;
+}
+
+.light .forLight,
+.dark .forDark {
+	display: block;
+}
+
+.label {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.curtain,
+	.curtain[data-active='true'] {
+		transition: none;
+	}
+}

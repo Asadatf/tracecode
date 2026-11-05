@@ -445,6 +445,66 @@ if it ever gains an `exec`/`eval`/`compile` call. Verified against real Pyodide 
 `e2e/trace-engine.spec.ts`, including a `run → ast → trace → run` sequence on one
 worker that leaves the run and trace results unchanged.
 
+## Amendment: `test_result` worker event (Practice Run progress)
+
+> **Status: IMPLEMENTED in code — Track A + Track B sign-off was NOT separately
+> obtained.** Requested in the product brief for the Practice Run experience
+> (`specs/features/practice-run-progress.md`). Like the `ast` amendment above, it
+> is purely additive and leaves `RunRequest`, `RunResult` and every rule untouched,
+> but the worker protocol is part of this governed contract, so until the other
+> owner signs off it is open to change: any change is made in one PR with this
+> section, the Zod schemas and the tests together.
+
+**What changes:** one new worker → main message, `test_result`. **Nothing else.**
+The `run` request and the final `run_result` are exactly as before, and
+`run_result` remains the one authoritative result.
+
+**Why:** the Python run program already executes the tests one after another, but
+the worker only posted once, after the last one. A learner watching a slow run saw
+nothing until the end. Posting as each test finishes lets the page show real
+progress — no timers, no replaying a finished batch.
+
+```ts
+// worker → main, zero or more per `run`, in test order, before `run_result`
+{
+	type: 'test_result'
+	index: number // position in `request.tests`, 0-based
+	test: TestResult // the same object that appears in run_result.tests[index]
+}
+```
+
+**Guarantees for both tracks:**
+
+- **Real events.** `RUN_PROGRAM` calls an optional `REPORT_TEST` after each test,
+  while its loop is still running; the worker turns that into `postMessage`
+  synchronously, so the message is sent before the next test starts. A test in
+  `run_result.tests` is byte-identical to its `test_result`.
+- **Grading is untouched.** The comparison, `safe()`, the `deepcopy` of args and
+  the error capture are unchanged; reporting happens after a test's result is
+  recorded and a failure to report is swallowed. A run with no `REPORT_TEST`
+  (the node test harness) behaves exactly as before.
+- **Ordered and de-duplicated on the main thread.** The engine forwards an event
+  only if its `index` is the next expected one; a duplicate, a gap or a malformed
+  event is ignored. Handlers are cleared when the call settles, so nothing from a
+  finished, timed-out or recycled run can reach a later one.
+- **Not sent when no test runs:** a syntax error or a missing entry produces no
+  `test_result`, only `run_result`.
+- **Timeouts and the single-flight rule are unchanged.** The execution timer still
+  covers the whole run (events do not extend it). On a timeout the worker is
+  terminated and `run_result` is still `status: 'timeout'` with `tests: []`; the
+  caller may keep the events it already received for display, but they are not
+  a result and are never graded or persisted.
+- **Track B impact: optional.** A consumer may ignore `test_result` entirely and
+  only read `run_result`; Daily Challenge examples do.
+
+**Where it lives:** the variant is in `workerResponseSchema` in
+`src/lib/trace/contract.ts`; the Python in `RUN_PROGRAM`
+(`src/lib/trace/trace-program.ts`); the glue in `src/lib/trace/worker-source.ts`;
+the main-thread side is `EngineCallOptions.onTestResult` in
+`src/lib/trace/run-code.ts`. Tested against the real worker source and the real
+runner under Pyodide in `src/lib/trace/run-streaming.test.mts` (strict
+alternation of the learner's own code and the reports proves they are not batched).
+
 ## Judging in-place problems (no contract change)
 
 A problem whose function returns nothing and mutates its argument (Move Zeroes)

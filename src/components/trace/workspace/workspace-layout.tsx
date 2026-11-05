@@ -39,6 +39,10 @@ import styles from './workspace.module.css'
 // default size and un-maximizes; it changes nothing inside the panes.
 export interface WorkspaceLayoutApi {
 	reset: () => void
+	// Make the results visible when a Run starts: open the pane if it was collapsed, and on a
+	// phone (where code and results are separate views) bring the Results view up. Transient —
+	// the saved layout is not changed — and a pane the learner maximised is left as they set it.
+	revealResults: () => void
 }
 
 type Maximized = null | 'left' | 'code' | 'results' | 'tutor'
@@ -230,6 +234,10 @@ export function WorkspaceLayout({
 		reset() {
 			setMaximized(null)
 			commit(DEFAULT_LAYOUT)
+		},
+		revealResults() {
+			if (layout.resultsCollapsed) setLayout({ ...layout, resultsCollapsed: false })
+			setPhoneView('results')
 		}
 	}))
 

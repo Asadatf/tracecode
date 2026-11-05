@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { Surface } from '@/components/navigation/navigation-curtain'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { traceResultSchema } from '@/lib/trace/contract'
 import { PROBLEMS, twoSum } from '@/lib/trace/problems'
@@ -31,40 +32,42 @@ export default async function HomePage() {
 	const table = buildProblemTable(Object.values(PROBLEMS), progress)
 
 	return (
-		<div className={styles.page}>
-			<ScrollReveal />
-			<LandingCursor />
-			<LandingHeader />
-			<main>
-				<div className={styles.heroShell} data-cursor-dark>
-					<section className={styles.hero} aria-labelledby="landing-title">
-						<div className={styles.heroCopy}>
-							<p className={styles.heroEyebrow}>{t('eyebrow')}</p>
-							<h1 id="landing-title" className={styles.heroTitle}>
-								{t('title')}
-							</h1>
-							<p className={styles.heroDescription}>{t('description')}</p>
-							<div className={styles.heroActions}>
-								<Link href={`/practice/${twoSum.slug}`} className={styles.primaryCta}>
-									{t('cta')}
-								</Link>
-								<a href="#narrative-title" className={styles.secondaryCta}>
-									{t('exploreDemo')}
-								</a>
-								<a href="#problems" className={styles.textCta}>
-									{t('seeAll')} <span aria-hidden="true">↓</span>
-								</a>
+		<Surface tone="dark">
+			<div className={styles.page}>
+				<ScrollReveal />
+				<LandingCursor />
+				<LandingHeader />
+				<main>
+					<div className={styles.heroShell} data-cursor-dark>
+						<section className={styles.hero} aria-labelledby="landing-title">
+							<div className={styles.heroCopy}>
+								<p className={styles.heroEyebrow}>{t('eyebrow')}</p>
+								<h1 id="landing-title" className={styles.heroTitle}>
+									{t('title')}
+								</h1>
+								<p className={styles.heroDescription}>{t('description')}</p>
+								<div className={styles.heroActions}>
+									<Link href={`/practice/${twoSum.slug}`} className={styles.primaryCta}>
+										{t('cta')}
+									</Link>
+									<a href="#narrative-title" className={styles.secondaryCta}>
+										{t('exploreDemo')}
+									</a>
+									<a href="#problems" className={styles.textCta}>
+										{t('seeAll')} <span aria-hidden="true">↓</span>
+									</a>
+								</div>
+								<p className={styles.trustLine}>{t('trust')}</p>
 							</div>
-							<p className={styles.trustLine}>{t('trust')}</p>
-						</div>
-						<ExecutionTour demo={demo} />
-					</section>
-				</div>
-				<TraceNarrative demo={demo} />
-				<LearningLoop />
-				<ProblemTable table={table} authenticated={progress.authenticated} />
-				<ClosingCta />
-			</main>
-		</div>
+							<ExecutionTour demo={demo} />
+						</section>
+					</div>
+					<TraceNarrative demo={demo} />
+					<LearningLoop />
+					<ProblemTable table={table} authenticated={progress.authenticated} />
+					<ClosingCta />
+				</main>
+			</div>
+		</Surface>
 	)
 }

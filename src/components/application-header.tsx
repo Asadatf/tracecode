@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { cn } from '@/lib/cn'
+import { BrandMark } from '@/components/ui/brand-mark'
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
 import { AccountMenu } from '@/components/account-menu'
@@ -21,9 +22,7 @@ export async function ApplicationHeader({
 		<div className={cn(styles.headerRail, variant === 'home' && styles.homeHeader)}>
 			<header className={styles.header}>
 				<Link href="/" aria-label={t('home')} className={styles.brand}>
-					<span aria-hidden="true" className={styles.brandMark}>
-						⌁
-					</span>
+					<BrandMark tone={variant === 'home' ? 'dark' : 'light'} />
 					tracecode
 				</Link>
 				<nav aria-label={t('nav')} className={styles.nav}>

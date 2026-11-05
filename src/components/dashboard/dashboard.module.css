@@ -19,19 +19,38 @@
 	/* On a phone the widget comes after the two cards. */
 	order: 5;
 }
+/* Top to bottom: the summary, Progress beside Explore, then reviews, then activity. */
+.pair {
+	order: 2;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 18px;
+	align-items: start;
+	min-width: 0;
+}
+.yours,
+.explore {
+	min-width: 0;
+}
 .reviews {
-	order: 1;
+	order: 3;
 	min-width: 0;
 }
 .activity {
-	order: 2;
+	order: 4;
 	min-width: 0;
 }
-.yours {
-	order: 3;
+/* Beside each other whenever the room is there: on a tablet, or on a desktop where the
+   column (not the window — the sidebar and the widget take their share) is wide enough. */
+@media (min-width: 720px) and (max-width: 1023px) {
+	.pair {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
-.explore {
-	order: 4;
+@container (min-width: 700px) {
+	.pair {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 .eyebrow {
@@ -545,6 +564,7 @@ a.rowTitle:hover {
 	.centre {
 		display: flex;
 		flex-direction: column;
+		container-type: inline-size;
 		gap: 18px;
 		min-width: 0;
 		padding: 4px 0 28px 4px;

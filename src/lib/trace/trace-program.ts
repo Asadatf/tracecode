@@ -197,6 +197,18 @@ def safe(v):
         return out
     return {'kind': 'other', 'repr': repr(v)[:MAX_REPR]}
 
+# Progress only: tells the page a test has finished, while the loop is still running.
+# The worker provides REPORT_TEST; without it (the node test harness) this is a no-op,
+# and a failure to report never changes a result — RunResult below is authoritative.
+def _tc_report(index, entry):
+    callback = globals().get('REPORT_TEST')
+    if callback is None:
+        return
+    try:
+        callback(json.dumps({'index': index, 'test': entry}))
+    except Exception:
+        pass
+
 result = None
 try:
     compiled = compile(SOURCE, '<learner>', 'exec')
@@ -216,11 +228,11 @@ if result is None:
 
 if result is None:
     tests_out = []
-    for test in TESTS:
+    for index, test in enumerate(TESTS):
         expected = test['expected']
         try:
             returned = fn(*copy.deepcopy(test['args']))
-            tests_out.append({'testId': test['id'], 'passed': bool(returned == expected), 'actual': safe(returned), 'expected': safe(expected)})
+            entry = {'testId': test['id'], 'passed': bool(returned == expected), 'actual': safe(returned), 'expected': safe(expected)}
         except BaseException as e:
             tb = e.__traceback__
             line = 1
@@ -228,7 +240,9 @@ if result is None:
                 if tb.tb_frame.f_code.co_filename == '<learner>':
                     line = tb.tb_lineno
                 tb = tb.tb_next
-            tests_out.append({'testId': test['id'], 'passed': False, 'expected': safe(expected), 'error': {'type': type(e).__name__, 'message': str(e), 'line': line}})
+            entry = {'testId': test['id'], 'passed': False, 'expected': safe(expected), 'error': {'type': type(e).__name__, 'message': str(e), 'line': line}}
+        tests_out.append(entry)
+        _tc_report(index, entry)
     result = {'status': 'completed', 'tests': tests_out}
 
 json.dumps(result)

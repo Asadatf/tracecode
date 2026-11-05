@@ -23,7 +23,7 @@ export function organizationJsonLd(): JsonLdData {
 		'@type': 'Organization',
 		name: SITE.name,
 		url: siteUrl(),
-		logo: `${siteUrl()}/icon.svg`,
+		logo: `${siteUrl()}/brand/tracecode-icon-512.png`,
 		...(SITE.contactEmail == null ? {} : { email: SITE.contactEmail }),
 		...(SITE.sameAs.length === 0 ? {} : { sameAs: SITE.sameAs })
 	}

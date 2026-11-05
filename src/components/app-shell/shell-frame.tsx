@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Link } from '@/i18n/routing'
 import { cn } from '@/lib/cn'
 import { CloseIcon, MenuIcon, SidebarIcon } from '@/components/ui/icons'
+import { BrandMark } from '@/components/ui/brand-mark'
 import { SidebarNav, type NavGroup, type NavKey } from './sidebar-nav'
 import { sidebarCookie } from './sidebar-state'
 import styles from './app-shell.module.css'
@@ -55,9 +56,7 @@ export function ShellFrame({
 
 	const brand = (
 		<Link href="/" aria-label={labels.home} className={styles.brand}>
-			<span aria-hidden="true" className={styles.brandMark}>
-				⌁
-			</span>
+			<BrandMark tone="dark" />
 			<span className={styles.brandName}>tracecode</span>
 		</Link>
 	)

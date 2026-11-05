@@ -5,6 +5,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { QueryProvider } from '@/components/query-provider'
+import { NavigationCurtainProvider } from '@/components/navigation/navigation-curtain'
 import { AnalyticsProvider } from '@/lib/analytics/analytics-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { SiteFooter } from '@/components/site-footer'
@@ -24,6 +25,15 @@ export const metadata: Metadata = {
 	metadataBase: new URL(siteUrl()),
 	title: SITE.name,
 	applicationName: SITE.name,
+	// The brand's own files in public/brand. The SVG is the favicon; the PNG is for
+	// browsers that do not take an SVG one; iOS needs a PNG for the home-screen icon.
+	icons: {
+		icon: [
+			{ url: '/brand/tracecode-icon.svg', type: 'image/svg+xml' },
+			{ url: '/brand/tracecode-icon-192.png', type: 'image/png', sizes: '192x192' }
+		],
+		apple: [{ url: '/brand/tracecode-icon-180.png', type: 'image/png', sizes: '180x180' }]
+	},
 	verification: {
 		google: SITE.verification.google ?? undefined,
 		other: SITE.verification.bing == null ? {} : { 'msvalidate.01': SITE.verification.bing }
@@ -47,8 +57,10 @@ export default async function LocaleLayout({
 			<body>
 				<AnalyticsProvider />
 				<NextIntlClientProvider>
-					<QueryProvider>{children}</QueryProvider>
-					<SiteFooter />
+					<NavigationCurtainProvider>
+						<QueryProvider>{children}</QueryProvider>
+						<SiteFooter />
+					</NavigationCurtainProvider>
 				</NextIntlClientProvider>
 				<Toaster />
 				<JsonLd data={organizationJsonLd()} />

@@ -502,6 +502,9 @@
 			"step": "Step"
 		}
 	},
+	"Navigation": {
+		"loading": "Loading…"
+	},
 	"AppShell": {
 		"home": "TraceCode home",
 		"navLabel": "Main",

@@ -75,10 +75,7 @@ export function PublicProfileForm({ initial }: { initial: ProfileSettings }) {
 	const visibilityOnlyError = error === 'username_required'
 
 	return (
-		<section
-			aria-labelledby="public-profile-heading"
-			className="border-border bg-surface rounded-lg border p-6 sm:p-8"
-		>
+		<section aria-labelledby="public-profile-heading">
 			<h2 id="public-profile-heading" className="m-0 text-lg font-bold">
 				{t('heading')}
 			</h2>

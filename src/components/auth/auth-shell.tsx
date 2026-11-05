@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { BrandMark } from '@/components/ui/brand-mark'
 import { AuthVisual } from './auth-visual'
 import styles from './auth.module.css'
 
@@ -24,9 +25,7 @@ export async function AuthShell({
 		<main key={variant} className={styles.shell}>
 			<section className={styles.formPanel}>
 				<Link href="/" aria-label={t('home')} className={styles.brand}>
-					<span aria-hidden="true" className={styles.brandMark}>
-						⌁
-					</span>
+					<BrandMark tone="light" />
 					tracecode
 				</Link>
 				<div className={styles.formWrap}>
