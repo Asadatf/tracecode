@@ -13,8 +13,12 @@ import { effectivePermissions, ROLE_RANK } from './roles'
 // layout passes it straight to <AuthzProvider>); `has` answers a check without
 // re-deriving. Resolved once per request via cache(), so a layout, a page and
 // an action in the same request share one session read + one DB read.
+// Only the columns the admin console uses. Reading the whole row would make the admin
+// console depend on every column of `users`, including ones a not-yet-applied migration adds.
+export type AdminContextUser = Pick<User, 'id' | 'email' | 'createdAt' | 'updatedAt'>
+
 export type AdminContext = {
-	user: User
+	user: AdminContextUser
 	member: AdminMember
 	permissions: Permission[]
 	has: (permission: Permission) => boolean
@@ -38,7 +42,7 @@ export const getAdminContext = cache(async (): Promise<AdminContext | null> => {
 
 	const record = await db.adminMember.findUnique({
 		where: { userId },
-		include: { user: true }
+		include: { user: { select: { id: true, email: true, createdAt: true, updatedAt: true } } }
 	})
 	if (!record || !record.isActive) return null
 
