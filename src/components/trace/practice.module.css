@@ -1086,3 +1086,52 @@
 		padding-block: 10px;
 	}
 }
+
+/* Folded repeats in the replay's execution history (progressive disclosure, no new panel). */
+.stepFold {
+	border-style: dashed;
+}
+.foldNote {
+	flex-basis: 100%;
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+}
+.foldLink {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--green);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.foldLink:focus-visible {
+	outline: 2px solid var(--green);
+	outline-offset: 2px;
+}
+
+/* Validation checks beyond the visible teaching set (results pane). */
+.checks {
+	margin-top: 4px;
+}
+.checksToggle {
+	display: block;
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px dashed var(--line);
+	border-radius: 10px;
+	background: transparent;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+.checksToggle:focus-visible {
+	outline: 2px solid var(--green);
+	outline-offset: 2px;
+}
+.checksNote {
+	color: var(--muted);
+	font-size: 12px;
+}

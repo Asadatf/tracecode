@@ -4,6 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { deriveView } from '@/lib/trace/derive'
 import { explainTrace } from '@/lib/trace/explain'
+import {
+	condenseTrace,
+	describeRun,
+	runAhead,
+	stepFrom,
+	type RepeatRun
+} from '@/lib/trace/condense'
 import { formatValue, listItems } from '@/lib/trace/value'
 import type { ProblemMeta, Trace } from '@/lib/trace/contract'
 import { ArrayView, type ArrayPointer } from './array-view'
@@ -52,6 +59,21 @@ export function ReplayView({
 	const step = controlledStep ?? ownStep
 	const setStep = onStepChange ?? setOwnStep
 	const [showSteps, setShowSteps] = useState(false)
+	// Repeated passes of a loop or recursion are folded by default (src/lib/trace/condense.ts):
+	// a few passes, then one summary. `full` shows every recorded step everywhere; `openRuns`
+	// opens single folds. Nothing is removed from the trace, only collapsed in the display.
+	const runs = useMemo(() => condenseTrace(trace), [trace])
+	const [full, setFull] = useState(false)
+	const [openRuns, setOpenRuns] = useState<ReadonlySet<number>>(() => new Set())
+	const isOpen = (run: RepeatRun) => full || openRuns.has(run.id)
+	function toggleRun(run: RepeatRun) {
+		setOpenRuns((current) => {
+			const next = new Set(current)
+			if (next.has(run.id)) next.delete(run.id)
+			else next.add(run.id)
+			return next
+		})
+	}
 	const codeRef = useRef<HTMLDivElement>(null)
 
 	// Keep the active line visible by scrolling ONLY the code container (never the
@@ -96,6 +118,13 @@ export function ReplayView({
 	function go(next: number) {
 		setStep(Math.max(0, Math.min(total - 1, next)))
 	}
+	// Previous / Next skip the steps of a folded run; a fold you are inside stays readable.
+	function move(direction: 1 | -1) {
+		setStep(stepFrom(runs, index, direction, total, isOpen))
+	}
+	const skippingNext = runAhead(runs, index, 1, isOpen)
+	const skippingPrevious = runAhead(runs, index, -1, isOpen)
+	const skipping = skippingNext ?? skippingPrevious
 
 	const compactHead = (
 		<div className={styles.replayHead}>
@@ -106,6 +135,17 @@ export function ReplayView({
 				<span className={styles.pill}>
 					Step {index + 1} of {total}
 				</span>
+				{runs.length > 0 && (
+					<button
+						type="button"
+						className={styles.btn}
+						onClick={() => setFull((value) => !value)}
+						aria-pressed={full}
+						title="Fold repeated passes, or show every recorded step"
+					>
+						{full ? 'Fold repeats' : 'Show full trace'}
+					</button>
+				)}
 				<button
 					type="button"
 					className={styles.btn}
@@ -192,52 +232,125 @@ export function ReplayView({
 		</div>
 	)
 
+	// The execution history. Folded runs are ONE row each (a button that opens them); every other
+	// step is its own row, so the default list is short and the full trace is one click away.
+	const rows: React.ReactNode[] = []
+	for (let i = 0; i < history.length; i += 1) {
+		const run = runs.find((r) => r.hiddenFrom === i)
+		if (run != null && !isOpen(run)) {
+			const words = describeRun(run)
+			rows.push(
+				<li key={`run-${run.id}`}>
+					<button
+						type="button"
+						className={cn(styles.stepSummary, styles.stepFold)}
+						onClick={() => toggleRun(run)}
+						aria-expanded={false}
+						aria-controls={`fold-${run.id}`}
+					>
+						<span className={styles.summaryIndex}>⋯</span>
+						<span className={styles.summaryContent}>
+							<strong>{words.summary}</strong>
+							<span>
+								{words.detail} Steps {run.hiddenFrom + 1}–{run.hiddenTo + 1} ({run.hiddenSteps}{' '}
+								steps) are folded. Press to show them.
+							</span>
+						</span>
+					</button>
+				</li>
+			)
+			i = run.hiddenTo
+			continue
+		}
+		const open = runs.find((r) => i >= r.hiddenFrom && i <= r.hiddenTo && isOpen(r))
+		if (open != null && i === open.hiddenFrom && !full) {
+			rows.push(
+				<li key={`open-${open.id}`}>
+					<button
+						type="button"
+						className={cn(styles.stepSummary, styles.stepFold)}
+						onClick={() => toggleRun(open)}
+						aria-expanded={true}
+						aria-controls={`fold-${open.id}`}
+					>
+						<span className={styles.summaryIndex}>⋯</span>
+						<span className={styles.summaryContent}>
+							<strong>Showing every step of the repeated section</strong>
+							<span>{open.hiddenSteps} steps. Press to fold them again.</span>
+						</span>
+					</button>
+				</li>
+			)
+		}
+		const entry = history[i]
+		if (entry == null) continue
+		rows.push(
+			<li
+				key={entry.index}
+				id={open != null && i === open.hiddenFrom ? `fold-${open.id}` : undefined}
+			>
+				<button
+					type="button"
+					className={cn(styles.stepSummary, entry.index === index && styles.stepSelected)}
+					onClick={() => go(entry.index)}
+					aria-current={entry.index === index ? 'step' : undefined}
+				>
+					<span className={styles.summaryIndex}>{entry.index + 1}</span>
+					<span className={styles.summaryContent}>
+						<strong>
+							Line {entry.line}
+							{entry.event === 'return'
+								? ' · Return'
+								: entry.event === 'exception'
+									? ' · Exception'
+									: ''}
+						</strong>
+						<span>{entry.body}</span>
+					</span>
+				</button>
+			</li>
+		)
+	}
+
 	const stepsBlock = (
 		<div className={styles.stepsInline}>
 			<div className={styles.stepsInlineHead}>
 				<div>
 					<strong>Execution history</strong>
-					<p>Every captured Python event. Select any step to jump there.</p>
+					<p>
+						{runs.length > 0 && !full
+							? 'Repeated passes are folded. Every captured Python event is still here: open a fold or show the full trace.'
+							: 'Every captured Python event. Select any step to jump there.'}
+					</p>
 				</div>
 				<span className={styles.description}>
 					{total} steps · {kind === 'custom' ? 'Custom input' : 'Test replay'}
 				</span>
 			</div>
-			<ol className={styles.stepsList}>
-				{history.map((entry) => (
-					<li key={entry.index}>
-						<button
-							type="button"
-							className={cn(styles.stepSummary, entry.index === index && styles.stepSelected)}
-							onClick={() => go(entry.index)}
-						>
-							<span className={styles.summaryIndex}>{entry.index + 1}</span>
-							<span className={styles.summaryContent}>
-								<strong>
-									Line {entry.line}
-									{entry.event === 'return'
-										? ' · Return'
-										: entry.event === 'exception'
-											? ' · Exception'
-											: ''}
-								</strong>
-								<span>{entry.body}</span>
-							</span>
-						</button>
-					</li>
-				))}
-			</ol>
+			<ol className={styles.stepsList}>{rows}</ol>
 		</div>
 	)
+
+	// A short, polite note when Next / Previous would jump over a fold, with the way to see it.
+	const skipNote =
+		skipping != null && !full ? (
+			<p className={styles.foldNote} role="status">
+				{describeRun(skipping).summary} ({skipping.hiddenSteps} steps are skipped).{' '}
+				<button type="button" className={styles.foldLink} onClick={() => toggleRun(skipping)}>
+					Show every step
+				</button>
+			</p>
+		) : null
 
 	const bottomBlock = (
 		<div className={styles.replayBottom}>
 			<span className={styles.description}>{context}</span>
+			{skipNote}
 			<div className={styles.replayNav}>
 				<button
 					type="button"
 					className={styles.btn}
-					onClick={() => go(index - 1)}
+					onClick={() => move(-1)}
 					disabled={index === 0}
 				>
 					← Previous
@@ -245,7 +358,7 @@ export function ReplayView({
 				<button
 					type="button"
 					className={cn(styles.btn, styles.btnDark)}
-					onClick={() => go(index + 1)}
+					onClick={() => move(1)}
 					disabled={index === total - 1}
 				>
 					Next step →
@@ -294,22 +407,7 @@ export function ReplayView({
 						Watch your code, one step at a time
 					</h2>
 				</div>
-				<div className={styles.replayHeadingActions}>
-					{trace.truncated && (
-						<span className={styles.truncNote}>Truncated · first {total} steps</span>
-					)}
-					<span className={styles.pill}>
-						Step {index + 1} of {total}
-					</span>
-					<button
-						type="button"
-						className={styles.btn}
-						onClick={() => setShowSteps((s) => !s)}
-						aria-expanded={showSteps}
-					>
-						All steps {showSteps ? '↑' : '↓'}
-					</button>
-				</div>
+				{compactHead}
 			</div>
 
 			<div className={styles.replayGrid}>
@@ -317,65 +415,9 @@ export function ReplayView({
 				{stateBlock}
 			</div>
 
-			{showSteps && (
-				<div className={styles.stepsInline}>
-					<div className={styles.stepsInlineHead}>
-						<div>
-							<strong>Execution history</strong>
-							<p>Every captured Python event. Select any step to jump there.</p>
-						</div>
-						<span className={styles.description}>
-							{total} steps · {kind === 'custom' ? 'Custom input' : 'Test replay'}
-						</span>
-					</div>
-					<ol className={styles.stepsList}>
-						{history.map((entry) => (
-							<li key={entry.index}>
-								<button
-									type="button"
-									className={cn(styles.stepSummary, entry.index === index && styles.stepSelected)}
-									onClick={() => go(entry.index)}
-								>
-									<span className={styles.summaryIndex}>{entry.index + 1}</span>
-									<span className={styles.summaryContent}>
-										<strong>
-											Line {entry.line}
-											{entry.event === 'return'
-												? ' · Return'
-												: entry.event === 'exception'
-													? ' · Exception'
-													: ''}
-										</strong>
-										<span>{entry.body}</span>
-									</span>
-								</button>
-							</li>
-						))}
-					</ol>
-				</div>
-			)}
+			{showSteps && stepsBlock}
 
-			<div className={styles.replayBottom}>
-				<span className={styles.description}>{context}</span>
-				<div className={styles.replayNav}>
-					<button
-						type="button"
-						className={styles.btn}
-						onClick={() => go(index - 1)}
-						disabled={index === 0}
-					>
-						← Previous
-					</button>
-					<button
-						type="button"
-						className={cn(styles.btn, styles.btnDark)}
-						onClick={() => go(index + 1)}
-						disabled={index === total - 1}
-					>
-						Next step →
-					</button>
-				</div>
-			</div>
+			{bottomBlock}
 		</div>
 	)
 }

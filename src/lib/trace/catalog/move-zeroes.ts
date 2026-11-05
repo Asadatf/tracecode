@@ -43,6 +43,7 @@ export const moveZeroes = {
 	// Judged on `nums` after the call, not on the return value (grading.ts), so
 	// `expected` is the final list.
 	grading: { mode: 'mutate-arg', argIndex: 0 },
+	visibleTestIds: ['t1', 't2', 't4', 't5', 't7', 't10'],
 	tests: [
 		{ id: 't1', args: [[0, 1, 0, 3, 12]], expected: [1, 3, 12, 0, 0] },
 		{ id: 't2', args: [[0]], expected: [0] },
