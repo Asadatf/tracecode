@@ -1,6 +1,11 @@
 import { PROBLEMS } from '@/lib/trace/problems'
 import { parseReminderPlan, practicePath, reminderCopy } from '@/lib/learning/reminder-plan'
 import {
+	CHALLENGE_RESULT_KIND,
+	challengeResultCopy,
+	parseChallengeResult
+} from '@/lib/challenge/notification'
+import {
 	REVIEW_REMINDER_KIND,
 	parseReviewReminder,
 	reviewReminderCopy
@@ -94,6 +99,21 @@ export function toNotificationView(row: {
 	createdAt: Date
 }): NotificationView {
 	const base = { id: row.id, createdAt: row.createdAt.toISOString(), read: row.readAt != null }
+	if (row.kind === CHALLENGE_RESULT_KIND) {
+		const result = parseChallengeResult(row.payload)
+		if (result == null) {
+			return {
+				...base,
+				title: 'Your daily challenge result is ready',
+				body: 'Open the daily challenge to see how it went.',
+				concept: null,
+				href: '/problems',
+				cta: 'Open problems'
+			}
+		}
+		const titles = Object.fromEntries(Object.values(PROBLEMS).map((p) => [p.slug, p.title]))
+		return { ...base, ...challengeResultCopy(result, titles) }
+	}
 	if (row.kind === REVIEW_REMINDER_KIND) {
 		const reminder = parseReviewReminder(row.payload)
 		if (reminder == null) {

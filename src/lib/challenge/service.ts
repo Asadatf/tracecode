@@ -1,20 +1,12 @@
-import {
-	MAX_SOURCE_BYTES,
-	acceptsSubmission,
-	deadlineFor,
-	elapsedFor,
-	isScored,
-	phaseOf,
-	type Phase
-} from './exam-rules'
-import { dailyScore } from './scoring'
+import { MAX_SOURCE_BYTES, deadlineFor, elapsedFor, phaseOf, type Phase } from './exam-rules'
 import { weekStartOf } from './week'
 
-// The competitive-attempt lifecycle as orchestration over an injected store, so the
-// rules that matter — one attempt per learner per challenge, a server-owned deadline,
-// one final submission, no late score, no double grading, no score without a verified
-// grader result — are tested against a fake that behaves like the database. The Prisma
-// wiring is src/server/challenge/store.ts.
+// The Daily Learning Challenge's attempt lifecycle as orchestration over an injected
+// store, so the rules that matter — one attempt per learner per challenge, a server-owned
+// start, exactly ONE final submission (valid at any time: the 30 minutes is a soft target,
+// never a cutoff), no double grading, no result without a verified grader — are tested
+// against a fake that behaves like the database. No score or ranking exists; the result
+// is test counts. The Prisma wiring is src/server/challenge/store.ts.
 //
 // Every mutation is a single CONDITIONAL write on the state the caller expects, never
 // a read-then-write, so duplicate and concurrent requests cannot both succeed.
@@ -30,7 +22,6 @@ export interface AttemptRow {
 	elapsedMs: number | null
 	testsPassed: number | null
 	testsTotal: number | null
-	score: number | null
 	gradeError: string | null
 	gradingClaimedAt: Date | null
 }
@@ -38,7 +29,6 @@ export interface AttemptRow {
 export interface GradeRecord {
 	testsPassed: number
 	testsTotal: number
-	score: number
 	graderVersion: string
 }
 
@@ -52,7 +42,7 @@ export interface ChallengeAttemptStore {
 		deadlineAt: Date
 		weekStart: string
 	}): Promise<boolean>
-	// started -> submitted, only while the deadline plus grace has not passed.
+	// started -> submitted, once, at any time (there is no deadline).
 	submit(input: {
 		userId: string
 		date: string
@@ -60,41 +50,38 @@ export interface ChallengeAttemptStore {
 		submittedAt: Date
 		elapsedMs: number
 	}): Promise<boolean>
-	// started -> expired, only once the deadline plus grace HAS passed.
-	expire(userId: string, date: string, now: Date): Promise<boolean>
 	// submitted | grader_error | (grading, claimed before `staleBefore`) -> grading.
 	claimGrading(userId: string, date: string, now: Date, staleBefore: Date): Promise<boolean>
-	// grading -> graded; the only write that sets a score. When the submission passed
-	// every test it also records the verified solve (Attempt + progress) in the same
-	// transaction, exactly once.
+	// grading -> graded with the verified counts. When the submission passed every test it
+	// also records the verified solve (Attempt, progress) in the same transaction, dated at
+	// the SUBMISSION, and starts the spaced-review cycle, exactly once.
 	completeGrading(userId: string, date: string, record: GradeRecord, at: Date): Promise<boolean>
 	// grading -> grader_error with a short code.
 	failGrading(userId: string, date: string, code: string): Promise<boolean>
 	readSource(userId: string, date: string): Promise<string | null>
 }
 
-// What the browser may see: state, times and, only once graded, the verified result.
-// Never the source, never per-test detail.
+// What the browser may see: state, times and, only once graded, the verified counts.
+// Never the source, never per-test detail, never a score.
 export interface AttemptView {
 	phase: Phase
 	startedAt: string
-	deadlineAt: string
+	// When the one final submission was made, or null while the challenge is open.
+	submittedAt: string | null
 	elapsedMs: number | null
 	testsPassed: number | null
 	testsTotal: number | null
-	score: number | null
 }
 
-export function toAttemptView(row: AttemptRow, now: Date): AttemptView {
-	const graded = isScored(row.status)
+export function toAttemptView(row: AttemptRow): AttemptView {
+	const graded = row.status === 'graded'
 	return {
-		phase: phaseOf(row, now),
+		phase: phaseOf(row),
 		startedAt: row.startedAt.toISOString(),
-		deadlineAt: row.deadlineAt.toISOString(),
+		submittedAt: row.submittedAt == null ? null : row.submittedAt.toISOString(),
 		elapsedMs: row.elapsedMs,
 		testsPassed: graded ? row.testsPassed : null,
-		testsTotal: graded ? row.testsTotal : null,
-		score: graded ? row.score : null
+		testsTotal: graded ? row.testsTotal : null
 	}
 }
 
@@ -122,7 +109,7 @@ export async function startAttempt(
 
 export type SubmitOutcome =
 	| { ok: true; accepted: true; attempt: AttemptRow }
-	| { ok: true; accepted: false; reason: 'already_submitted' | 'expired'; attempt: AttemptRow }
+	| { ok: true; accepted: false; reason: 'already_submitted'; attempt: AttemptRow }
 	| { ok: false; error: 'not_started' | 'empty' | 'too_large' | 'unavailable' }
 
 export async function submitAttempt(
@@ -138,21 +125,9 @@ export async function submitAttempt(
 
 	const current = await store.find(userId, date)
 	if (current == null) return { ok: false, error: 'not_started' }
-	// A repeat of a submission already made (or already expired) just reports it.
-	if (current.status !== 'started') {
-		return {
-			ok: true,
-			accepted: false,
-			reason: current.status === 'expired' ? 'expired' : 'already_submitted',
-			attempt: current
-		}
-	}
-	if (!acceptsSubmission(current.deadlineAt, now)) {
-		await store.expire(userId, date, now)
-		const after = await store.find(userId, date)
-		return after == null
-			? { ok: false, error: 'unavailable' }
-			: { ok: true, accepted: false, reason: 'expired', attempt: after }
+	// A repeat of the one final submission just reports it. Nothing about the clock matters.
+	if (current.status !== 'started' && current.status !== 'expired') {
+		return { ok: true, accepted: false, reason: 'already_submitted', attempt: current }
 	}
 
 	const won = await store.submit({
@@ -164,15 +139,11 @@ export async function submitAttempt(
 	})
 	const after = await store.find(userId, date)
 	if (after == null) return { ok: false, error: 'unavailable' }
-	// Losing the race means someone (a duplicate request) already submitted: same result.
+	// Losing the race means a duplicate or simultaneous request already submitted: the first
+	// source wins and this one changes nothing.
 	return won
 		? { ok: true, accepted: true, attempt: after }
-		: {
-				ok: true,
-				accepted: false,
-				reason: after.status === 'expired' ? 'expired' : 'already_submitted',
-				attempt: after
-			}
+		: { ok: true, accepted: false, reason: 'already_submitted', attempt: after }
 }
 
 // ---- Grading ------------------------------------------------------------------------
@@ -204,7 +175,7 @@ export function triesOf(gradeError: string | null): number {
 }
 
 export type GradingResult =
-	| { status: 'graded'; score: number }
+	| { status: 'graded' }
 	| { status: 'grader_error'; code: string }
 	| { status: 'retry_later' }
 	| { status: 'gave_up' }
@@ -217,7 +188,9 @@ export async function gradeAttempt(
 	userId: string,
 	date: string,
 	problemSlug: string,
-	now: Date
+	now: Date,
+	// The instant grading FINISHED, for `gradedAt` (defaults to `now`; the server passes its clock).
+	finishedAt: () => Date = () => now
 ): Promise<GradingResult> {
 	// No grader configured: the submission waits. It is never scored from anything else.
 	if (grader == null) return { status: 'no_grader' }
@@ -255,21 +228,15 @@ export async function gradeAttempt(
 		outcome = { ok: false, code: 'grader_exception' }
 	}
 	if (!outcome.ok) return fail(outcome.code)
-	const score = dailyScore({
-		testsPassed: outcome.testsPassed,
-		testsTotal: outcome.testsTotal,
-		elapsedMs: row.elapsedMs
-	})
 	const wrote = await store.completeGrading(
 		userId,
 		date,
 		{
 			testsPassed: outcome.testsPassed,
 			testsTotal: outcome.testsTotal,
-			score,
 			graderVersion: outcome.graderVersion
 		},
-		now
+		finishedAt()
 	)
-	return wrote ? { status: 'graded', score } : { status: 'not_claimed' }
+	return wrote ? { status: 'graded' } : { status: 'not_claimed' }
 }

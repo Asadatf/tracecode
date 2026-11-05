@@ -29,6 +29,9 @@ const challenge = read('./challenge.ts')
 const leaderboard = read('./leaderboard.ts')
 const grade = read('./grade.ts')
 const hiddenWrapper = read('./hidden-suites.ts')
+const messagesChallenge = JSON.parse(
+	readFileSync(new URL('../../../messages/en.json', import.meta.url), 'utf8')
+).Challenge as Record<string, unknown>
 const packageJson = JSON.parse(
 	readFileSync(new URL('../../../package.json', import.meta.url), 'utf8')
 )
@@ -77,24 +80,24 @@ describe('hidden tests never reach the browser', () => {
 	})
 })
 
-describe('a browser can never supply a score', () => {
+describe('a browser can never supply a result', () => {
 	it('every action input is strict and carries no score, pass count, status, time or id', () => {
 		for (const schema of actions.match(/input: z[\s\S]*?\.strict\(\)/g) ?? [])
 			assert.doesNotMatch(schema, /score|passed|status|elapsed|userId|attemptId/i)
-		assert.equal((actions.match(/\.strict\(\)/g) ?? []).length, 4)
+		assert.equal((actions.match(/\.strict\(\)/g) ?? []).length, 5)
 		assert.doesNotMatch(actions, /userId/)
 	})
 
-	it('a score is written in exactly one place, the grading-completion transaction', () => {
-		// `score: true` is a column in a select; an ASSIGNMENT is `score: <something else>`.
-		assert.equal((store.match(/\bscore: (?!true)/g) ?? []).length, 1)
+	it('no score exists: counts are written in exactly one place, the grading-completion transaction', () => {
+		assert.doesNotMatch(store, /\bscore\b/)
+		assert.doesNotMatch(read('../../lib/challenge/service.ts'), /\bscore\b|dailyScore/)
 		assert.equal((store.match(/status: 'graded'/g) ?? []).length, 1)
 		const complete = store.slice(
 			store.indexOf('async completeGrading'),
 			store.indexOf('async failGrading')
 		)
 		assert.match(complete, /status: 'grading'/)
-		assert.ok(complete.includes('score: record.score'))
+		assert.ok(complete.includes('testsPassed: record.testsPassed'))
 	})
 
 	it("the learner is always the session's, never a request value", () => {
@@ -108,7 +111,7 @@ describe('a browser can never supply a score', () => {
 
 describe('grading is off unless deliberately enabled and verified', () => {
 	it('the flag defaults to off', () => {
-		assert.equal(FLAGS.challenge_competitive_grading.default, false)
+		assert.equal(FLAGS.challenge_server_grading.default, false)
 	})
 
 	it('no grader exists unless the flag is on AND the Sandbox SDK loads', () => {
@@ -118,12 +121,10 @@ describe('grading is off unless deliberately enabled and verified', () => {
 
 	it('the Sandbox SDK is installed, but only reachable behind the off-by-default flag', () => {
 		assert.ok('@vercel/sandbox' in packageJson.dependencies)
-		assert.match(grade, /challenge_competitive_grading/)
-		assert.ok(
-			grade.indexOf('challenge_competitive_grading') < grade.indexOf('loadSandboxFactory()')
-		)
+		assert.match(grade, /challenge_server_grading/)
+		assert.ok(grade.indexOf('challenge_server_grading') < grade.indexOf('loadSandboxFactory()'))
 		const flags = read('../../lib/flags/flags.ts')
-		assert.match(flags, /challenge_competitive_grading: \{\s*default: false/)
+		assert.match(flags, /challenge_server_grading: \{\s*default: false/)
 	})
 
 	it('without a grader a submission is stored and waits; nothing else produces a score', () => {
@@ -194,6 +195,29 @@ describe('a verified solve counts for the streak exactly once', () => {
 		assert.match(complete, /testsPassed === record\.testsTotal/)
 		assert.match(complete, /attemptId: attempt\.id/)
 		assert.match(complete, /isMeaningfulAttempt\(slug, row\.source\)/)
+	})
+
+	it('the solve is dated at the SUBMISSION (not the later grading), so UTC midnight cannot move it', () => {
+		const complete = store.slice(
+			store.indexOf('async completeGrading'),
+			store.indexOf('async failGrading')
+		)
+		assert.match(complete, /createdAt: solvedAt/)
+		assert.match(complete, /const solvedAt = row\.submittedAt/)
+		assert.match(complete, /firstSolvedAt: existing\?\.firstSolvedAt \?\? solvedAt/)
+		assert.match(complete, /latestSolvedAt: solvedAt/)
+	})
+
+	it('a meaningful full pass also starts the spaced-review cycle, once, dated at the submission', () => {
+		const complete = store.slice(
+			store.indexOf('async completeGrading'),
+			store.indexOf('async failGrading')
+		)
+		assert.match(complete, /if \(meaningful !== false\) review = \{ slug, submittedAt: solvedAt \}/)
+		// After the transaction, only for the transition winner, best effort.
+		assert.match(complete, /if \(won && review != null\)/)
+		assert.match(complete, /trackReviewPass\(userId, slug, submittedAt\)/)
+		assert.equal((complete.match(/trackReviewPass\(/g) ?? []).length, 1)
 	})
 
 	it('a failing or partial verified result records no Attempt', () => {
@@ -310,5 +334,112 @@ describe('cron', () => {
 		const cron = read('../api/learning-reminders-cron.ts')
 		assert.match(cron, /closeFinishedWeeks\(\)/)
 		assert.match(cron, /area: 'leaderboard-close-cron'/)
+	})
+})
+
+describe('the Daily Learning Challenge server side', () => {
+	it('exactly ONE final submission: the state change is the lock, with no clock in it', () => {
+		const submit = store.slice(store.indexOf('async submit('), store.indexOf('async claimGrading'))
+		assert.match(submit, /status: \{ in: \['started', 'expired'\] \}/)
+		assert.doesNotMatch(submit, /deadlineAt|GRACE|new Date\(/)
+		assert.match(submit, /data: \{ status: 'submitted', source, submittedAt, elapsedMs \}/)
+	})
+
+	it('there is no deadline-based expiry anywhere on the server', () => {
+		assert.doesNotMatch(store, /async expire|acceptsSubmission|SUBMIT_GRACE/)
+		assert.doesNotMatch(challenge, /expire|acceptsSubmission|deadlineAt/)
+		const svc = read('../../lib/challenge/service.ts')
+		assert.doesNotMatch(svc, /acceptsSubmission|\.expire\(|reason: 'expired'/)
+	})
+
+	it('the final result is graded on the server from the stored source, never taken from the browser', () => {
+		assert.match(challenge, /gradeAttempt\(\s*attemptStore,\s*await activeGrader\(\)/)
+		const svc = read('../../lib/challenge/service.ts')
+		assert.match(svc, /const source = await store\.readSource\(userId, date\)/)
+		assert.doesNotMatch(read('../../components/challenge/challenge-exam.tsx'), /saveAttempt/)
+		assert.doesNotMatch(actions, /testsPassed|allPassed|tests:/)
+	})
+
+	it('without grading switched on a final submission is saved and shown as pending', () => {
+		const exam = read('../../components/challenge/challenge-exam.tsx')
+		assert.match(
+			exam,
+			/const pending = phase === 'submitted' \|\| phase === 'grading' \|\| phase === 'grader_error'/
+		)
+		assert.match(exam, /if \(!gradingOn \|\| !pending\) return/)
+		assert.match(
+			String(JSON.stringify(messagesChallenge.pending)),
+			/Submission saved — grading pending/
+		)
+	})
+
+	it('the learner is notified (in-app, pass or fail) once, by the grading winner, best effort', () => {
+		const complete = store.slice(
+			store.indexOf('async completeGrading'),
+			store.indexOf('async failGrading')
+		)
+		assert.match(complete, /if \(won\) await notifyChallengeResult\(userId, date, record\)/)
+		const notify = read('./notify.ts')
+		assert.match(notify, /skipDuplicates: true/)
+		// In-app is always on in this release (ADR-0009): no preference can suppress it.
+		assert.doesNotMatch(notify, /notificationPreference|inAppEnabled/)
+		assert.match(
+			notify,
+			/catch \(error\) \{\s*captureError\(error, \{ area: 'challenge-result-notification' \}\)/
+		)
+		// In-app only: this path sends no email.
+		assert.doesNotMatch(notify, /sendEmail|resend|email/i.exec('')?.[0] ?? /sendEmail|resend/i)
+	})
+
+	it('the weekly standings archive does not run while the leaderboard is hidden', () => {
+		const fn = leaderboard.slice(leaderboard.indexOf('export async function closeFinishedWeeks'))
+		assert.match(fn, /if \(!LEADERBOARD_VISIBLE\) return \{ closed: 0 \}/)
+		assert.ok(fn.indexOf('LEADERBOARD_VISIBLE') < fn.indexOf('db.challengeAttempt'))
+	})
+
+	describe('the AI assessment reuses the existing AI integration', () => {
+		const assess = read('./assessment.ts')
+		const store = read('./assessment-store.ts')
+
+		it("uses Tracy's provider adapter, model configuration, usage accounting and rate limit", () => {
+			assert.match(assess, /resolveTutorConfig\(\)/)
+			assert.match(assess, /callTutorProvider\(config/)
+			assert.match(assess, /checkRateLimit\(id\)\.ok/)
+			assert.match(assess, /feature: ASSESSMENT_FEATURE/)
+			assert.doesNotMatch(assess, /fetch\(|openrouter|anthropic|new OpenAI|process\.env|\benv\./i)
+		})
+
+		it("runs only once the final submission is GRADED, reading the code from the learner's own stored submission", () => {
+			assert.match(assess, /row\.status !== 'graded'/)
+			assert.match(assess, /attemptStore\.readSource\(userId, lookup\.date\)/)
+			assert.match(assess, /result: \{ passed: row\.testsPassed, total: row\.testsTotal \}/)
+			// No source or code from the request ever reaches it.
+			assert.match(assess, /export async function assessDaily\(rawDate: string\)/)
+			assert.doesNotMatch(assess, /source: input|rawSource/)
+		})
+
+		it('claims before calling the model and stores the result once, by conditional writes', () => {
+			assert.match(store, /assessment: \{ equals: Prisma\.DbNull \}/)
+			assert.equal((store.match(/updateMany/g) ?? []).length, 2)
+			assert.match(store, /assessmentClaimedAt: \{ lt: staleBefore \}/)
+		})
+
+		it('a failure is "unavailable": no estimate is ever fabricated server-side', () => {
+			assert.doesNotMatch(assess, /timeComplexity: ['"]|O\(n\)|assessApproach|codeFeatures/)
+		})
+
+		it('the model sees no hints, strategies or reference solutions', () => {
+			const lib = read('../../lib/challenge/assessment.ts')
+			assert.doesNotMatch(lib, /knownStrategies|correctnessHints|optimization|reference-solutions/)
+		})
+	})
+
+	it('the browser component never imports the grader or the sandbox, and ranks nothing', () => {
+		for (const file of [read('../../components/challenge/challenge-exam.tsx')])
+			assert.doesNotMatch(
+				file,
+				/activeGrader|sandbox|@vercel\/sandbox|challenge_server_grading|leaderboard/
+			)
+		assert.equal(FLAGS.challenge_server_grading.default, false)
 	})
 })

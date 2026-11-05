@@ -251,7 +251,7 @@
 		},
 		"reminders": {
 			"heading": "Reminders",
-			"description": "Daily nudges built from your current recommendation. Each one is independent.",
+			"description": "Daily suggestions and due-review reminders appear in your notification bell. Notifications are in-app only.",
 			"inApp": "In-app notifications",
 			"inAppHelp": "A daily reminder in the bell at the top of the page.",
 			"email": "Daily reminder email",
@@ -273,7 +273,7 @@
 		"heading": "Notifications",
 		"markAll": "Mark all as read",
 		"markRead": "Mark as read",
-		"empty": "No notifications yet. Your daily reminder will appear here.",
+		"empty": "No notifications yet. Daily suggestions and due-review reminders appear here in the app.",
 		"error": "Notifications are unavailable right now.",
 		"loading": "Loading…",
 		"subheading": "Your learning updates, all in one place.",
@@ -281,7 +281,7 @@
 		"all": "All",
 		"unreadTab": "Unread ({count})",
 		"emptyUnread": "You're all caught up.",
-		"settings": "Notification settings"
+		"settings": "Account settings"
 	},
 	"Activity": {
 		"heading": "Practice activity",
@@ -333,58 +333,74 @@
 	"Challenge": {
 		"metaTitle": "Daily challenge | TraceCode",
 		"eyebrow": "Daily challenge",
-		"pastEyebrow": "Past challenge",
-		"pastNote": "This challenge has ended. Past challenges are for practice and do not affect the weekly competition.",
-		"practice": "Practise this problem",
 		"back": "Back to problems",
-		"leaderboardLink": "Leaderboard",
 		"unavailable": "The daily challenge is unavailable right now. Try again in a moment.",
 		"examples": "Examples",
 		"workArea": "Your attempt",
 		"editor": "Challenge code editor",
 		"rules": {
-			"heading": "Before you start",
-			"time": "You have {minutes} minutes from the moment you press Start. The clock runs on our server and keeps running if you close or refresh this page.",
-			"once": "You get ONE final submission. Press Submit when you are done: it cannot be undone or repeated, and a late submission earns nothing.",
-			"run": "Run checks your code against the public examples only, in your browser. It never counts toward your score.",
-			"noHelp": "Tracy, hints, replay and solutions are not available during the challenge.",
-			"hidden": "Your score comes from hidden tests that we run on our servers. You will see how many passed after grading.",
-			"gradingOff": "Competitive grading is not switched on yet. A submission is saved and waits for grading; nothing is scored or ranked from unverified results."
+			"heading": "How the daily challenge works",
+			"time": "Press Start and a {minutes}-minute target begins. It is a goal for your own feedback: nothing stops at zero, and you can keep going.",
+			"run": "Run tries the public examples as often as you like.",
+			"once": "You get ONE final Submit. It cannot be undone or repeated, and if it does not pass you cannot try again today.",
+			"hidden": "Your final submission is checked on our servers against a full set of tests, and you will see how many passed.",
+			"noHelp": "Tracy, hints, replay and solutions stay hidden during the challenge. They are all back in Practice.",
+			"personal": "Your time and result are just for you. Nothing is scored, ranked or compared with anyone."
 		},
 		"start": "Start the challenge",
 		"starting": "Starting…",
 		"timeLeft": "Time left",
-		"timeLeftLabel": "Time left in the challenge",
+		"timeLeftLabel": "Time left in the 30-minute target",
 		"run": "Run examples",
 		"running": "Running…",
 		"submit": "Submit final answer",
-		"confirmSubmit": "Yes, submit final answer",
-		"cancel": "Keep working",
-		"submitting": "Submitting…",
-		"confirmText": "This is your one final submission. You cannot change it or submit again.",
 		"exampleResult": "Public examples passed: {passed} of {total}",
-		"exampleNote": "These are only the examples shown on the left. Your score is decided by hidden tests.",
+		"exampleNote": "Run only tries the public examples shown on the left.",
 		"runProblem": "Your code could not run to completion. Check it and try again.",
-		"submittedHeading": "Submitted",
-		"awaitingGrading": "Your answer is saved and waiting to be graded.",
-		"grading": "Grading your answer…",
-		"savedNotScored": "Your answer is saved. Competitive grading is not switched on yet, so it has not been scored.",
-		"gradedHeading": "Graded",
-		"graded": "{passed} of {total} hidden tests passed.",
-		"score": "Score: {score}",
-		"timeTaken": "Time taken: {time}",
-		"graderErrorHeading": "Not graded yet",
-		"graderError": "We could not grade your answer yet. It is saved and will be retried. No points are awarded until it is verified.",
-		"expiredHeading": "Time ran out",
-		"expired": "The time ran out before a submission, so this challenge earns no score.",
 		"errors": {
 			"generic": "Something went wrong. Try again.",
 			"unauthenticated": "Sign in again to continue.",
-			"notLive": "Only today’s challenge can be attempted.",
+			"notLive": "Only today’s challenge can be started.",
 			"notStarted": "Start the challenge before submitting.",
 			"empty": "Write some code before submitting.",
 			"tooLarge": "Your code is too long to submit."
-		}
+		},
+		"problemPane": "Problem",
+		"resizePanes": "Resize the problem and code panes",
+		"targetLabel": "{minutes}-minute target",
+		"overtime": "Overtime",
+		"overtimeLabel": "Time past the 30-minute target",
+		"assessment": {
+			"heading": "AI feedback on your solution",
+			"badge": "AI estimate",
+			"approach": "Approach: {approach}",
+			"time": "Time: {time}",
+			"space": "Space: {space}",
+			"efficiency": "Looks: {level}",
+			"levels": {
+				"brute_force": "brute force",
+				"reasonably_efficient": "reasonably efficient",
+				"optimal": "optimal"
+			},
+			"improvement": "One thing to try: {improvement}",
+			"disclaimer": "Generated by an AI from your submitted code. It is an estimate, not proof that the solution is correct or optimal.",
+			"loading": "Writing your feedback…",
+			"unavailable": "AI feedback is unavailable right now. Your result is not affected; reload later to try again."
+		},
+		"submitting": "Submitting…",
+		"confirmSubmit": "Yes, submit final answer",
+		"cancel": "Keep working",
+		"confirmText": "This is your one final submission. You cannot change it or submit again today.",
+		"submittedBadge": "Submitted",
+		"pendingHeading": "Submission saved",
+		"pending": "Submission saved — grading pending. Your code is safe and will be graded; you do not need to submit again.",
+		"grading": "Grading your submission…",
+		"passedHeading": "Challenge complete",
+		"failedHeading": "Final submission graded",
+		"resultCounts": "{passed} of {total} tests passed",
+		"passedBody": "You solved today’s challenge in {time}. It counts toward your streak and your reviews.",
+		"failedBody": "Not every test passed, so today’s challenge is not complete. The final submission cannot be retried today; you can keep practising the problem in Practice.",
+		"timeTaken": "Time: {time}"
 	},
 	"Leaderboard": {
 		"metaTitle": "Weekly leaderboard | TraceCode",
@@ -421,7 +437,10 @@
 			"shared": "Learners equal on all of these share a rank.",
 			"verified": "Scores come from tests run on our servers. Results reported by a browser are never used."
 		},
-		"archive": { "heading": "Past weeks", "current": "This week" }
+		"archive": {
+			"heading": "Past weeks",
+			"current": "This week"
+		}
 	},
 	"Streak": {
 		"heading": "Your streak",
@@ -447,12 +466,12 @@
 	"UnsubscribePage": {
 		"metaTitle": "Unsubscribe | TraceCode",
 		"heading": "Unsubscribe from reminder emails",
-		"body": "Confirm below to stop daily reminder emails. In-app notifications aren’t affected, and you can turn email back on from your settings.",
+		"body": "Notifications are currently in-app only. You can still confirm below to remove a previous reminder email opt-in.",
 		"confirm": "Unsubscribe",
 		"working": "Unsubscribing…",
 		"done": "Done. You won’t get reminder emails any more.",
 		"failed": "Something went wrong. Please try again.",
-		"invalid": "This unsubscribe link isn’t valid. You can manage reminder emails from your progress page."
+		"invalid": "This unsubscribe link isn’t valid. Notifications are currently in-app only; manage in-app reminders in Settings."
 	},
 	"Auth": {
 		"email": "Email",
@@ -636,9 +655,9 @@
 		},
 		"reminders": {
 			"heading": "Learning reminders",
-			"description": "Choose how TraceCode nudges you to keep practising.",
+			"description": "Daily suggestions and spaced-review reminders appear in your notification bell. Notifications are in-app only.",
 			"inApp": "In-app reminders",
-			"inAppHelp": "Show your daily suggestion in your notifications.",
+			"inAppHelp": "Show daily suggestions and due-review reminders in your notifications.",
 			"email": "Email reminders",
 			"emailHelp": "Also send the suggestion by email. Off unless you turn it on.",
 			"emailUnavailable": "Email delivery isn't set up on this server yet.",
@@ -662,7 +681,9 @@
 			"dayNone": "{date}: no challenge",
 			"openToday": "Open today’s challenge",
 			"dayHeading": "Day {day}",
-			"timeLeft": "{time} left"
+			"timeLeft": "{time} left",
+			"todayDone": "Completed",
+			"todaySubmitted": "Submitted"
 		},
 		"filterAll": "All topics",
 		"filterLabel": "Filter by topic",

@@ -1,7 +1,9 @@
 # 0004. Unified learning notifications: in-app + email from one daily scheduler
 
 Date: 2026-11-02
-Status: Accepted (Umair; no teammate sign-off yet)
+Status: Partially superseded by [ADR-0009](0009-in-app-only-hackathon-notifications.md)
+(email enablement and reminder preference controls for the hackathon release).
+The underlying multi-channel architecture remains accepted.
 
 ## Context
 

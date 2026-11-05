@@ -15,4 +15,7 @@ new ADR that supersedes it and set the old one's status to
 | [0003](0003-browser-ast-and-cached-recommendations.md) | Browser-side AST analysis and cached recommendations                  | Accepted (Umair; no teammate sign-off) |
 | [0004](0004-unified-learning-notifications.md)         | Unified learning notifications (in-app + email, one scheduler)        | Accepted (Umair; no teammate sign-off) |
 | [0006](0006-spaced-review-schedule.md)                 | Spaced review: persisted per-problem 1 / 3 / 7 day schedule           | Accepted (Umair; no teammate sign-off) |
-| [0007](0007-server-side-competitive-grading.md)        | Competitive grading: server-verified sandbox execution, behind a flag | Accepted (Umair; grading not enabled)  |
+| [0007](0007-server-side-competitive-grading.md)        | Competitive grading: server-verified sandbox execution, behind a flag | Accepted (Umair; dormant, see 0008)    |
+| [0008](0008-daily-challenge-is-a-learning-exercise.md) | The daily challenge is a learning exercise, not a competition         | Accepted (Umair)                       |
+
+| [0009](0009-in-app-only-hackathon-notifications.md) | In-app-only notifications for the hackathon | Accepted (Umair) |

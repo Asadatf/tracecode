@@ -6,10 +6,19 @@ import { currentAccountSafe } from '@/server/auth/session'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { toExamProblem } from '@/lib/challenge/exam-problem'
 import { getChallenge, getMyAttempt } from '@/server/challenge/challenge'
+import { getStoredAssessment } from '@/server/challenge/assessment'
 import { activeGrader } from '@/server/challenge/grade'
 import { ChallengeExam } from '@/components/challenge/challenge-exam'
-import { Button } from '@/components/ui/button'
+import { AppShell } from '@/components/app-shell/app-shell'
+import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import styles from '@/components/challenge/challenge.module.css'
+
+const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--tc-sans' })
+const jetBrainsMono = JetBrains_Mono({
+	subsets: ['latin'],
+	weight: ['400', '600', '700'],
+	variable: '--tc-mono'
+})
 
 // specs/features/daily-challenge.md. One designated problem per UTC day, the same for
 // everyone, pinned the first time the date is needed. A FUTURE date is a 404 (it cannot
@@ -49,9 +58,6 @@ export default async function ChallengePage({
 			<Link href="/" className={styles.brand}>
 				tracecode
 			</Link>
-			<Button asChild size="sm" variant="outline">
-				<Link href="/leaderboard">{t('leaderboardLink')}</Link>
-			</Button>
 		</header>
 	)
 	const problem = lookup.status === 'ok' ? PROBLEMS[lookup.problemSlug] : undefined
@@ -74,61 +80,44 @@ export default async function ChallengePage({
 	)
 
 	const [mine, grader] = await Promise.all([getMyAttempt(account.id, date), activeGrader()])
+	const stored =
+		mine.available && mine.view?.phase === 'graded'
+			? await getStoredAssessment(account.id, date)
+			: null
 	// The learner's OWN attempt decides what to show, not today's date: one started late in
 	// the day (say 23:50) keeps its full server deadline after midnight, and a finished
 	// attempt stays visible. A past date with no attempt of theirs is practice only.
 	const hasAttempt = mine.available && mine.view != null
 
-	// A past challenge: the statement for practice, nothing competitive.
+	// A past challenge with no attempt of the learner's is practice only: straight into the
+	// normal Practice workspace for that problem (no separate page).
 	if (lookup.kind === 'past' && !hasAttempt) {
-		return (
-			<div className={styles.page}>
-				{header}
-				<main className={styles.main}>
-					<p className={styles.eyebrow}>{t('pastEyebrow')}</p>
-					<h1 className={styles.title}>{heading}</h1>
-					<section aria-labelledby="past-title" className={styles.statement}>
-						<h2 id="past-title" className={styles.problemTitle}>
-							{problem.title}
-						</h2>
-						{problem.statement.map((paragraph) => (
-							<p key={paragraph}>{paragraph}</p>
-						))}
-						<p className={styles.muted}>{t('pastNote')}</p>
-						<p>
-							<Button asChild>
-								<Link href={`/practice/${problem.slug}`}>{t('practice')}</Link>
-							</Button>
-						</p>
-					</section>
-					<p className={styles.back}>
-						<Link href="/problems">{t('back')}</Link>
-					</p>
-				</main>
-			</div>
-		)
+		redirect({ href: `/practice/${problem.slug}`, locale })
+		return null
 	}
 
+	// The exam gets the same frame as Practice (app shell, full-height panes, same fonts).
 	return (
-		<div className={styles.page}>
-			{header}
-			<main className={styles.main}>
-				<p className={styles.eyebrow}>{t('eyebrow')}</p>
-				<h1 className={styles.title}>{heading}</h1>
-				{mine.available ? (
-					<ChallengeExam
-						date={date}
-						problem={exam}
-						initial={mine.view}
-						serverNow={new Date().toISOString()}
-						scoringActive={grader != null}
-					/>
-				) : (
-					<p role="status" className={styles.statement}>
-						{t('unavailable')}
-					</p>
-				)}
-			</main>
+		<div className={`${dmSans.variable} ${jetBrainsMono.variable}`}>
+			<AppShell bare startCollapsed>
+				<div data-in-shell>
+					{mine.available ? (
+						<ChallengeExam
+							date={date}
+							heading={heading}
+							problem={exam}
+							initial={mine.view}
+							initialAssessment={stored}
+							serverNow={new Date().toISOString()}
+							gradingOn={grader != null}
+						/>
+					) : (
+						<p role="status" className={styles.statement}>
+							{t('unavailable')}
+						</p>
+					)}
+				</div>
+			</AppShell>
 		</div>
 	)
 }

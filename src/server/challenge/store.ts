@@ -1,10 +1,11 @@
 import 'server-only'
 import { db } from '@/server/db/client'
 import { dayColumn } from '@/lib/reviews/review-queries'
-import { SUBMIT_GRACE_MS } from '@/lib/challenge/exam-rules'
 import type { ChallengeCatalogStore } from '@/lib/challenge/assignment'
 import type { AttemptRow, ChallengeAttemptStore } from '@/lib/challenge/service'
 import { isMeaningfulAttempt } from '@/lib/streak/attempt-meaning'
+import { trackReviewPass } from '@/server/reviews/reviews'
+import { notifyChallengeResult } from './notify'
 
 // Prisma wiring for the challenge stores. Every write is ONE conditional statement (or
 // one transaction) on the state the caller expects; every query is keyed by the learner
@@ -38,7 +39,6 @@ const ATTEMPT_SELECT = {
 	elapsedMs: true,
 	testsPassed: true,
 	testsTotal: true,
-	score: true,
 	gradeError: true,
 	gradingClaimedAt: true
 } as const
@@ -77,25 +77,12 @@ export const attemptStore: ChallengeAttemptStore = {
 			where: {
 				userId,
 				challengeDate: dayColumn(date),
-				status: 'started',
-				// The deadline is enforced IN the write, so a late request cannot slip in
-				// between a read and this update.
-				deadlineAt: { gte: new Date(submittedAt.getTime() - SUBMIT_GRACE_MS) }
+				// The ONE final submission: the state change itself is the lock, so a duplicate
+				// or simultaneous request finds it already moved on. No deadline condition: the
+				// 30 minutes is a soft target. ('expired' is a leftover of the earlier exam design.)
+				status: { in: ['started', 'expired'] }
 			},
 			data: { status: 'submitted', source, submittedAt, elapsedMs }
-		})
-		return count === 1
-	},
-
-	async expire(userId, date, now) {
-		const { count } = await db.challengeAttempt.updateMany({
-			where: {
-				userId,
-				challengeDate: dayColumn(date),
-				status: 'started',
-				deadlineAt: { lt: new Date(now.getTime() - SUBMIT_GRACE_MS) }
-			},
-			data: { status: 'expired' }
 		})
 		return count === 1
 	},
@@ -117,8 +104,9 @@ export const attemptStore: ChallengeAttemptStore = {
 	},
 
 	async completeGrading(userId, date, record, at) {
-		return db.$transaction(async (tx) => {
-			// The only write that sets a score, and only from 'grading'.
+		// Filled by the transaction when this call wins a fully verified, meaningful pass.
+		let review: { slug: string; submittedAt: Date } | null = null
+		const won = await db.$transaction(async (tx) => {
 			const { count } = await tx.challengeAttempt.updateMany({
 				where: { userId, challengeDate: dayColumn(date), status: 'grading' },
 				data: {
@@ -126,38 +114,47 @@ export const attemptStore: ChallengeAttemptStore = {
 					gradedAt: at,
 					testsPassed: record.testsPassed,
 					testsTotal: record.testsTotal,
-					score: record.score,
 					graderVersion: record.graderVersion,
 					gradeError: null
 				}
 			})
 			if (count !== 1) return false
-			// A fully verified pass is also a real solve: record it once as an Attempt so
-			// the streak and activity graph count it with their existing semantics, and
-			// reflect it in the learner's progress. Only the transition winner gets here.
+			// A fully verified pass is also a real solve: record it once as an Attempt so the
+			// streak and activity graph count it with their existing semantics, and reflect it
+			// in the learner's progress. Only the transition winner gets here. Everything is
+			// dated at the SUBMISSION, not at the later grading, so a submit just before UTC
+			// midnight still counts for the day it was made. A failed submission records none.
 			if (record.testsTotal > 0 && record.testsPassed === record.testsTotal) {
 				const row = await tx.challengeAttempt.findUnique({
 					where: { userId_challengeDate: { userId, challengeDate: dayColumn(date) } },
-					select: { source: true, challenge: { select: { problemSlug: true } } }
+					select: {
+						source: true,
+						submittedAt: true,
+						challenge: { select: { problemSlug: true } }
+					}
 				})
-				if (row?.source != null) {
+				if (row?.source != null && row.submittedAt != null) {
 					const slug = row.challenge.problemSlug
+					const solvedAt = row.submittedAt
+					const meaningful = isMeaningfulAttempt(slug, row.source)
 					const attempt = await tx.attempt.create({
 						data: {
 							userId,
 							problemSlug: slug,
 							source: row.source,
+							createdAt: solvedAt,
 							status: 'completed',
 							testsPassed: record.testsPassed,
 							testsTotal: record.testsTotal,
 							allPassed: true,
-							meaningful: isMeaningfulAttempt(slug, row.source)
+							meaningful
 						},
 						select: { id: true }
 					})
 					await tx.challengeAttempt.update({
 						where: { userId_challengeDate: { userId, challengeDate: dayColumn(date) } },
-						data: { attemptId: attempt.id }
+						data: { attemptId: attempt.id },
+						select: { id: true }
 					})
 					const existing = await tx.problemProgress.findUnique({
 						where: { userId_problemSlug: { userId, problemSlug: slug } }
@@ -171,22 +168,33 @@ export const attemptStore: ChallengeAttemptStore = {
 							attempts: 1,
 							bestTestsPassed: record.testsPassed,
 							testsTotal: record.testsTotal,
-							firstSolvedAt: at,
-							latestSolvedAt: at
+							firstSolvedAt: solvedAt,
+							latestSolvedAt: solvedAt
 						},
 						update: {
 							status: 'solved',
 							attempts: { increment: 1 },
 							bestTestsPassed: Math.max(existing?.bestTestsPassed ?? 0, record.testsPassed),
 							testsTotal: record.testsTotal,
-							firstSolvedAt: existing?.firstSolvedAt ?? at,
-							latestSolvedAt: at
+							firstSolvedAt: existing?.firstSolvedAt ?? solvedAt,
+							latestSolvedAt: solvedAt
 						}
 					})
+					if (meaningful !== false) review = { slug, submittedAt: solvedAt }
 				}
 			}
 			return true
 		})
+		// Spaced repetition (M9C), dated at the submission. Only the single transition winner
+		// reaches here, and the review cycle itself is keyed by the attempt's own time, so a
+		// replay can never advance a later stage. Best effort: it never fails the grading.
+		if (won && review != null) {
+			const { slug, submittedAt } = review
+			await trackReviewPass(userId, slug, submittedAt)
+		}
+		// The learner is told their result is ready, pass or fail. Only the winner, once.
+		if (won) await notifyChallengeResult(userId, date, record)
+		return won
 	},
 
 	async failGrading(userId, date, code) {

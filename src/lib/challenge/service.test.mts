@@ -14,8 +14,7 @@ import {
 	type Grader,
 	type GradeRecord
 } from './service.ts'
-import { EXAM_DURATION_MS, SUBMIT_GRACE_MS } from './exam-rules.ts'
-import { dailyScore } from './scoring.ts'
+import { EXAM_DURATION_MS } from './exam-rules.ts'
 import { attemptQualifies } from '../streak/streak.ts'
 import { buildDailyActivity } from '../activity/daily-activity.ts'
 import { computeStreak } from '../streak/streak.ts'
@@ -28,7 +27,9 @@ function fakeStore() {
 		string,
 		AttemptRow & { source: string | null; claimedAt: Date | null; weekStart: string }
 	>()
-	const solves: { userId: string; date: string }[] = []
+	// A verified full pass records one solve, DATED AT THE SUBMISSION (not at the grading).
+	const solves: { userId: string; date: string; at: Date | null }[] = []
+	const gradedAtLog: Date[] = []
 	const key = (u: string, d: string) => `${u}|${d}`
 	const tick = () => new Promise((r) => setImmediate(r))
 	const store: ChallengeAttemptStore = {
@@ -51,7 +52,6 @@ function fakeStore() {
 				elapsedMs: null,
 				testsPassed: null,
 				testsTotal: null,
-				score: null,
 				gradeError: null,
 				gradingClaimedAt: null,
 				source: null,
@@ -63,21 +63,9 @@ function fakeStore() {
 		async submit({ userId, date, source, submittedAt, elapsedMs }) {
 			await tick()
 			const row = rows.get(key(userId, date))
-			if (!row || row.status !== 'started') return false
-			if (row.deadlineAt.getTime() < submittedAt.getTime() - SUBMIT_GRACE_MS) return false
+			// The one final submission: the state change is the lock; no clock is consulted.
+			if (!row || (row.status !== 'started' && row.status !== 'expired')) return false
 			Object.assign(row, { status: 'submitted', source, submittedAt, elapsedMs })
-			return true
-		},
-		async expire(userId, date, now) {
-			await tick()
-			const row = rows.get(key(userId, date))
-			if (
-				!row ||
-				row.status !== 'started' ||
-				row.deadlineAt.getTime() >= now.getTime() - SUBMIT_GRACE_MS
-			)
-				return false
-			row.status = 'expired'
 			return true
 		},
 		async claimGrading(userId, date, now, staleBefore) {
@@ -89,17 +77,18 @@ function fakeStore() {
 			Object.assign(row, { status: 'grading', claimedAt: now, gradingClaimedAt: now })
 			return true
 		},
-		async completeGrading(userId, date, record: GradeRecord) {
+		async completeGrading(userId, date, record: GradeRecord, at: Date) {
+			gradedAtLog.push(at)
 			await tick()
 			const row = rows.get(key(userId, date))
 			if (!row || row.status !== 'grading') return false
 			Object.assign(row, {
 				status: 'graded',
 				testsPassed: record.testsPassed,
-				testsTotal: record.testsTotal,
-				score: record.score
+				testsTotal: record.testsTotal
 			})
-			if (record.testsPassed === record.testsTotal) solves.push({ userId, date })
+			if (record.testsPassed === record.testsTotal)
+				solves.push({ userId, date, at: row.submittedAt })
 			return true
 		},
 		async failGrading(userId, date, code) {
@@ -113,7 +102,7 @@ function fakeStore() {
 			return rows.get(key(u, d))?.source ?? null
 		}
 	}
-	return { store, rows, solves }
+	return { store, rows, solves, gradedAtLog }
 }
 
 const D = '2026-11-10'
@@ -173,49 +162,29 @@ test('an on-time submission is accepted once and records the server-measured tim
 	assert.equal(rows.get(`u1|${D}`)?.status, 'submitted')
 })
 
-test('a submission after the deadline (plus grace) is refused, marks the attempt expired and earns nothing', async () => {
+test('the 30 minutes is a soft target: a submission in overtime is valid, graded and recorded with its real elapsed time', async () => {
 	const { store, rows } = fakeStore()
 	await startAttempt(store, 'u1', D, T0)
-	const late = await submitAttempt(
-		store,
-		'u1',
-		D,
-		'def f(): pass',
-		at(EXAM_DURATION_MS + SUBMIT_GRACE_MS + 1)
-	)
-	assert.ok(late.ok && !late.accepted && late.reason === 'expired')
-	assert.equal(rows.get(`u1|${D}`)?.status, 'expired')
-	assert.equal(rows.get(`u1|${D}`)?.source, null, 'a late source is never stored')
-	// And it can never be graded afterwards.
-	assert.equal(
-		(await gradeAttempt(store, pass(10, 10), 'u1', D, 'two-sum', at(EXAM_DURATION_MS + 60_000)))
-			.status,
-		'not_claimed'
-	)
-	assert.equal(rows.get(`u1|${D}`)?.score, null)
+	for (const [i, offset] of [EXAM_DURATION_MS + 1, 3 * 3600_000].entries()) {
+		const user = `late${i}`
+		await startAttempt(store, user, D, T0)
+		const late = await submitAttempt(store, user, D, 'def f(): pass', at(offset))
+		assert.ok(late.ok && late.accepted, `submit at +${offset} ms`)
+		assert.equal(rows.get(`${user}|${D}`)?.status, 'submitted')
+		assert.equal(rows.get(`${user}|${D}`)?.elapsedMs, offset, 'elapsed time is not capped')
+		assert.equal(rows.get(`${user}|${D}`)?.source, 'def f(): pass')
+	}
+	const graded = await gradeAttempt(store, pass(10, 10), 'late0', D, 'two-sum', at(4 * 3600_000))
+	assert.equal(graded.status, 'graded')
 })
 
-test('a deadline-boundary submission inside the grace is accepted', async () => {
-	const { store } = fakeStore()
-	await startAttempt(store, 'u1', D, T0)
-	const edge = await submitAttempt(store, 'u1', D, 'x = 1', at(EXAM_DURATION_MS + SUBMIT_GRACE_MS))
-	assert.ok(edge.ok && edge.accepted)
-})
-
-test('the deadline is enforced in the write itself: a request that passed the read check but arrives late still loses', async () => {
+test('nothing ever marks an attempt expired, and a leftover expired row can still be submitted once', async () => {
 	const { store, rows } = fakeStore()
 	await startAttempt(store, 'u1', D, T0)
-	// Simulate the read-then-write gap: the caller believed "now" was on time, but the
-	// conditional update is judged at the real submit instant.
-	const ok = await store.submit({
-		userId: 'u1',
-		date: D,
-		source: 'x',
-		submittedAt: at(EXAM_DURATION_MS + 60_000),
-		elapsedMs: 1
-	})
-	assert.equal(ok, false)
-	assert.equal(rows.get(`u1|${D}`)?.status, 'started')
+	rows.get(`u1|${D}`)!.status = 'expired' // a row left by the earlier exam design
+	const result = await submitAttempt(store, 'u1', D, 'x = 1', at(5 * 3600_000))
+	assert.ok(result.ok && result.accepted)
+	assert.equal((store as unknown as Record<string, unknown>).expire, undefined)
 })
 
 test('duplicate submissions are idempotent: the first source wins and a repeat just reports it', async () => {
@@ -263,34 +232,40 @@ test('with no grader configured a submission waits: it is never scored from anyt
 	})
 	const row = rows.get(`u1|${D}`)!
 	assert.equal(row.status, 'submitted')
-	assert.equal(row.score, null)
-	const view = toAttemptView(row, at(120_000))
+	assert.equal(row.testsPassed, null)
+	const view = toAttemptView(row)
 	assert.equal(view.phase, 'submitted')
-	assert.equal(view.score, null)
+	assert.equal(view.testsPassed, null)
 })
 
-test("a verified result is scored from the SERVER's counts and elapsed time", async () => {
+test("a verified result carries the SERVER's counts and no score", async () => {
 	const { store, rows } = fakeStore()
 	await startAttempt(store, 'u1', D, T0)
 	await submitAttempt(store, 'u1', D, 'code', at(10 * 60_000))
 	const result = await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(10 * 60_000 + 5000))
-	assert.deepEqual(result, {
-		status: 'graded',
-		score: dailyScore({ testsPassed: 12, testsTotal: 12, elapsedMs: 10 * 60_000 })
-	})
-	assert.equal(rows.get(`u1|${D}`)?.status, 'graded')
+	assert.deepEqual(result, { status: 'graded' })
+	const row = rows.get(`u1|${D}`)!
+	assert.equal(row.status, 'graded')
+	assert.equal(row.testsPassed, 12)
+	assert.equal('score' in row, false, 'there is no score to carry')
 })
 
-test('a failing result is graded with a partial score and records no solve', async () => {
+test('a failing final submission is graded with its counts, records no solve and cannot be retried', async () => {
 	const { store, rows, solves } = fakeStore()
 	await startAttempt(store, 'u1', D, T0)
 	await submitAttempt(store, 'u1', D, 'code', at(60_000))
 	const result = await gradeAttempt(store, pass(5, 12), 'u1', D, 'two-sum', at(70_000))
+	assert.deepEqual(result, { status: 'graded' })
+	assert.equal(solves.length, 0, 'a failed submission advances nothing')
+	assert.equal(rows.get(`u1|${D}`)?.testsPassed, 5)
+	// One shot: a second submit changes nothing, and nothing re-grades it.
+	const again = await submitAttempt(store, 'u1', D, 'better code', at(120_000))
+	assert.ok(again.ok && !again.accepted && again.reason === 'already_submitted')
+	assert.equal(rows.get(`u1|${D}`)?.source, 'code')
 	assert.equal(
-		result.status === 'graded' && result.score,
-		dailyScore({ testsPassed: 5, testsTotal: 12, elapsedMs: 60_000 })
+		(await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(130_000))).status,
+		'not_claimed'
 	)
-	assert.equal(solves.length, 0)
 	assert.equal(rows.get(`u1|${D}`)?.testsPassed, 5)
 })
 
@@ -319,13 +294,13 @@ test('grading again after success changes nothing and records no second solve', 
 	await startAttempt(store, 'u1', D, T0)
 	await submitAttempt(store, 'u1', D, 'code', at(60_000))
 	await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(70_000))
-	const score = rows.get(`u1|${D}`)?.score
+	const passedBefore = rows.get(`u1|${D}`)?.testsPassed
 	for (let i = 0; i < 3; i++)
 		assert.equal(
 			(await gradeAttempt(store, pass(1, 12), 'u1', D, 'two-sum', at(80_000))).status,
 			'not_claimed'
 		)
-	assert.equal(rows.get(`u1|${D}`)?.score, score)
+	assert.equal(rows.get(`u1|${D}`)?.testsPassed, passedBefore)
 	assert.equal(solves.length, 1)
 })
 
@@ -340,8 +315,8 @@ test('a grader failure is recoverable: no score now, retried later, then scored 
 	})
 	const row = rows.get(`u1|${D}`)!
 	assert.equal(row.status, 'grader_error')
-	assert.equal(row.score, null, 'a grader error never gives or removes points on its own')
-	assert.equal(toAttemptView(row, at(80_000)).score, null)
+	assert.equal(row.testsPassed, null, 'a grader error never gives or removes a result on its own')
+	assert.equal(toAttemptView(row).testsPassed, null)
 	assert.equal(
 		(await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(90_000))).status,
 		'retry_later',
@@ -375,7 +350,7 @@ test('a grader that throws is treated as an error, never a score', async () => {
 		at(70_000)
 	)
 	assert.deepEqual(result, { status: 'grader_error', code: 'grader_exception' })
-	assert.equal(rows.get(`u1|${D}`)?.score, null)
+	assert.equal(rows.get(`u1|${D}`)?.testsPassed, null)
 })
 
 test("a crashed grading worker's claim is taken over only after it goes stale", async () => {
@@ -403,26 +378,28 @@ test("a crashed grading worker's claim is taken over only after it goes stale", 
 	assert.equal(rows.get(`u1|${D}`)?.status, 'graded')
 })
 
-test('the browser view never carries the source or a score before grading, and nothing a client sends can set one', async () => {
+test('the browser view never carries the source, a score or a result before grading', async () => {
 	const { store, rows } = fakeStore()
 	await startAttempt(store, 'u1', D, T0)
 	await submitAttempt(store, 'u1', D, 'SECRET SOURCE', at(60_000))
 	const row = rows.get(`u1|${D}`)!
 	// A row that somehow carries numbers before grading still shows none of them.
-	const tampered = { ...row, testsPassed: 12, testsTotal: 12, score: 1100 }
-	const view = toAttemptView(tampered, at(61_000))
-	assert.equal(view.score, null)
+	const view = toAttemptView({ ...row, testsPassed: 12, testsTotal: 12 })
 	assert.equal(view.testsPassed, null)
 	assert.equal(JSON.stringify(view).includes('SECRET SOURCE'), false)
 	assert.deepEqual(Object.keys(view).sort(), [
-		'deadlineAt',
 		'elapsedMs',
 		'phase',
-		'score',
 		'startedAt',
+		'submittedAt',
 		'testsPassed',
 		'testsTotal'
 	])
+	// Graded: counts only.
+	await gradeAttempt(store, pass(7, 12), 'u1', D, 'two-sum', at(70_000))
+	const graded = toAttemptView(rows.get(`u1|${D}`)!)
+	assert.equal(graded.phase, 'graded')
+	assert.deepEqual([graded.testsPassed, graded.testsTotal], [7, 12])
 })
 
 test('streak: a verified fully-passing challenge counts as exactly one qualifying day, however many events share the date', () => {
@@ -455,11 +432,10 @@ test('streak: a verified fully-passing challenge counts as exactly one qualifyin
 	)
 })
 
-test('an attempt started late in the day can be submitted after UTC midnight, judged only by its own deadline', async () => {
-	const { store, rows } = fakeStore()
+test('an attempt started late in the day can be submitted after UTC midnight and after the 30 minutes', async () => {
+	const { store, rows, solves } = fakeStore()
 	const lateStart = new Date('2026-11-10T23:50:00.000Z')
 	await startAttempt(store, 'u1', D, lateStart)
-	// 00:10 the next UTC day is 20 minutes in, inside the 30-minute window.
 	const after = await submitAttempt(
 		store,
 		'u1',
@@ -469,11 +445,13 @@ test('an attempt started late in the day can be submitted after UTC midnight, ju
 	)
 	assert.ok(after.ok && after.accepted)
 	assert.equal(rows.get(`u1|${D}`)?.elapsedMs, 20 * 60_000)
-	// While 00:21 (31 minutes in) is late.
-	const { store: s2 } = fakeStore()
-	await startAttempt(s2, 'u2', D, lateStart)
-	const late = await submitAttempt(s2, 'u2', D, 'x = 1', new Date('2026-11-11T00:21:00.000Z'))
-	assert.ok(late.ok && !late.accepted && late.reason === 'expired')
+	// 31 minutes in is just as valid.
+	await startAttempt(store, 'u2', D, lateStart)
+	const later = await submitAttempt(store, 'u2', D, 'x = 1', new Date('2026-11-11T00:21:00.000Z'))
+	assert.ok(later.ok && later.accepted)
+	// Graded hours later, the verified solve is dated at the SUBMISSION, not the grading.
+	await gradeAttempt(store, pass(10, 10), 'u1', D, 'two-sum', new Date('2026-11-11T05:00:00.000Z'))
+	assert.equal(solves[0]?.at?.toISOString(), '2026-11-11T00:10:00.000Z')
 })
 
 test('retries are bounded: backoff between tries, then it gives up and creates no more sandboxes', async () => {
@@ -506,7 +484,7 @@ test('retries are bounded: backoff between tries, then it gives up and creates n
 		'gave_up'
 	)
 	assert.equal(calls, MAX_GRADING_TRIES)
-	assert.equal(rows.get(`u1|${D}`)?.score, null)
+	assert.equal(rows.get(`u1|${D}`)?.testsPassed, null)
 })
 
 test('concurrent triggers of one submission run the grader exactly once', async () => {
@@ -539,10 +517,24 @@ test('grader errors and exhausted retries never award points and never destroy t
 		await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now))
 		now += GRADING_RETRY_BACKOFF_MS * MAX_GRADING_TRIES + 1
 		const row = rows.get(`u1|${D}`)!
-		assert.equal(row.score, null)
+		assert.equal(row.testsPassed, null)
 		assert.equal(row.testsPassed, null)
 		assert.equal(await store.readSource('u1', D), 'MY SOURCE')
-		assert.equal(toAttemptView(row, at(now)).score, null)
+		assert.equal(toAttemptView(row).testsPassed, null)
 	}
 	assert.equal(rows.get(`u1|${D}`)?.status, 'grader_error')
+})
+
+test('gradedAt is when grading FINISHED, not when it was claimed', async () => {
+	const { store, gradedAtLog } = fakeStore()
+	await startAttempt(store, 'u1', D, T0)
+	await submitAttempt(store, 'u1', D, 'code', at(60_000))
+	await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(70_000), () => at(81_000))
+	assert.equal(gradedAtLog[0]?.toISOString(), at(81_000).toISOString())
+	// Without a separate clock it falls back to the instant given.
+	const other = fakeStore()
+	await startAttempt(other.store, 'u2', D, T0)
+	await submitAttempt(other.store, 'u2', D, 'code', at(60_000))
+	await gradeAttempt(other.store, pass(12, 12), 'u2', D, 'two-sum', at(70_000))
+	assert.equal(other.gradedAtLog[0]?.toISOString(), at(70_000).toISOString())
 })

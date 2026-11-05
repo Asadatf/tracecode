@@ -1,3 +1,4 @@
+import { resolveReminderEmailConfig } from '../../lib/notifications/release-policy.ts'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
@@ -260,4 +261,27 @@ test('learners are isolated: each gets only their own reviews', async () => {
 	)
 	await runReviewScheduler(w.deps)
 	assert.deepEqual(new Set(w.reminded), new Set(['a|two-sum', 'b|binary-search']))
+})
+
+// spaced-review AC7 / learning-recommendations AC19a.
+test('hackathon cron announces opted-in learners due reviews without invoking email', async () => {
+	const config = resolveReminderEmailConfig({
+		RESEND_API_KEY: 'fixture',
+		REMINDER_FROM_EMAIL: 'reminders@example.test',
+		RESEND_VERIFIED_DOMAIN: 'example.test'
+	})
+	const w = world(
+		[
+			candidate({ emailOptIn: true, emailSlot: { status: 'retry', attempts: 1, claimedAt: null } }),
+			candidate({ userId: 'u2', emailOptIn: true, inAppEnabled: false })
+		],
+		{ email: config.enabled }
+	)
+	const summary = await runReviewScheduler(w.deps)
+	assert.equal(summary.inApp.created, 1)
+	assert.deepEqual([...w.notifications], ['u1|review:2026-11-12'])
+	assert.deepEqual(w.reminded, ['u1|two-sum'])
+	assert.equal(summary.email.configured, false)
+	assert.equal(w.sent.length, 0)
+	assert.equal(w.slots.size, 0)
 })

@@ -2,13 +2,12 @@ import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
-import { getPreferences } from '@/server/notifications/inbox'
 import { getProfileSettings } from '@/server/profile/profile'
 import { getLeaderboardConsent } from '@/server/challenge/leaderboard'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { PublicProfileForm } from '@/components/settings/public-profile-form'
+import { LEADERBOARD_VISIBLE } from '@/lib/challenge/visibility'
 import { LeaderboardOptIn } from '@/components/settings/leaderboard-opt-in'
-import { ReminderPreferences } from '@/components/notifications/reminder-preferences'
 import { Input } from '@/components/ui/input'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,11 +21,10 @@ export default async function SettingsPage() {
 		redirect({ href: '/login?next=%2Fsettings', locale: await getLocale() })
 		return null
 	}
-	const [t, preferences, profile, consent] = await Promise.all([
+	const [t, profile, consent] = await Promise.all([
 		getTranslations('SettingsPage'),
-		getPreferences(),
 		getProfileSettings(),
-		getLeaderboardConsent()
+		LEADERBOARD_VISIBLE ? getLeaderboardConsent() : null
 	])
 	return (
 		<AppShell current="settings">
@@ -66,33 +64,9 @@ export default async function SettingsPage() {
 						{t('unavailable')}
 					</p>
 				)}
-				{consent.authenticated && consent.available ? (
+				{consent != null && consent.authenticated && consent.available ? (
 					<LeaderboardOptIn initial={consent.optIn} hasUsername={consent.hasUsername} />
 				) : null}
-				{preferences.authenticated && preferences.available ? (
-					<ReminderPreferences
-						initial={{ inAppEnabled: preferences.inAppEnabled, emailOptIn: preferences.emailOptIn }}
-						emailConfigured={preferences.emailConfigured}
-						labels={{
-							heading: t('reminders.heading'),
-							description: t('reminders.description'),
-							inApp: t('reminders.inApp'),
-							inAppHelp: t('reminders.inAppHelp'),
-							email: t('reminders.email'),
-							emailHelp: t('reminders.emailHelp'),
-							emailUnavailable: t('reminders.emailUnavailable'),
-							saved: t('reminders.saved'),
-							failed: t('reminders.failed'),
-							saving: t('saving'),
-							cadence: t('cadence'),
-							daily: t('daily')
-						}}
-					/>
-				) : (
-					<p role="status" className="border-border bg-surface text-warning rounded-lg border p-6">
-						{t('unavailable')}
-					</p>
-				)}
 			</div>
 		</AppShell>
 	)

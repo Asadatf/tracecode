@@ -5,9 +5,8 @@ import { useMutation } from '@tanstack/react-query'
 import { captureClientError } from '@/lib/observability/capture-client-error'
 import { updateNotificationPreferencesAction } from '@/server/actions/notifications'
 
-// The two independent reminder switches on /settings (M7.5B): in-app (default
-// ON) and daily email (explicit opt-in, default OFF). Each change is saved on its
-// own; the server resolves the learner from the session, never from this form.
+// Retained for future configurable reminder releases; not rendered in Settings.
+// The server resolves the learner from the session, never from this form.
 
 export interface PreferenceLabels {
 	heading: string

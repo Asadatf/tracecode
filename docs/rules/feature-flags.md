@@ -227,3 +227,10 @@ not a user-owned row. The granular columns (`variant`, `variantWeights`,
 are all **nullable and additive** — a plain boolean flag leaves them unset, so
 the migration that adds them is a pure column-add with no RLS change (the
 overrides table keeps the RLS it already has).
+
+## Local-only overrides
+
+For testing a flag on a developer's machine without touching any shared database, set
+`LOCAL_FLAG_OVERRIDES="key=true,other=false"` in that process's environment. It applies to
+BOOLEAN flags only, ignores unknown keys and non-boolean values, comes first in the chain, and is
+ignored entirely when `NODE_ENV` is `production`, however it is set. Never set it in a deployment.

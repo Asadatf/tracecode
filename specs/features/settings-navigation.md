@@ -7,12 +7,12 @@ Related: auth-access.md, progress-page.md, learning-recommendations.md
 ## Why
 
 Give learners one calm navigation surface and a dedicated home for account
-information and learning reminders, keeping Progress focused on learning.
+information. In-app learning reminders are always active for the hackathon release.
 
 ## User stories
 
 - As a learner, I want consistent access to Practice, Progress, my inbox and Settings.
-- As a learner, I want to manage reminder preferences without leaving them in my dashboard.
+- As a learner, I receive daily suggestions and due-review reminders in the app without configuring notification settings.
 
 ## Acceptance criteria
 
@@ -28,26 +28,28 @@ information and learning reminders, keeping Progress focused on learning.
 - **AC4** — GIVEN Settings WHEN rendered THEN Profile shows the verified account
   email read-only. Display-name editing is deferred by explicit user instruction
   on 2026-11-02: no name field, schema change or profile update action.
-- **AC5** — GIVEN Settings WHEN reminder controls change THEN the existing M7.5
-  session-scoped action persists them, shows saving/success/failure feedback and
-  reloads saved values. Defaults stay in-app on, email off. Only Daily is shown.
-- **AC6** — GIVEN email is unavailable THEN copy explains configuration is required;
-  changing opt-in does not claim delivery or trigger an email, cron or AI call.
+- **AC5** — GIVEN Settings in the hackathon release THEN no notification preference
+  controls or reminder settings section are shown. In-app notifications are always
+  active, including for learners with a previously saved in-app opt-out.
+- **AC6** — GIVEN the hackathon release THEN reminders are in-app only and outgoing
+  reminder email is disabled independently of configuration and existing opt-ins.
+  Saved preferences are preserved for future releases; Auth emails are unchanged.
 - **AC7** — GIVEN 1440, 1280, 768 or 390px width THEN navigation, dropdowns and
   forms remain usable without page overflow, with visible keyboard focus.
 
 ## Data / API
 
-New /settings route. Existing currentAccountSafe, getPreferences and
-updateNotificationPreferencesAction only. No schema or persistence changes.
+Protected /settings route using currentAccountSafe and the existing profile loaders.
+No notification preference reads or controls in this release. Existing preference
+actions and stored values are retained for future use. No schema or persistence changes.
 Account initials derive from email until profile names are separately authorized.
 
 ## Edge cases
 
-- Missing preferences or database failure shows an unavailable message, not fake defaults.
+- A profile database failure shows an unavailable message.
 - Missing email uses a neutral account initial.
 - Long emails wrap in the menu and profile section.
-- Preferences stay session-scoped; no browser-supplied user ID.
+- Retained preference actions stay session-scoped; no browser-supplied user ID.
 
 ## Tasks
 

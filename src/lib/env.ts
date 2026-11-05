@@ -44,6 +44,10 @@ const envSchema = z.object({
 	// first sign-in (src/lib/rbac/staff-bootstrap.ts). Unset means none.
 	ADMIN_EMAIL_DOMAINS: z.string().optional(),
 
+	// Developer-only: `key=true,other=false` forces BOOLEAN flags in this process only, with no
+	// database change. Ignored when NODE_ENV is production (src/lib/flags/provider.ts).
+	LOCAL_FLAG_OVERRIDES: z.string().optional().or(z.literal('')),
+
 	NEXT_PUBLIC_DEFAULT_LOCALE: z.string().default('en'),
 
 	// Required by cron routes only; an unset secret must not break unrelated pages.
