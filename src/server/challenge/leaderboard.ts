@@ -1,4 +1,5 @@
 import 'server-only'
+import { LEADERBOARD_VISIBLE } from '@/lib/challenge/visibility'
 import { cache } from 'react'
 import { db } from '@/server/db/client'
 import { currentUserIdSafe } from '@/server/auth/session'
@@ -176,6 +177,9 @@ export const getLeaderboard = cache(
 // Freezes every finished, closed week that has verified results and no archive yet.
 // Idempotent: the (week, user) primary key and skipDuplicates make a re-run a no-op.
 export async function closeFinishedWeeks(now: Date = new Date()): Promise<{ closed: number }> {
+	// The leaderboard is hidden (a learning exercise, not a competition): no standings are
+	// archived while it is. Existing rows and tables are left exactly as they are.
+	if (!LEADERBOARD_VISIBLE) return { closed: 0 }
 	const currentWeek = weekStartOf(utcDay(now))
 	const weeks = await db.challengeAttempt.findMany({
 		where: { status: 'graded', weekStart: { lt: dayColumn(currentWeek) } },

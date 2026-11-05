@@ -25,6 +25,10 @@ export interface CalendarLabels {
 	dayNone: string
 	// Shown on today's row until the assignment has been pinned.
 	openToday: string
+	// Shown on today's row once the learner has completed today's challenge, or has made
+	// their one final submission that did not (or has not yet) passed.
+	todayDone: string
+	todaySubmitted: string
 }
 
 // One shared clock tick per second. The server snapshot is null, so the first
@@ -74,6 +78,7 @@ export function ProblemCalendar({
 	titles,
 	pinned,
 	todayIso,
+	todayState,
 	labels
 }: {
 	// Problem titles by slug.
@@ -83,6 +88,7 @@ export function ProblemCalendar({
 	// change a date's problem; a future date is not in it and cannot be opened.
 	pinned: Record<string, string>
 	todayIso: string
+	todayState: 'open' | 'submitted' | 'completed'
 	labels: CalendarLabels
 }) {
 	const locale = useLocale()
@@ -213,7 +219,10 @@ export function ProblemCalendar({
 						return (
 							<span key={iso} role="gridcell">
 								<Link
-									href={`/challenge/${iso}`}
+									// A past day goes straight to Practice for its problem; only today is the
+									// challenge. (A past day not yet pinned still opens its challenge URL,
+									// which pins it and redirects to Practice.)
+									href={isToday || slug == null ? `/challenge/${iso}` : `/practice/${slug}`}
 									className={isToday ? `${styles.day} ${styles.dayToday}` : styles.day}
 									aria-current={isToday ? 'date' : undefined}
 									aria-label={
@@ -239,6 +248,12 @@ export function ProblemCalendar({
 						<strong>
 							{todaySlug == null ? labels.openToday : (titles[todaySlug] ?? todaySlug)}
 						</strong>
+						{todayState === 'completed' ? (
+							<span className={styles.todayLabel}>✓ {labels.todayDone}</span>
+						) : null}
+						{todayState === 'submitted' ? (
+							<span className={styles.todayLabel}>{labels.todaySubmitted}</span>
+						) : null}
 					</span>
 					<ArrowRightIcon size={18} />
 				</Link>

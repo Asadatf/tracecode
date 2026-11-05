@@ -8,9 +8,8 @@ Related: `specs/features/public-profile-settings.md`, `specs/features/activity-h
 ## Why
 
 A learner who chooses to can share a page that shows their practice on TraceCode:
-what they have solved, how consistently they practise, and which topics they have
-covered, on a CV, a portfolio, GitHub or LinkedIn. The page shows recorded practice
-activity. It does not claim to be a verified skill assessment, and says so.
+what they have solved and how consistently they practise, on a CV, a portfolio, GitHub or LinkedIn. The page shows recorded practice
+activity. It does not claim to be a verified skill assessment.
 
 ## Acceptance criteria
 
@@ -24,8 +23,8 @@ activity. It does not claim to be a verified skill assessment, and says so.
 - **AC3** — GIVEN a public profile THEN it shows: the username with the TraceCode
   identity; problems solved (of the catalogue total); qualifying practice runs
   (all-time, the streak's rule); current and longest streak; the M9A.2 contribution
-  graph (the same component, 365 days); topic coverage (solved per topic and how
-  many topics are practised); and a copy-link control.
+  graph (the same component, 365 days); and a copy-link control. There is no topic
+  breakdown.
 - **AC4** — GIVEN the numbers THEN each is derived from the owner's saved data and
   nothing is estimated: solved counts distinct solved problems in the current
   catalogue; streaks are computed from the same days the graph shows; with no data
@@ -47,8 +46,15 @@ activity. It does not claim to be a verified skill assessment, and says so.
   anything that is not a public profile the head and the image are generic and
   identical.
 - **AC10** — GIVEN the page THEN it uses the app's tokens, has one `h1`, labelled
-  sections, a description list for the statistics, decorative bars hidden from
-  assistive tech, reflows to two columns at 720px, and wraps long names.
+  sections, a description list for the statistics, reflows to two columns at 720px, and wraps long names.
+- **AC11** — GIVEN the page THEN it follows the home page's design in two compact
+  panels on the dashboard's soft grey-green: the signed-out home header (brand,
+  section links back to home, Sign in, Register) whoever is looking, because the
+  public path never reads the session; panel one with the username, a "TraceCode
+  learner" subtitle, the address and a copy-link control on the left and the four
+  statistics in a 2×2 grid on the right; panel two the contribution graph with its
+  count and legend. There is no Practise button and no explainer paragraph under the
+  graph or the page; the graph keeps its labels and tooltips.
 
 ## Data / API
 
@@ -66,8 +72,8 @@ activity. It does not claim to be a verified skill assessment, and says so.
 
 - A profile made private stops resolving immediately; cached link previews elsewhere
   may linger outside our control.
-- Runs are browser-reported (ADR-0001) and a learner can forge them; the footnote
-  says the profile is not a verified assessment. Verified results arrive with M9B.
+- Runs are browser-reported (ADR-0001) and a learner can forge them, so the profile
+  is not a verified assessment (the page carries no disclaimer line). Verified results arrive with M9B.
 - A learner with more than 730 days of history shows streaks over the supported
   window; the run total is all-time.
 - Before the M9A.2/M9A.3 migrations run, the owner lookup fails and the page is the
@@ -81,3 +87,6 @@ activity. It does not claim to be a verified skill assessment, and says so.
 ## Changelog
 
 - 2026-11-05 — created (Agreed).
+- 2026-11-05 — two-panel layout; tagline kept as a subtitle; footnote, graph explainer and Practise button removed.
+- 2026-11-05 — redesigned to follow the home page (header, hero, dark surface); topic
+  coverage removed (AC3, AC11).

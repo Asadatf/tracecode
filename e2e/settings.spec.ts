@@ -60,11 +60,13 @@ for (const width of [1440, 1280, 768, 390]) {
 	)
 }
 
-test('progress AC11–AC14: all six problems and preferences relocated', async ({ page }) => {
+test('progress AC11–AC14: all sixteen problems and preferences relocated', async ({ page }) => {
 	await openAsLearner(page, '/progress')
 	await expect(page.getByRole('heading', { name: 'Your progress', exact: true })).toBeVisible()
 	await expect(page.getByRole('heading', { name: 'What to practice next' })).toBeVisible()
-	await expect(page.locator('section[aria-labelledby="progress-problems"] tbody tr')).toHaveCount(6)
+	await expect(page.locator('section[aria-labelledby="progress-problems"] tbody tr')).toHaveCount(
+		16
+	)
 	await expect(page.getByRole('checkbox')).toHaveCount(0)
 	await page.getByRole('link', { name: 'Manage notifications' }).click()
 	await expect(page).toHaveURL('/settings')

@@ -37,7 +37,17 @@ const ROUTES = [
 	['valid-anagram', 'Valid Anagram'],
 	['move-zeroes', 'Move Zeroes'],
 	['binary-search', 'Binary Search'],
-	['valid-parentheses', 'Valid Parentheses']
+	['valid-parentheses', 'Valid Parentheses'],
+	['valid-palindrome', 'Valid Palindrome'],
+	['reverse-string', 'Reverse String'],
+	['maximum-subarray', 'Maximum Subarray'],
+	['best-time-to-buy-and-sell-stock', 'Best Time to Buy and Sell Stock'],
+	['merge-two-sorted-arrays', 'Merge Two Sorted Arrays'],
+	['first-unique-character', 'First Unique Character'],
+	['missing-number', 'Missing Number'],
+	['majority-element', 'Majority Element'],
+	['longest-common-prefix', 'Longest Common Prefix'],
+	['climbing-stairs', 'Climbing Stairs']
 ] as const
 
 for (const [slug, title] of ROUTES) {
@@ -47,10 +57,12 @@ for (const [slug, title] of ROUTES) {
 		await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible()
 	})
 
-	test(`/practice/${slug} resolves and lists all six problems in the picker`, async ({ page }) => {
+	test(`/practice/${slug} resolves and lists all sixteen problems in the picker`, async ({
+		page
+	}) => {
 		await openAsLearner(page, `/practice/${slug}`)
 		await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
-		await expect(page.locator('select option')).toHaveCount(6)
+		await expect(page.locator('select option')).toHaveCount(16)
 	})
 }
 

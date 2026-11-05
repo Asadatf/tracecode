@@ -43,6 +43,11 @@ export const problemDefinitionSchema = z.object({
 	examples: z.array(z.object({ args: z.array(jsonSchema), output: jsonSchema })),
 	starter: z.string(),
 	tests: z.array(testCaseSchema).min(1),
+	// The small teaching set shown as individual results in Practice (5–6 distinct, meaningful
+	// cases). Every test in `tests` still runs and still decides pass/fail; the rest are
+	// validation checks (edge cases, larger inputs, performance) summarised in the results.
+	// Absent means every test is shown.
+	visibleTestIds: z.array(z.string()).optional(),
 	// Judging mode; absent means `return`.
 	grading: gradingSchema.optional(),
 	// Observation → reasoning → strategy hints about the specification, shown as

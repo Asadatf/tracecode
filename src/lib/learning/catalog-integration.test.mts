@@ -15,8 +15,19 @@ import { computeEvidenceHash } from './evidence-hash.ts'
 // problems need no changes anywhere downstream. (The older M7 tests pin the
 // original two-problem catalog — see evidence-fixtures.mts.)
 
-const FULL = catalogEntries(Object.values(PROBLEMS))
-const ALL_SLUGS = Object.keys(PROBLEMS).sort()
+// These scenarios pin the six-problem catalog (the original two plus the four added next). The
+// ten-problem expansion has its own integration tests in catalog-expansion.test.mts, so this file's
+// exact counts (6, 4, ...) stay a stable fixture instead of drifting with the live catalog.
+const SIX = [
+	'two-sum',
+	'contains-duplicate',
+	'valid-anagram',
+	'move-zeroes',
+	'binary-search',
+	'valid-parentheses'
+] as const
+const FULL = catalogEntries(SIX.map((slug) => PROBLEMS[slug]!))
+const ALL_SLUGS = [...SIX].sort()
 const NEW_SLUGS = ['binary-search', 'move-zeroes', 'valid-anagram', 'valid-parentheses']
 
 // An attempt on a new problem, sized to that problem's real test count.
@@ -171,7 +182,7 @@ test('the AI guard accepts a new catalog slug and rejects a nonexistent one', ()
 })
 
 test('the reminder planner only ever points at a catalog problem, with a resolvable route', () => {
-	const catalog: CatalogProblem[] = Object.values(PROBLEMS).map((p) => ({
+	const catalog: CatalogProblem[] = SIX.map((slug) => PROBLEMS[slug]!).map((p) => ({
 		slug: p.slug,
 		title: p.title,
 		conceptTags: p.conceptTags
@@ -204,22 +215,25 @@ test('M6 statistics and the progress view count the new problems', () => {
 		true
 	)
 
-	const view = buildProgressView(Object.values(PROBLEMS), {
-		authenticated: true,
-		available: true,
-		progress: [
-			{
-				problemSlug: 'valid-parentheses',
-				status: 'solved',
-				attempts: 1,
-				bestTestsPassed: 26,
-				testsTotal: 26,
-				firstSolvedAt: at(0).toISOString(),
-				lastAttemptAt: at(0).toISOString()
-			}
-		],
-		recentAttempts: []
-	} as never)
+	const view = buildProgressView(
+		SIX.map((slug) => PROBLEMS[slug]!),
+		{
+			authenticated: true,
+			available: true,
+			progress: [
+				{
+					problemSlug: 'valid-parentheses',
+					status: 'solved',
+					attempts: 1,
+					bestTestsPassed: 26,
+					testsTotal: 26,
+					firstSolvedAt: at(0).toISOString(),
+					lastAttemptAt: at(0).toISOString()
+				}
+			],
+			recentAttempts: []
+		} as never
+	)
 	assert.equal(view.summary.total, 6)
 	assert.equal(view.summary.solved, 1)
 	assert.deepEqual(

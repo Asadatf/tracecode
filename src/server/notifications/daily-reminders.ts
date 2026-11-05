@@ -4,7 +4,7 @@ import { env } from '@/lib/env'
 import { log } from '@/server/lib/logger'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { parseReminderPlan, planReminder, type ReminderPlan } from '@/lib/learning/reminder-plan'
-import { resolveEmailConfig } from '@/lib/notifications/email-config'
+import { resolveReminderEmailConfig } from '@/lib/notifications/release-policy'
 import { renderReminderEmail } from '@/lib/notifications/email-template'
 import { sendEmail } from '@/server/email/resend'
 import { recommendationForUser } from '@/server/learning/recommendation'
@@ -59,14 +59,7 @@ function frozenReminder(value: unknown): PlannedReminder | null {
 
 async function candidates(date: string): Promise<Candidate[]> {
 	const users = await db.user.findMany({
-		// In-app defaults ON (no preference row = enabled); email is opt-in only.
-		where: {
-			OR: [
-				{ notificationPreference: { is: null } },
-				{ notificationPreference: { is: { inAppEnabled: true } } },
-				{ notificationPreference: { is: { emailOptIn: true } } }
-			]
-		},
+		// Every learner is eligible: historical channel opt-outs do not apply in this release.
 		select: {
 			id: true,
 			email: true,
@@ -89,7 +82,7 @@ async function candidates(date: string): Promise<Candidate[]> {
 	})
 	return users.map((u) => ({
 		userId: u.id,
-		inAppEnabled: u.notificationPreference?.inAppEnabled ?? true,
+		inAppEnabled: true, // In-app reminders are always active for this release.
 		emailOptIn: u.notificationPreference?.emailOptIn ?? false,
 		email: u.notificationPreference == null || u.email === '' ? null : u.email,
 		unsubscribeToken: u.notificationPreference?.unsubscribeToken ?? null,
@@ -128,7 +121,7 @@ async function createInApp(
 }
 
 function emailChannel(): EmailChannel | null {
-	const config = resolveEmailConfig(env)
+	const config = resolveReminderEmailConfig(env)
 	if (!config.enabled) return null
 	const key = (userId: string, date: string) => ({
 		userId,

@@ -7,7 +7,7 @@ import { buildProgressView } from '@/lib/progress/progress-view'
 import { buildProblemSummaries } from '@/lib/problems/problem-summary'
 import { getFirstAttemptDates, getLearningProgress } from '@/server/learning/progress'
 import { AppShell } from '@/components/app-shell/app-shell'
-import { getChallenge, getPinnedChallenges } from '@/server/challenge/challenge'
+import { getChallenge, getMyAttempt, getPinnedChallenges } from '@/server/challenge/challenge'
 import { ProblemCalendar } from '@/components/problems/problem-calendar'
 import { ProblemList } from '@/components/problems/problem-list'
 import dashboard from '@/components/dashboard/dashboard.module.css'
@@ -36,6 +36,17 @@ export default async function ProblemsPage() {
 		// name it; the pinned map covers today and earlier only, never a future date.
 		getChallenge(todayIso).then(() => getPinnedChallenges())
 	])
+	const todaySlug = pinned[todayIso]
+	const today = todaySlug == null ? null : await getMyAttempt(account.id, todayIso)
+	const todayView = today != null && today.available ? today.view : null
+	// Completed only by a fully passing graded final submission; a failed or still-pending one
+	// reads as "Submitted". Nothing is scored.
+	const todayState =
+		todayView == null || todayView.submittedAt == null
+			? 'open'
+			: todayView.phase === 'graded' && todayView.testsPassed === todayView.testsTotal
+				? 'completed'
+				: 'submitted'
 	const problems = Object.values(PROBLEMS)
 	// Statuses are shown only when saved progress could actually be read.
 	const view =
@@ -57,6 +68,7 @@ export default async function ProblemsPage() {
 						pinned={pinned}
 						titles={Object.fromEntries(problems.map((problem) => [problem.slug, problem.title]))}
 						todayIso={todayIso}
+						todayState={todayState}
 						labels={{
 							dayHeading: t('calendar.dayHeading', { day: '{day}' }),
 							timeLeft: t('calendar.timeLeft', { time: '{time}' }),
@@ -67,7 +79,9 @@ export default async function ProblemsPage() {
 							dayLabelPlain: t('calendar.dayLabelPlain', { date: '{date}' }),
 							dayLocked: t('calendar.dayLocked', { date: '{date}' }),
 							dayNone: t('calendar.dayNone', { date: '{date}' }),
-							openToday: t('calendar.openToday')
+							openToday: t('calendar.openToday'),
+							todayDone: t('calendar.todayDone'),
+							todaySubmitted: t('calendar.todaySubmitted')
 						}}
 					/>
 				</aside>

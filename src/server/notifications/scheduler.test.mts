@@ -1,3 +1,4 @@
+import { resolveReminderEmailConfig } from '../../lib/notifications/release-policy.ts'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
@@ -506,4 +507,33 @@ test('crash recovery re-sends the reminder frozen at the first claim, even if th
 	// Same key, same payload — so Resend can replay rather than reject.
 	assert.deepEqual(w.sends[1]?.reminder, w.sends[0]?.reminder)
 	assert.equal(w.sends[1]?.reminder.plan.problemSlug, 'two-sum')
+})
+
+// learning-recommendations AC19a: a previous opt-in cannot bypass release policy.
+test('hackathon cron creates in-app reminders without sending or retrying email', async () => {
+	const config = resolveReminderEmailConfig({
+		RESEND_API_KEY: 'fixture',
+		REMINDER_FROM_EMAIL: 'reminders@example.test',
+		RESEND_VERIFIED_DOMAIN: 'example.test'
+	})
+	assert.equal(config.enabled, false)
+	const w = world([
+		{ userId: 'u1', emailOptIn: true },
+		{ userId: 'u2', emailOptIn: true, inAppEnabled: false }
+	])
+	w.slots.set('u1|2026-11-02', {
+		reminder: REMINDER,
+		status: 'retry',
+		attempts: 1,
+		claimedAt: null,
+		providerMessageId: null,
+		lastError: 'network_error'
+	})
+	const summary = await runScheduler(w.deps({ email: config.enabled ? w.email : null }))
+	assert.equal(summary.inApp.created, 1)
+	assert.equal(w.notifications.size, 1)
+	assert.equal(summary.email.configured, false)
+	assert.equal(w.sends.length, 0)
+	assert.equal(w.slots.size, 1)
+	assert.equal(w.slots.get('u1|2026-11-02')?.attempts, 1)
 })

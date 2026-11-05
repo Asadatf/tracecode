@@ -3,7 +3,7 @@ import { db } from '@/server/db/client'
 import { env } from '@/lib/env'
 import { captureError } from '@/lib/observability/capture-error'
 import { currentLearnerId, currentUserIdSafe } from '@/server/auth/session'
-import { resolveEmailConfig } from '@/lib/notifications/email-config'
+import { resolveReminderEmailConfig } from '@/lib/notifications/release-policy'
 import {
 	isWellFormedUnsubscribeToken,
 	listNotificationsQuery,
@@ -106,7 +106,7 @@ export async function getPreferences(): Promise<PreferencesView> {
 			available: true,
 			inAppEnabled: row?.inAppEnabled ?? true,
 			emailOptIn: row?.emailOptIn ?? false,
-			emailConfigured: resolveEmailConfig(env).enabled
+			emailConfigured: resolveReminderEmailConfig(env).enabled
 		}
 	} catch {
 		return { authenticated: true, available: false }

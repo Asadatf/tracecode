@@ -2,6 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { FLAGS, type FlagKey } from './flags'
 import {
+	localOverrideProvider,
+	parseLocalOverrides,
 	parseWeights,
 	rolloutBucket,
 	walkProviders,
@@ -202,4 +204,28 @@ test('weightedVariant makes the last variant fully reachable (no unreachable top
 test('weightedVariant abstains (undefined) when no declared variant carries weight', () => {
 	assert.equal(weightedVariant(VARIANT_KEY, 'user-1', { legacy_variant: 100 }), undefined)
 	assert.equal(weightedVariant(VARIANT_KEY, 'user-1', {}), undefined)
+})
+
+test('LOCAL_FLAG_OVERRIDES: boolean flags only, known keys only, never in production', async () => {
+	const on = parseLocalOverrides('challenge_server_grading=true, checkout_kill_switch=false', false)
+	assert.equal(on.get('challenge_server_grading'), true)
+	assert.equal(on.get('checkout_kill_switch'), false)
+	// Production ignores it entirely, however it is set.
+	assert.equal(parseLocalOverrides('challenge_server_grading=true', true).size, 0)
+	// Unknown keys, non-boolean values, variant flags and junk are ignored.
+	const junk = parseLocalOverrides(
+		'nope=true,challenge_server_grading=yes,dashboard_layout=true,=true,garbage',
+		false
+	)
+	assert.equal(junk.size, 0)
+	assert.equal(parseLocalOverrides(undefined, false).size, 0)
+	assert.equal(parseLocalOverrides('', false).size, 0)
+	// As a chain link it wins over everything after it and abstains for any other flag.
+	const first = localOverrideProvider(on)
+	const result = await walkProviders('challenge_server_grading', {}, [
+		first,
+		{ resolve: async () => false }
+	])
+	assert.equal(result, true)
+	assert.equal(await first.resolve('payments_module', {}), undefined)
 })

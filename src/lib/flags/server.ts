@@ -1,6 +1,7 @@
 import 'server-only'
 import { cache } from 'react'
 import { db } from '@/server/db/client'
+import { env } from '@/lib/env'
 import { getPostHogServerClient } from '@/lib/posthog/server'
 import {
 	FLAGS,
@@ -15,6 +16,8 @@ import {
 } from './flags'
 import { validatePayload, type PayloadOf, type PayloadSnapshot } from './payload-schemas'
 import {
+	localOverrideProvider,
+	parseLocalOverrides,
 	parseWeights,
 	rolloutBucket,
 	walkProviders,
@@ -161,6 +164,13 @@ function posthogOptions(ctx: FlagContext) {
 		groups: ctx.groups,
 		groupProperties: ctx.groupProperties
 	}
+}
+
+// Link 0 — a developer's local-only override (LOCAL_FLAG_OVERRIDES), never in production.
+function localProvider(): FlagProvider {
+	return localOverrideProvider(
+		parseLocalOverrides(env.LOCAL_FLAG_OVERRIDES, process.env.NODE_ENV === 'production')
+	)
 }
 
 // --- VALUE providers (the on/off | variant chain) ----------------------------
@@ -313,6 +323,7 @@ export async function getFlag<K extends FlagKey>(
 ): Promise<ValueOf<K>> {
 	const snapshot = await loadFlagSnapshot(ctx.userId)
 	const providers: readonly FlagProvider[] = [
+		localProvider(),
 		overrideProvider(snapshot),
 		dbFlagProvider(snapshot),
 		posthogExposingProvider()
@@ -369,6 +380,7 @@ export const getFlagSnapshot = cache(
 	async (ctx: FlagContext = {}): Promise<{ flags: FlagSnapshot; payloads: PayloadSnapshot }> => {
 		const [snapshot, bulk] = await Promise.all([loadFlagSnapshot(ctx.userId), loadPostHogBulk(ctx)])
 		const providers: readonly FlagProvider[] = [
+			localProvider(),
 			overrideProvider(snapshot),
 			dbFlagProvider(snapshot),
 			posthogBulkProvider(bulk?.values)

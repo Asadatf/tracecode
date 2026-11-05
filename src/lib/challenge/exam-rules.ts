@@ -1,11 +1,9 @@
-// The timed-assessment rules (specs/features/daily-challenge.md). Pure and clock-free:
-// every function takes the instant it should judge, and callers pass the SERVER's
-// clock. A browser's clock is never consulted, so changing it cannot extend an exam.
+// The Daily Learning Challenge's rules (specs/features/daily-challenge.md). Pure and
+// clock-free: callers pass the SERVER's instants. The 30 minutes is a SOFT TARGET: there is
+// no deadline, no expiry and no submission cutoff, so overtime is unlimited.
 
-// Thirty minutes from the server-recorded start.
+// The soft target: thirty minutes from the server-recorded start.
 export const EXAM_DURATION_MS = 30 * 60 * 1000
-// Network and server latency allowance for the auto-submit at zero. Small on purpose.
-export const SUBMIT_GRACE_MS = 5_000
 // Largest source accepted for a submission.
 export const MAX_SOURCE_BYTES = 20_000
 
@@ -23,30 +21,18 @@ export function deadlineFor(startedAt: Date): Date {
 	return new Date(startedAt.getTime() + EXAM_DURATION_MS)
 }
 
-export function msRemaining(deadlineAt: Date, now: Date): number {
-	return Math.max(0, deadlineAt.getTime() - now.getTime())
-}
-
-// Whether a submission arriving at `now` may still count. The grace covers the
-// client's auto-submit at zero; anything later is late and earns nothing.
-export function acceptsSubmission(deadlineAt: Date, now: Date): boolean {
-	return now.getTime() <= deadlineAt.getTime() + SUBMIT_GRACE_MS
-}
-
-// Elapsed time to record: server-measured, never negative, never above the limit.
+// Whole milliseconds from the server-recorded start to the final submit. Never negative
+// and NOT capped: a long overtime is recorded as it was.
 export function elapsedFor(startedAt: Date, submittedAt: Date): number {
-	return Math.min(EXAM_DURATION_MS, Math.max(0, submittedAt.getTime() - startedAt.getTime()))
+	return Math.max(0, submittedAt.getTime() - startedAt.getTime())
 }
 
-// What the page should show for an attempt, judged at `now` — including an attempt
-// whose time ran out without a submission, which is expired even if no one has
-// marked it yet.
-export type Phase = 'running' | 'expired' | 'submitted' | 'grading' | 'graded' | 'grader_error'
+// What the page should show for an attempt. There is no "expired": a started attempt is
+// running (or in overtime) until its one final submit, whatever the clock says.
+export type Phase = 'running' | 'submitted' | 'grading' | 'graded' | 'grader_error'
 
-export function phaseOf(attempt: { status: string; deadlineAt: Date }, now: Date): Phase {
+export function phaseOf(attempt: { status: string }): Phase {
 	switch (attempt.status) {
-		case 'started':
-			return acceptsSubmission(attempt.deadlineAt, now) ? 'running' : 'expired'
 		case 'submitted':
 			return 'submitted'
 		case 'grading':
@@ -56,12 +42,8 @@ export function phaseOf(attempt: { status: string; deadlineAt: Date }, now: Date
 		case 'grader_error':
 			return 'grader_error'
 		default:
-			return 'expired'
+			// 'started', and a legacy 'expired' row from the earlier exam design, are both
+			// still open: nothing about time ever closes the challenge.
+			return 'running'
 	}
-}
-
-// Only a fully graded attempt has a score; every other state has none, whatever
-// a row might contain.
-export function isScored(status: string): boolean {
-	return status === 'graded'
 }

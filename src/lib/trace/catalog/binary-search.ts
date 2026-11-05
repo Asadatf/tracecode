@@ -24,6 +24,7 @@ export const binarySearch = {
 	],
 	starter:
 		'def search(nums: list[int], target: int) -> int:\n    # Return the index of target in the sorted list nums, or -1 if absent.\n    return -1',
+	visibleTestIds: ['t1', 't2', 't3', 't5', 't9', 't10'],
 	tests: [
 		{ id: 't1', args: [[-1, 0, 3, 5, 9, 12], 9], expected: 4 },
 		{ id: 't2', args: [[-1, 0, 3, 5, 9, 12], 2], expected: -1 },

@@ -26,6 +26,7 @@ export const validAnagram = {
 	],
 	starter:
 		'def is_anagram(s: str, t: str) -> bool:\n    # Return True if t is a rearrangement of the letters of s.\n    # Start with any correct approach.\n    return False',
+	visibleTestIds: ['t1', 't2', 't3', 't5', 't7', 't8'],
 	tests: [
 		{ id: 't1', args: ['anagram', 'nagaram'], expected: true },
 		{ id: 't2', args: ['rat', 'car'], expected: false },

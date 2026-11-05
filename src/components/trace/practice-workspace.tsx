@@ -11,6 +11,7 @@ import { PROBLEMS } from '@/lib/trace/problems'
 import { isGuestPracticeSlug } from '@/lib/auth/access'
 import { optimizationPrompt, teach, type TeachingPrompt } from '@/lib/trace/teach'
 import { buildRunRequest } from '@/lib/trace/grading'
+import { splitResults } from '@/lib/trace/visible-tests'
 import {
 	isContextualHintEligible,
 	findSolvedAttempt,
@@ -1096,26 +1097,71 @@ function ResultsBody({
 			</div>
 		)
 	}
+	const split = splitResults(problem, result.tests)
+	const resultLabel =
+		problem.grading?.mode === 'mutate-arg'
+			? `${problem.params[problem.grading.argIndex]?.name ?? 'argument'} after the call`
+			: 'Returned'
+	const row = (test: TestResult) => {
+		const args = problem.tests.find((t) => t.id === test.testId)?.args ?? []
+		return (
+			<ResultRow
+				key={test.testId}
+				test={test}
+				args={args}
+				busy={busy}
+				namedInput={namedInput}
+				resultLabel={resultLabel}
+				onReplay={() => onReplay({ id: test.testId, args })}
+			/>
+		)
+	}
 	return (
 		<div>
-			{result.tests.map((test) => {
-				const args = problem.tests.find((t) => t.id === test.testId)?.args ?? []
-				return (
-					<ResultRow
-						key={test.testId}
-						test={test}
-						args={args}
-						busy={busy}
-						namedInput={namedInput}
-						resultLabel={
-							problem.grading?.mode === 'mutate-arg'
-								? `${problem.params[problem.grading.argIndex]?.name ?? 'argument'} after the call`
-								: 'Returned'
-						}
-						onReplay={() => onReplay({ id: test.testId, args })}
-					/>
-				)
-			})}
+			{split.visible.map(row)}
+			{split.checks.length > 0 && (
+				<ValidationChecks passed={split.passedChecks} failed={split.failedChecks} row={row} />
+			)}
+		</div>
+	)
+}
+
+// The validation checks beyond the small teaching set: one summary line, with every FAILING check
+// always listed, and the passing ones one press away (progressive disclosure, keyboard operable).
+function ValidationChecks({
+	passed,
+	failed,
+	row
+}: {
+	passed: TestResult[]
+	failed: TestResult[]
+	row: (test: TestResult) => React.ReactNode
+}) {
+	const [open, setOpen] = useState(false)
+	const total = passed.length + failed.length
+	return (
+		<div className={styles.checks}>
+			<button
+				type="button"
+				className={styles.checksToggle}
+				onClick={() => setOpen((value) => !value)}
+				aria-expanded={open}
+				aria-controls="validation-checks"
+			>
+				<span aria-hidden="true">{open ? '▾' : '▸'}</span>{' '}
+				<strong>
+					{failed.length === 0
+						? `${total} more validation checks passed`
+						: `${failed.length} of ${total} more validation checks failed`}
+				</strong>{' '}
+				<span className={styles.checksNote}>
+					Extra edge cases and larger inputs that also have to pass.
+				</span>
+			</button>
+			<div id="validation-checks">
+				{failed.map(row)}
+				{open && passed.map(row)}
+			</div>
 		</div>
 	)
 }

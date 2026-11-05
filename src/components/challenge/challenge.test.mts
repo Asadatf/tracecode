@@ -17,7 +17,7 @@ const messages = JSON.parse(
 )
 const t = (ns: string) => createTranslator({ locale: 'en', messages, namespace: ns })
 
-describe('the assessment shows no teaching aids', () => {
+describe('no teaching aids and no competition appear on the challenge', () => {
 	it('imports nothing from Tracy, hints, replay, solutions or the practice workspace', () => {
 		for (const source of [exam, examPage]) {
 			assert.doesNotMatch(
@@ -27,7 +27,7 @@ describe('the assessment shows no teaching aids', () => {
 		}
 	})
 
-	it('shows only what the exam needs: statement, examples, editor, timer, Run, Submit', () => {
+	it('shows only what the challenge needs: statement, examples, editor, timer, Run, Submit, Start', () => {
 		for (const needle of [
 			'problem.statement',
 			'problem.examples',
@@ -40,57 +40,140 @@ describe('the assessment shows no teaching aids', () => {
 			assert.ok(exam.includes(needle), needle)
 	})
 
-	it('explains the one-submission rule before the learner can start', () => {
-		const rules = exam.indexOf("t('rules.heading')")
-		const start = exam.indexOf("t('start')")
-		assert.ok(rules > 0 && rules < start)
-		assert.ok(exam.includes("t('rules.once')"))
+	it('shows no score, rank, leaderboard link or deadline; the result is counts only', () => {
+		assert.doesNotMatch(exam, /leaderboard|rank|score|deadline|expired/i)
+		assert.doesNotMatch(examPage, /leaderboard/i)
+		const text = JSON.stringify(messages.Challenge).toLowerCase()
+		for (const word of ['leaderboard', 'ranked against', 'expired', 'proctor', 'score:'])
+			assert.equal(text.includes(word), false, word)
+	})
+
+	it('the problem handed to the browser carries no tests, hints, solutions or topics', () => {
+		assert.match(examPage, /toExamProblem\(problem\)/)
+		assert.doesNotMatch(
+			exam,
+			/conceptTags|knownStrategies|correctnessHints|optimization|problem\.tests/
+		)
 	})
 })
 
-describe('the server owns the clock and the score', () => {
-	it('the countdown is display only: only a date and the source ever go to the server', () => {
-		assert.match(exam, /submitChallengeAction\(\{ date, source: code \}\)/)
+describe('the Practice look with exactly two panes', () => {
+	it('reuses the Practice frame, panes and editor chrome', () => {
+		for (const needle of ['practice.module.css', 'workspace.module.css', 'ws.pane', 'ws.paneCode'])
+			assert.ok(exam.includes(needle), needle)
+		assert.match(examPage, /<AppShell bare startCollapsed>/)
+	})
+
+	it('has a problem pane and a code pane only: no results, tutor or third pane', () => {
+		assert.equal((exam.match(/className=\{[^}]*\bws\.pane\b/g) ?? []).length, 2)
+		assert.doesNotMatch(exam, /resultsHead|WorkspaceLayout|ws\.paneTutor/)
+	})
+
+	it('the divider is a keyboard operable, labelled separator', () => {
+		assert.match(exam, /role="separator"/)
+		assert.match(exam, /aria-label=\{t\('resizePanes'\)\}/)
+		assert.match(exam, /ArrowLeft/)
+		assert.match(exam, /ArrowRight/)
+	})
+})
+
+describe('the timer is a soft target owned by the server clock', () => {
+	it('the clock comes from the server-recorded start and the server\'s "now"', () => {
+		assert.match(exam, /dailyClock\(/)
+		assert.match(
+			exam,
+			/startedAt: view\?\.startedAt \?\? null, submittedAt: view\?\.submittedAt \?\? null/
+		)
+		assert.match(exam, /Date\.parse\(serverNow\) - Date\.now\(\)/)
 		assert.match(exam, /startChallengeAction\(\{ date \}\)/)
-		assert.match(exam, /challengeStatusAction\(\{ date \}\)/)
-		// Every server-action call carries only the date (and, for Submit, the source).
+	})
+
+	it('shows the countdown, then Overtime, then a stopped time at the final submit', () => {
+		for (const needle of [
+			"clock.phase === 'running'",
+			"clock.phase === 'overtime'",
+			"clock.phase === 'submitted'",
+			"t('overtime')",
+			"t('submittedBadge')"
+		])
+			assert.ok(exam.includes(needle), needle)
+		// The tick runs only while the challenge is open.
+		assert.match(exam, /if \(!open\) return/)
+	})
+
+	it('never auto-submits, expires, or blocks Run or Submit on time', () => {
+		assert.doesNotMatch(exam, /deadline|expire|setTimeout/i)
+		// Controls are disabled only while a request is in flight, never by the clock.
+		const disabled = [...exam.matchAll(/disabled=\{([^}]*)\}/g)].map((m) => m[1])
+		assert.ok(disabled.length >= 4)
+		for (const condition of disabled) assert.match(condition ?? '', /^busy != null$/)
+		// Nothing calls submit from a timer or an effect.
+		assert.equal((exam.match(/\bsubmit\(\)/g) ?? []).length, 1, 'only its definition')
+		assert.match(exam, /onClick=\{submit\}/)
+	})
+
+	it('Run uses the public examples and never reaches a server action', () => {
+		assert.match(exam, /runCode\(exampleRunRequest\(problem, code\)\)/)
+		const runFn = exam.slice(
+			exam.indexOf('async function run()'),
+			exam.indexOf('async function submit()')
+		)
+		assert.doesNotMatch(runFn, /Action\(|saveAttempt/)
+	})
+})
+
+describe('the ONE final submission', () => {
+	it('is a two-step confirm before anything is sent', () => {
+		assert.match(exam, /setConfirming\(true\)/)
+		assert.match(exam, /t\('confirmText'\)/)
+		assert.match(exam, /t\('confirmSubmit'\)/)
+	})
+
+	it('sends only the date and the source: no pass count, result or time from the browser', () => {
+		assert.match(exam, /submitChallengeAction\(\{ date, source: code \}\)/)
 		const calls = [...exam.matchAll(/(start|submit|status)\w*Action\(\{([^}]*)\}\)/gi)].map(
 			(m) => m[2] ?? ''
 		)
 		assert.equal(calls.length, 3)
 		for (const args of calls) assert.match(args, /^\s*date(, source: code)?\s*$/)
+		// The browser's own test results are never used for the final result.
+		assert.doesNotMatch(exam, /saveAttempt|submitRunRequest|allPassed|testsPassed:/)
 	})
 
-	it('local Run uses public examples only and never reaches a server action', () => {
-		assert.match(exam, /runCode\(exampleRunRequest\(problem, code\)\)/)
-		const runFn = exam.slice(exam.indexOf('async function run()'), exam.indexOf('const examples'))
-		assert.doesNotMatch(runFn, /Action\(/)
+	it('shows "grading pending" when saved but not graded, and the verified counts when graded', () => {
+		for (const needle of [
+			"t('pendingHeading')",
+			"t('pending')",
+			"t('grading')",
+			"t('resultCounts'",
+			"t('passedHeading')",
+			"t('failedHeading')"
+		])
+			assert.ok(exam.includes(needle), needle)
+		assert.match(String(messages.Challenge.pending), /Submission saved — grading pending/)
 	})
 
-	it('the display clock is anchored to the server\'s "now", not just the browser\'s', () => {
-		assert.match(exam, /Date\.parse\(serverNow\) - Date\.now\(\)/)
+	it('polls for the result only while it is waiting and grading is switched on', () => {
+		assert.match(exam, /if \(!gradingOn \|\| !pending\) return/)
+		assert.match(exam, /challengeStatusAction\(\{ date \}\)/)
 	})
 
-	it('the exam page passes the browser a problem without tests, and the server-only grader state as a boolean', () => {
-		assert.match(examPage, /toExamProblem\(problem\)/)
-		assert.match(examPage, /scoringActive=\{grader != null\}/)
-	})
-
-	it('the exam does not poll for a score when grading is off', () => {
-		assert.match(exam, /if \(!scoringActive\) return/)
+	it('a failed final submission cannot be retried: the editor is gone and no Submit remains', () => {
+		// The editor and the Submit footer exist only while the challenge is open.
+		assert.match(exam, /\{open \? \(\s*<div className=\{styles\.editorFill\}>/)
+		assert.match(exam, /\{open \? \(\s*<div className=\{styles\.foot\}>/)
+		assert.match(String(messages.Challenge.failedBody), /cannot be retried today/)
 	})
 })
 
 describe('states and accessibility', () => {
-	it('covers not started, running, submitting, awaiting grading, graded, grader error, expired and error', () => {
+	it('covers not started, running, overtime, submitted/pending, graded and errors', () => {
 		for (const needle of [
 			'phase == null',
-			"phase === 'running'",
-			"phase === 'submitted'",
-			"phase === 'graded'",
-			"phase === 'grader_error'",
-			"phase === 'expired'",
-			"busy === 'submitting'",
+			'open ? (',
+			'pending ? (',
+			'graded && view != null',
+			"clock.phase === 'overtime'",
 			'role="alert"'
 		])
 			assert.ok(exam.includes(needle), needle)
@@ -99,26 +182,81 @@ describe('states and accessibility', () => {
 	it('announces status changes and labels the timer and editor', () => {
 		assert.match(exam, /aria-live="polite"/)
 		assert.match(exam, /aria-label=\{t\('timeLeftLabel'\)\}/)
+		assert.match(exam, /aria-label=\{t\('overtimeLabel'\)\}/)
 		assert.match(exam, /ariaLabel=\{t\('editor'\)\}/)
 	})
 
-	it('final submission is a two-step confirm', () => {
-		assert.match(exam, /setConfirming\(true\)/)
-		assert.match(exam, /t\('confirmSubmit'\)/)
+	it('after grading it shows the personal time and AI feedback, clearly qualified, pass or fail', () => {
+		assert.match(exam, /t\('passedBody', \{ time: formatClock\(clock\.elapsedMs\) \}\)/)
+		for (const key of [
+			'approach',
+			'time',
+			'space',
+			'efficiency',
+			'improvement',
+			'disclaimer',
+			'badge'
+		])
+			assert.ok(exam.includes(`t('assessment.${key}'`), key)
+		assert.match(String(messages.Challenge.assessment.badge), /AI estimate/)
+		assert.match(String(messages.Challenge.assessment.disclaimer), /not proof/)
+		// The assessment block is inside the graded card, for both a pass and a fail.
+		const graded = exam.slice(exam.indexOf('graded && view != null'))
+		assert.ok(graded.includes("t('assessment.heading')"))
+		assert.ok(graded.includes("t('failedBody')") && graded.includes("t('passedBody'"))
 	})
 
-	it('the future is a 404, a past day is practice only, and the page needs a signed-in learner', () => {
+	it('asks for the feedback only once graded, never on Run or while still open', () => {
+		assert.match(exam, /if \(!graded \|\| assessment != null \|\| askedRef\.current\) return/)
+		assert.match(exam, /assessDailyAction\(\{ date \}\)/)
+		const runFn = exam.slice(
+			exam.indexOf('async function run()'),
+			exam.indexOf('async function submit()')
+		)
+		assert.doesNotMatch(runFn, /assess/i)
+		// A failure shows "unavailable"; nothing is estimated in the browser.
+		assert.match(exam, /aiFailed \? t\('assessment\.unavailable'\)/)
+		assert.doesNotMatch(exam, /assessApproach|kindOf|codeFeatures/)
+	})
+
+	it('the future is a 404, a past day with no attempt redirects to Practice, and the page needs a signed-in learner', () => {
 		assert.match(
 			examPage,
 			/lookup\.status === 'locked'[\s\S]*?lookup\.status === 'before_launch'[\s\S]*?notFound\(\)/
 		)
-		assert.match(examPage, /lookup\.kind === 'past'/)
+		assert.match(examPage, /lookup\.kind === 'past' && !hasAttempt/)
+		// ...and that practice-only day goes straight into the Practice workspace.
+		assert.match(examPage, /redirect\(\{ href: `\/practice\/\$\{problem\.slug\}`, locale \}\)/)
 		assert.match(examPage, /currentAccountSafe\(\)/)
 		assert.match(examPage, /robots: \{ index: false/)
 	})
 })
 
-describe('the calendar and the leaderboard', () => {
+describe('the leaderboard is hidden, not deleted', () => {
+	const visibility = read('../../lib/challenge/visibility.ts')
+	const settings = read('../../app/[locale]/settings/page.tsx')
+
+	it('one switch, off, gates the page and the settings opt-in', () => {
+		assert.match(visibility, /LEADERBOARD_VISIBLE = false/)
+		assert.match(board, /if \(!LEADERBOARD_VISIBLE\) notFound\(\)/)
+		assert.match(settings, /LEADERBOARD_VISIBLE \? getLeaderboardConsent\(\) : null/)
+	})
+
+	it('nothing in the challenge, the calendar or the problems page links to it', () => {
+		const problems = read('../../app/[locale]/problems/page.tsx')
+		for (const source of [exam, examPage, calendar, problems])
+			assert.doesNotMatch(source, /\/leaderboard/)
+	})
+})
+
+describe('the calendar and the (hidden) leaderboard', () => {
+	it('a past day links straight to Practice for its problem; only today opens the challenge', () => {
+		assert.match(
+			calendar,
+			/href=\{isToday \|\| slug == null \? `\/challenge\/\$\{iso\}` : `\/practice\/\$\{slug\}`\}/
+		)
+	})
+
 	it('the calendar never links a future date and reads assignments from the pinned map', () => {
 		assert.match(calendar, /if \(iso > todayIso\)/)
 		assert.match(calendar, /if \(iso < CHALLENGE_EPOCH\)/)
@@ -173,44 +311,33 @@ describe('copy', () => {
 		)
 	}
 
-	it('every message the exam, the pages and the opt-in use exists', () => {
+	it('every message the challenge, its page and the calendar use exists', () => {
 		for (const key of keys(exam)) assert.ok(has('Challenge', key), `Challenge.${key}`)
 		for (const key of keys(examPage)) assert.ok(has('Challenge', key), `Challenge.${key}`)
-		for (const key of keys(board)) assert.ok(has('Leaderboard', key), `Leaderboard.${key}`)
-		for (const key of keys(optIn))
-			assert.ok(has('SettingsPage.leaderboard', key), `SettingsPage.leaderboard.${key}`)
-		for (const key of [
-			'errors.generic',
-			'errors.unauthenticated',
-			'errors.notLive',
-			'errors.notStarted',
-			'errors.empty',
-			'errors.tooLarge'
-		])
-			assert.ok(has('Challenge', key), key)
-		for (const key of ['status.saved', 'status.username_required', 'status.failed'])
-			assert.ok(has('SettingsPage.leaderboard', key), key)
+		for (const key of ['generic', 'unauthenticated', 'notLive', 'notStarted', 'empty', 'tooLarge'])
+			assert.ok(has('Challenge', `errors.${key}`), key)
+		assert.ok(has('ProblemsPage', 'calendar.todayDone'))
+		assert.ok(has('ProblemsPage', 'calendar.todaySubmitted'))
+		for (const level of ['brute_force', 'reasonably_efficient', 'optimal'])
+			assert.ok(has('Challenge', `assessment.levels.${level}`), level)
 	})
 
-	it('rules and results read correctly with real values', () => {
+	it('the rules and results read correctly with real values', () => {
 		const c = t('Challenge')
-		assert.match(c('rules.time', { minutes: 30 }), /30 minutes/)
-		assert.equal(c('graded', { passed: 11, total: 12 }), '11 of 12 hidden tests passed.')
-		assert.equal(c('exampleResult', { passed: 2, total: 2 }), 'Public examples passed: 2 of 2')
-		const l = t('Leaderboard')
-		assert.equal(l('top', { count: 20 }), 'Top 20')
-		assert.equal(l('you.rank', { rank: 4, competitors: 31 }), 'Your rank: 4 of 31.')
-		assert.equal(l('competitors', { count: 1 }), '1 opted-in learner has a verified result.')
-		assert.equal(l('competitors', { count: 0 }), 'No opted-in learners have a verified result.')
+		assert.match(c('rules.time', { minutes: 30 }), /30-minute target/)
+		assert.match(c('rules.time', { minutes: 30 }), /nothing stops at zero/)
+		assert.match(c('rules.once'), /ONE final Submit/)
+		assert.match(c('rules.once'), /cannot try again today/)
+		assert.equal(c('resultCounts', { passed: 11, total: 12 }), '11 of 12 tests passed')
+		assert.match(c('passedBody', { time: '14:08' }), /14:08.*streak and your reviews/)
+		assert.match(c('pending'), /Submission saved — grading pending/)
+		assert.match(c('rules.personal'), /Nothing is scored, ranked or compared/)
 	})
 
-	it('makes no claim of proctoring, cheating detection or an unverified ranking', () => {
-		const text = JSON.stringify([messages.Challenge, messages.Leaderboard]).toLowerCase()
-		for (const word of ['cheat', 'proctor', 'monitor', 'camera', 'surveillance', 'detect'])
-			assert.equal(text.includes(word), false, word)
-		assert.match(
-			String(messages.Leaderboard.rules.verified),
-			/Results reported by a browser are never used/
-		)
+	it('claims no ranking, proctoring or comparison', () => {
+		const text = JSON.stringify(messages.Challenge).toLowerCase()
+		for (const word of ['cheat', 'proctor', 'monitor', 'camera', 'surveillance', 'detect', 'rank'])
+			if (word === 'rank') assert.match(text, /scored, ranked or compared/)
+			else assert.equal(text.includes(word), false, word)
 	})
 })

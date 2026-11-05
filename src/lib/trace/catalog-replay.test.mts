@@ -27,7 +27,12 @@ const itemsOf = (value: Value | undefined) => listItems(value)?.length ?? 0
 test('every reference solution produces a valid, bounded trace on a mid-size official input', async () => {
 	for (const slug of Object.keys(REFERENCE_SOLUTIONS)) {
 		const problem = PROBLEMS[slug]!
-		const test = problem.tests.find((t) => t.id === 't10') ?? problem.tests[0]!
+		// A mid-size official input: the largest test whose arguments stay under 500 characters.
+		const test =
+			[...problem.tests]
+				.filter((t) => JSON.stringify(t.args).length < 500)
+				.sort((a, b) => JSON.stringify(b.args).length - JSON.stringify(a.args).length)[0] ??
+			problem.tests[0]!
 		for (const sol of REFERENCE_SOLUTIONS[slug]!) {
 			const { trace: t, result } = await trace(slug, sol.source, test.args)
 			assert.ok(
@@ -41,13 +46,15 @@ test('every reference solution produces a valid, bounded trace on a mid-size off
 				t.steps.map((_, i) => i),
 				'dense indexes'
 			)
-			assert.ok(
-				t.steps.every((s) => s.depth === 0),
-				'learner frames only'
-			)
+			// Learner frames only: the entry frame is depth 0 at both ends (recursion and helper
+			// frames inside a solution are deeper, never the engine's own harness).
+			assert.equal(t.steps[0]?.depth, 0)
+			assert.equal(t.steps.at(-1)?.depth, 0)
+			assert.ok(t.steps.every((s) => s.depth >= 0))
 			// views align one-to-one with steps
 			assert.equal(deriveView(t, problemMeta(problem)).length, t.steps.length)
-			if (problem.grading?.mode !== 'mutate-arg') {
+			// Only compliant variants are expected to produce the official answer.
+			if (sol.passes && problem.grading?.mode !== 'mutate-arg') {
 				assert.deepEqual(
 					result.actual?.kind === 'bool'
 						? result.actual.value

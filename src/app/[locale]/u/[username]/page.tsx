@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { Link, redirect } from '@/i18n/routing'
+import { redirect } from '@/i18n/routing'
 import { localizedPath, robotsFor } from '@/lib/seo/metadata'
 import { SITE, siteUrl } from '@/lib/seo/site'
-import { Button } from '@/components/ui/button'
-import { CopyProfileLink } from '@/components/profile/copy-profile-link'
-import { ProfileSkeleton } from '@/components/profile/profile-skeleton'
+import { ProfileIdentity } from '@/components/profile/profile-identity'
+import { PublicProfileHeader } from '@/components/profile/public-profile-header'
+import { ActivitySkeleton, StatsSkeleton } from '@/components/profile/profile-skeleton'
 import { PublicProfileBody } from '@/components/profile/public-profile-body'
 import { loadPublicProfileStats, resolvePublicProfile } from '@/server/profile/public-profile'
 import styles from '@/components/profile/profile.module.css'
@@ -72,30 +72,14 @@ export default async function PublicProfilePage({
 	if (lookup.status === 'not_found') notFound()
 
 	const t = await getTranslations('PublicProfile')
-	const header = (
-		<header className={styles.top}>
-			<Link href="/" className={styles.brand} aria-label={t('home')}>
-				<span aria-hidden="true" className={styles.brandMark}>
-					⌁
-				</span>
-				tracecode
-			</Link>
-			<Button asChild size="sm" variant="outline">
-				<Link href="/" className={styles.cta}>
-					{t('cta')}
-				</Link>
-			</Button>
-		</header>
-	)
-
 	// A storage failure, not a missing profile. It happens identically whichever name
 	// was asked for, and the page does not echo the name back.
 	if (lookup.status === 'unavailable') {
 		return (
 			<div className={styles.page}>
-				{header}
-				<main className={styles.main}>
-					<p role="status" className={`${styles.card} ${styles.note} ${styles.warn}`}>
+				<PublicProfileHeader />
+				<main className={styles.content}>
+					<p role="status" className={`${styles.panel} ${styles.note} ${styles.warn}`}>
 						{t('unavailablePage')}
 					</p>
 				</main>
@@ -112,24 +96,20 @@ export default async function PublicProfilePage({
 
 	return (
 		<div className={styles.page}>
-			{header}
-			<main className={styles.main}>
-				<section aria-labelledby="profile-name" className={`${styles.card} ${styles.hero}`}>
-					<span className={styles.avatar} aria-hidden="true">
-						{owner.username.charAt(0)}
-					</span>
-					<div className={styles.identity}>
-						<h1 id="profile-name" className={styles.name}>
-							{owner.username}
-						</h1>
-						<p className={styles.tagline}>{t('tagline')}</p>
-					</div>
-					<CopyProfileLink url={url} />
-				</section>
-				<Suspense fallback={<ProfileSkeleton label={t('loading')} />}>
-					<PublicProfileBody owner={owner} />
+			<PublicProfileHeader />
+			<main className={styles.content}>
+				<Suspense
+					fallback={
+						<>
+							<ProfileIdentity username={owner.username} url={url}>
+								<StatsSkeleton label={t('loading')} />
+							</ProfileIdentity>
+							<ActivitySkeleton />
+						</>
+					}
+				>
+					<PublicProfileBody owner={owner} url={url} />
 				</Suspense>
-				<p className={styles.foot}>{t('footnote')}</p>
 			</main>
 		</div>
 	)

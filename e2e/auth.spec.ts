@@ -38,7 +38,7 @@ test('AC4: unknown routes still 404 rather than redirecting', async ({ page }) =
 	expect(response?.status()).toBe(404)
 })
 
-test('AC5: the catalog locks the other five problems and routes them through Sign In', async ({
+test('AC5: the catalog locks the other fifteen problems and routes them through Sign In', async ({
 	page
 }) => {
 	await page.goto('/')
@@ -47,7 +47,7 @@ test('AC5: the catalog locks the other five problems and routes them through Sig
 		'href',
 		'/practice/two-sum'
 	)
-	await expect(table.getByText('Sign in to unlock')).toHaveCount(5)
+	await expect(table.getByText('Sign in to unlock')).toHaveCount(15)
 	await expect(table.getByRole('link', { name: 'Valid Anagram' })).toHaveAttribute(
 		'href',
 		'/login?next=%2Fpractice%2Fvalid-anagram'

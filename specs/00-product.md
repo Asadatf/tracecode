@@ -56,7 +56,7 @@ against one contract: [`specs/02-trace-contract.md`](02-trace-contract.md).
 | In                                          | Notes                                                              |
 | ------------------------------------------- | ------------------------------------------------------------------ |
 | Sign up / sign in (Supabase Auth)           | Email + password at `/login` (M4); session and `users` row only    |
-| Problem list + problem page with editor     | ~10–15 curated problems, seeded, no authoring UI                   |
+| Problem list + problem page with editor     | 16 curated problems, seeded, no authoring UI                       |
 | Run against tests, show pass/fail per test  |                                                                    |
 | Step-by-step trace replay of a failing test | Variables, loop iterations, array index pointers                   |
 | Progressive hints, 3 levels                 | _(open)_ hand-authored per problem vs. AI-generated from the trace |
@@ -69,15 +69,16 @@ against one contract: [`specs/02-trace-contract.md`](02-trace-contract.md).
 - More than one language.
 - Problem authoring UI, user-submitted problems.
 - Instructor/cohort dashboards, classrooms, teams.
-- Competitive features beyond the daily challenge and weekly leaderboard
-  (`specs/features/daily-challenge.md`): contests, tournaments, head-to-head
-  matches and team play.
+- Competitive features of any kind: rankings, leaderboards, contests, tournaments,
+  head-to-head matches and team play. The daily challenge
+  (`specs/features/daily-challenge.md`) is a personal learning exercise; its
+  leaderboard code is built but hidden (ADR-0008).
 - Payments/subscriptions.
 - Server-side grading of PRACTICE, and anti-cheat or proctoring of any kind
   (practice stays browser-side and untrusted, ADR-0001). The one exception is the
-  daily challenge, whose competitive score comes only from server-verified
-  execution in an isolated sandbox (ADR-0007); it makes no claim to detect
-  external help.
+  Daily Learning Challenge's single final Submit, which is graded on the server in
+  an isolated sandbox against hidden tests (ADR-0007, ADR-0008) and shown as
+  counts only; it makes no claim to detect external help.
 - Objects/classes/recursion-tree visualisation beyond variables, loops and
   array pointers.
 - Mobile-optimised editing (pages must render at phone width; writing code

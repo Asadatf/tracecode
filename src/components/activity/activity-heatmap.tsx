@@ -30,12 +30,16 @@ const DAY_MS = 86_400_000
 export function ActivityHeatmap({
 	days,
 	today,
-	headingId
+	headingId,
+	showDisclaimer = true
 }: {
 	days: readonly DailyActivity[] | null
 	today: string
 	// The id of the heading that names this graph, when the host page has one.
 	headingId?: string
+	// The one-line explainer under the graph. A page that already says it elsewhere,
+	// or wants a quieter card, can leave it out; the labels and tooltips stay.
+	showDisclaimer?: boolean
 }) {
 	const t = useTranslations('Activity')
 	const locale = useLocale()
@@ -208,7 +212,7 @@ export function ActivityHeatmap({
 				</div>
 			</div>
 			{grid.activeDays === 0 ? <p className={styles.note}>{t('empty')}</p> : null}
-			<p className={styles.note}>{t('disclaimer')}</p>
+			{showDisclaimer ? <p className={styles.note}>{t('disclaimer')}</p> : null}
 		</div>
 	)
 }

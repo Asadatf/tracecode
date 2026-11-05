@@ -17,7 +17,7 @@ that matches the approved Landing Page. The Supabase Auth backend is unchanged.
 
 - As a visitor, I want to try Two Sum without an account, so I can judge the
   product first.
-- As a visitor, I want to see the other five problems and know they need an
+- As a visitor, I want to see the other problems and know they need an
   account, so I'm not surprised by a redirect.
 - As a learner, I want to sign in or register on a dedicated page and land back
   where I was heading.
@@ -37,7 +37,7 @@ that matches the approved Landing Page. The Supabase Auth backend is unchanged.
 - **AC4** — GIVEN a signed-out visitor WHEN they request any other practice
   problem or `/progress` THEN they are redirected to `/login?next=<that path>`.
 - **AC5** — GIVEN a signed-out visitor WHEN they view the problem catalog THEN
-  Two Sum links to practice; the other five show a lock and "Sign in to unlock"
+  Two Sum links to practice; every other problem shows a lock and "Sign in to unlock"
   and link to `/login?next=/practice/<slug>`. Problem data is unchanged.
 - **AC6** — GIVEN `/login` and `/register` WHEN opened THEN each renders its own
   form (Sign In: email, password, show/hide; Register: email, password, confirm

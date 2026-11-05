@@ -58,7 +58,7 @@ export type MyAttempt = { available: false } | { available: true; view: AttemptV
 export async function getMyAttempt(userId: string, date: string): Promise<MyAttempt> {
 	try {
 		const row = await attemptStore.find(userId, date)
-		return { available: true, view: row == null ? null : toAttemptView(row, new Date()) }
+		return { available: true, view: row == null ? null : toAttemptView(row) }
 	} catch (error) {
 		captureError(error, { area: 'challenge-attempt' })
 		return { available: false }
@@ -70,7 +70,15 @@ export async function getMyAttempt(userId: string, date: string): Promise<MyAtte
 function gradeLater(userId: string, date: string, problemSlug: string): void {
 	after(async () => {
 		try {
-			await gradeAttempt(attemptStore, await activeGrader(), userId, date, problemSlug, new Date())
+			await gradeAttempt(
+				attemptStore,
+				await activeGrader(),
+				userId,
+				date,
+				problemSlug,
+				new Date(),
+				() => new Date()
+			)
 		} catch (error) {
 			captureError(error, { area: 'challenge-grading' })
 		}
@@ -95,7 +103,7 @@ type Live =
 	| { ok: true; challenge: { date: string; problemSlug: string } }
 	| { ok: false; error: 'not_found' | 'not_live' | 'unavailable' }
 
-async function liveChallenge(rawDate: string): Promise<Live> {
+export async function liveChallenge(rawDate: string): Promise<Live> {
 	const lookup = await getChallenge(rawDate)
 	if (
 		lookup.status === 'invalid' ||
@@ -117,7 +125,7 @@ export async function startChallenge(rawDate: string): Promise<ChallengeActionRe
 	if (!found.ok) return { ok: false, error: found.error }
 	const outcome = await startAttempt(attemptStore, userId, found.challenge.date, new Date())
 	if (!outcome.ok) return { ok: false, error: 'unavailable' }
-	return { ok: true, view: toAttemptView(outcome.attempt, new Date()) }
+	return { ok: true, view: toAttemptView(outcome.attempt) }
 }
 
 export async function submitChallenge(
@@ -140,7 +148,7 @@ export async function submitChallenge(
 	const outcome = await submitAttempt(attemptStore, userId, lookup.date, source, now)
 	if (!outcome.ok) return { ok: false, error: outcome.error }
 	if (outcome.accepted) gradeLater(userId, lookup.date, lookup.problemSlug)
-	return { ok: true, view: toAttemptView(outcome.attempt, now) }
+	return { ok: true, view: toAttemptView(outcome.attempt) }
 }
 
 // The polled status. A submission that is still waiting (or whose grading failed) is
@@ -155,7 +163,7 @@ export async function challengeStatus(rawDate: string): Promise<ChallengeActionR
 	if (row.status === 'submitted' || row.status === 'grader_error' || row.status === 'grading') {
 		gradeLater(userId, lookup.date, lookup.problemSlug)
 	}
-	return { ok: true, view: toAttemptView(row, new Date()) }
+	return { ok: true, view: toAttemptView(row) }
 }
 
 // Retries submissions that are still waiting (never graded, a grader error, or a worker
@@ -191,7 +199,8 @@ export async function gradePendingAttempts(limit = 20): Promise<{ attempted: num
 			row.userId,
 			row.challengeDate.toISOString().slice(0, 10),
 			row.challenge.problemSlug,
-			new Date()
+			new Date(),
+			() => new Date()
 		)
 	}
 	return { attempted: rows.length }

@@ -3,7 +3,7 @@ import { db, Prisma } from '@/server/db/client'
 import { env } from '@/lib/env'
 import { log } from '@/server/lib/logger'
 import { PROBLEMS } from '@/lib/trace/problems'
-import { resolveEmailConfig } from '@/lib/notifications/email-config'
+import { resolveReminderEmailConfig } from '@/lib/notifications/release-policy'
 import { renderReviewEmail } from '@/lib/notifications/email-template'
 import { sendEmail } from '@/server/email/resend'
 import {
@@ -82,8 +82,7 @@ async function candidates(date: string): Promise<ReviewCandidate[]> {
 	})
 	return users.map((u) => ({
 		userId: u.id,
-		// The same defaults as the daily reminder: in-app on, email opt-in only.
-		inAppEnabled: u.notificationPreference?.inAppEnabled ?? true,
+		inAppEnabled: true, // In-app reminders are always active for this release.
 		emailOptIn: u.notificationPreference?.emailOptIn ?? false,
 		email: u.notificationPreference == null || u.email === '' ? null : u.email,
 		unsubscribeToken: u.notificationPreference?.unsubscribeToken ?? null,
@@ -144,9 +143,8 @@ async function markReminded(userId: string, items: readonly DueItem[], at: Date)
 }
 
 function emailChannel(): ReviewEmailChannel | null {
-	const config = resolveEmailConfig(env)
-	// Not configured (the normal state in development): the channel is skipped, which
-	// is not a failure. The in-app notification is unaffected.
+	const config = resolveReminderEmailConfig(env)
+	// Release-disabled or unconfigured email is skipped without affecting in-app reminders.
 	if (!config.enabled) return null
 	const key = (userId: string, date: string) => ({
 		userId,

@@ -438,6 +438,24 @@ refresh_claimed_at < now() - CLAIM_TTL)`. Only the writer whose statement
   across evidence changes; `max_tokens` bounded (≤600). **Never** on submit,
   replay, page load, or per-email.
 
+### Hackathon release: in-app notifications only (2026-11-05)
+
+This release policy overrides the email enablement and preference controls below
+(including AC14–AC19 and AC23): all reminder preference controls are hidden in Settings, and
+both cron reminder channels are disabled in code, independent of environment
+configuration and existing opt-ins. No email delivery slots are claimed or retried
+and Resend is never invoked. Daily recommendations, the bell, notification history
+and spaced-review reminders remain operational, always enabled, including for previously opted-out learners.
+Stored opt-ins, delivery tables, Resend integration, templates and unsubscribe
+flows are preserved for future use. Supabase Auth, signup and password-reset
+emails are unchanged. No infrastructure, environment variable or migration is added.
+
+- **AC19a** — GIVEN valid email configuration and existing opt-ins (including
+  retryable deliveries) WHEN the daily cron runs THEN eligible daily and due-review
+  in-app reminders are created, no reminder email is sent and Resend is never called.
+- **AC23a** — GIVEN Settings in this release THEN no reminder preference controls
+  are visible. In-app reminders are always active, including for existing opt-outs.
+
 ### Enrichment diagnostics (M7.4 follow-up)
 
 An enrichment that is dropped must be explainable without storing what the model

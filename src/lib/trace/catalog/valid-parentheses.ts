@@ -24,6 +24,7 @@ export const validParentheses = {
 	],
 	starter:
 		'def is_valid(s: str) -> bool:\n    # Return True if every bracket is closed by the same kind, in the right order.\n    # Start with any correct approach.\n    return False',
+	visibleTestIds: ['t2', 't5', 't3', 't4', 't6', 't7'],
 	tests: [
 		{ id: 't1', args: ['()'], expected: true },
 		{ id: 't2', args: ['()[]{}'], expected: true },

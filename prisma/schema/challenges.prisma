@@ -63,6 +63,13 @@ model ChallengeAttempt {
 	// streak and activity count that event exactly once.
 	attemptId String? @unique @db.Uuid
 
+	// Daily Learning Challenge: the one AI approach assessment of the learner's first
+	// completing Attempt (ids/enums/short text only; null until generated). Written at
+	// most once, so reloads and duplicate requests never spend tokens again.
+	assessment          Json?
+	// When a generation was last claimed. Duplicates inside the cooldown make no AI call.
+	assessmentClaimedAt DateTime? @db.Timestamptz(6)
+
 	createdAt DateTime @default(now()) @db.Timestamptz(6)
 
 	user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)

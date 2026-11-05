@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/routing'
+import { LEADERBOARD_VISIBLE } from '@/lib/challenge/visibility'
 import { getLeaderboard } from '@/server/challenge/leaderboard'
 import { activeGrader } from '@/server/challenge/grade'
 import { LEADERBOARD_SIZE } from '@/lib/challenge/scoring'
@@ -27,6 +29,8 @@ export default async function LeaderboardPage({
 }: {
 	searchParams: Promise<{ week?: string }>
 }) {
+	// Hidden: the challenge is a learning exercise, not a ranking.
+	if (!LEADERBOARD_VISIBLE) notFound()
 	const { week } = await searchParams
 	const [t, board, grader] = await Promise.all([
 		getTranslations('Leaderboard'),

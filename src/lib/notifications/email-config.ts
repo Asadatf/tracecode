@@ -12,7 +12,11 @@
 
 export type EmailConfig =
 	| { enabled: true; apiKey: string; from: string }
-	| { enabled: false; reason: 'no_api_key' | 'no_sender' | 'invalid_sender' | 'unverified_domain' }
+	| {
+			enabled: false
+			reason:
+				'release_disabled' | 'no_api_key' | 'no_sender' | 'invalid_sender' | 'unverified_domain'
+	  }
 
 export interface EmailEnv {
 	RESEND_API_KEY?: string

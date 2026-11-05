@@ -1,5 +1,12 @@
 import type { AdminRole } from '@prisma/client'
-import { FLAGS, variantsOf, type FlagKey, type JsonValue, type ValueOf } from './flags'
+import {
+	FLAGS,
+	isBooleanFlag,
+	variantsOf,
+	type FlagKey,
+	type JsonValue,
+	type ValueOf
+} from './flags'
 
 // The runtime value a provider can decide on: an on/off boolean, or a variant
 // string (multivariate / experiment flags). It's the widened successor to the
@@ -57,6 +64,33 @@ export async function walkProviders<K extends FlagKey>(
 		if (decided !== undefined) return decided as ValueOf<K>
 	}
 	return FLAGS[key].default as ValueOf<K>
+}
+
+// --- Local-only overrides (development testing) -----------------------------------
+
+// `LOCAL_FLAG_OVERRIDES="key=true,other=false"` in a developer's own environment turns
+// BOOLEAN flags on or off for that process only, with no database row and no change to any
+// shared state. It is ignored in production (NODE_ENV === 'production') however it is set, so
+// it can never reach a deployment, and an unknown key or a non-boolean value is ignored.
+export function parseLocalOverrides(
+	raw: string | undefined,
+	isProduction: boolean
+): ReadonlyMap<FlagKey, boolean> {
+	const out = new Map<FlagKey, boolean>()
+	if (isProduction || raw == null || raw.trim() === '') return out
+	for (const part of raw.split(',')) {
+		const [key, value] = part.split('=').map((piece) => piece.trim())
+		if (key == null || !Object.hasOwn(FLAGS, key) || (value !== 'true' && value !== 'false'))
+			continue
+		const flag = key as FlagKey
+		if (!isBooleanFlag(flag)) continue
+		out.set(flag, value === 'true')
+	}
+	return out
+}
+
+export function localOverrideProvider(overrides: ReadonlyMap<FlagKey, boolean>): FlagProvider {
+	return { resolve: (key) => Promise.resolve(overrides.get(key)) }
 }
 
 // --- Deterministic bucketing (pure, so it's unit-tested here, not in the

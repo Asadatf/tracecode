@@ -3,6 +3,16 @@ import { validAnagram } from './catalog/valid-anagram'
 import { moveZeroes } from './catalog/move-zeroes'
 import { binarySearch } from './catalog/binary-search'
 import { validParentheses } from './catalog/valid-parentheses'
+import { validPalindrome } from './catalog/valid-palindrome'
+import { reverseString } from './catalog/reverse-string'
+import { maximumSubarray } from './catalog/maximum-subarray'
+import { bestTimeToBuyAndSellStock } from './catalog/best-time-to-buy-and-sell-stock'
+import { mergeTwoSortedArrays } from './catalog/merge-two-sorted-arrays'
+import { firstUniqueCharacter } from './catalog/first-unique-character'
+import { missingNumber } from './catalog/missing-number'
+import { majorityElement } from './catalog/majority-element'
+import { longestCommonPrefix } from './catalog/longest-common-prefix'
+import { climbingStairs } from './catalog/climbing-stairs'
 
 // The curated problem set. Two Sum and Contains Duplicate live here; the four
 // later problems are one file each under ./catalog. Ported from the prototype's tracecode-problems.json, with named test
@@ -27,7 +37,11 @@ export const twoSum = {
 	tests: [
 		{ id: 't1', args: [[2, 7, 11, 15], 9], expected: [0, 1] },
 		{ id: 't2', args: [[3, 2, 4], 6], expected: [1, 2] },
-		{ id: 't3', args: [[3, 3], 6], expected: [0, 1] }
+		{ id: 't3', args: [[3, 3], 6], expected: [0, 1] },
+		// Negative numbers, a zero pair, and an answer at the very end of the list.
+		{ id: 't4', args: [[-2, 5, 1, -8], -10], expected: [0, 3] },
+		{ id: 't5', args: [[0, 4, 0], 0], expected: [0, 2] },
+		{ id: 't6', args: [[1, 2, 3, 4], 7], expected: [2, 3] }
 	],
 	arrayVar: 'nums',
 	pointerVars: [
@@ -85,5 +99,15 @@ export const PROBLEMS: Record<string, ProblemDefinition> = {
 	[validAnagram.slug]: validAnagram,
 	[moveZeroes.slug]: moveZeroes,
 	[binarySearch.slug]: binarySearch,
-	[validParentheses.slug]: validParentheses
+	[validParentheses.slug]: validParentheses,
+	[validPalindrome.slug]: validPalindrome,
+	[reverseString.slug]: reverseString,
+	[maximumSubarray.slug]: maximumSubarray,
+	[bestTimeToBuyAndSellStock.slug]: bestTimeToBuyAndSellStock,
+	[mergeTwoSortedArrays.slug]: mergeTwoSortedArrays,
+	[firstUniqueCharacter.slug]: firstUniqueCharacter,
+	[missingNumber.slug]: missingNumber,
+	[majorityElement.slug]: majorityElement,
+	[longestCommonPrefix.slug]: longestCommonPrefix,
+	[climbingStairs.slug]: climbingStairs
 }

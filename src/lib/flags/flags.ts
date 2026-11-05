@@ -123,15 +123,16 @@ export const FLAGS = {
 		description: 'Which dashboard layout a user sees.',
 		owner: 'web-team'
 	},
-	// M9B competitive grading kill-switch (ADR-0007). OFF by default and everywhere:
-	// while it is off, no challenge submission is ever graded or scored, regardless of
-	// whether the Vercel Sandbox SDK is present. Competitive scoring turns on only when
-	// this is deliberately enabled AND the sandbox grader is available.
-	challenge_competitive_grading: {
+	// Daily Learning Challenge server grading (ADR-0007, ADR-0008). OFF by default and
+	// everywhere: while it is off a final submission is saved and shown as "grading pending",
+	// and nothing is graded, whether or not the Vercel Sandbox SDK is present. It turns on only
+	// when deliberately enabled AND the sandbox grader is available. It produces the final test
+	// counts, never a score or a ranking.
+	challenge_server_grading: {
 		default: false,
 		kind: 'ops',
 		description:
-			'Enables server-side sandbox grading of daily challenge submissions (off until the grader is verified).',
+			'Grades the one final Daily Challenge submission on the server in a sandbox (off until enabled).',
 		owner: 'web-team'
 	},
 	// An experiment — same variant machinery, but the tuple must lead with

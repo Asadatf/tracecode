@@ -67,10 +67,12 @@ can still advance a review: this is a known limit, closed only by server-side gr
   are unchanged; a review never replaces a recommendation.
 - **AC7** — GIVEN due, unannounced reviews THEN the daily cron, after the daily
   suggestion, creates at most one in-app `review_due` notification per learner per UTC
-  day (`review:<date>`) and, only for learners who opted in to email and when email is
-  configured, at most one review email per day on its own `email_review` channel.
-  Preferences are respected exactly as for the daily reminder; unconfigured email is
-  skipped, not a failure; the daily practice suggestion is unaffected.
+  day (`review:<date>`). During the hackathon release, the `email_review` channel is
+  disabled in code regardless of configuration or existing opt-ins; no delivery slot
+  is claimed or retried and Resend is never invoked. In-app reminders are always
+  active, including for existing opt-outs;
+  the daily practice suggestion is unaffected. Email integration and tables remain
+  available for future use; Supabase Auth emails are unchanged.
 - **AC8** — GIVEN a review has been announced THEN it is marked, and later runs do not
   announce that stage again; completing it advances the stage and clears the mark so
   the next stage is announced once when it falls due. A retry never re-sends a review
