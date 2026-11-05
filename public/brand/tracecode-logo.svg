@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 418 1346 640" role="img" aria-label="TraceCode">
+  <defs>
+    <mask id="hollow" maskUnits="userSpaceOnUse" x="150" y="418" width="1346" height="640">
+      <rect x="150" y="418" width="1346" height="640" fill="#fff"/>
+      <circle cx="632" cy="985" r="22" fill="#000"/>
+      <circle cx="823" cy="738" r="19" fill="#000"/>
+      <circle cx="1014" cy="491" r="22" fill="#000"/>
+    </mask>
+  </defs>
+  <!-- code brackets: shallow, long chevrons with a narrow mouth -->
+  <path fill="#fff" d="M580 528 180 738l400 210V868L332 738l248-130z"/>
+  <path fill="#fff" d="M1066 528l400 210-400 210V868l248-130-248-130z"/>
+  <!-- trace path: steep legs, straight angled run through the centre node -->
+  <path mask="url(#hollow)" fill="none" stroke="#39a67e" stroke-width="30" stroke-linejoin="miter" stroke-linecap="butt"
+    d="M632 985 714 781 932 695 1014 491"/>
+  <!-- trace nodes: thin coloured rings, empty centre -->
+  <g fill="none" stroke-width="8">
+    <circle cx="632" cy="985" r="26" stroke="#9b4dff"/>
+    <circle cx="823" cy="738" r="26" stroke="#ff8c0a" stroke-width="13"/>
+    <circle cx="1014" cy="491" r="26" stroke="#9b4dff"/>
+  </g>
+</svg>

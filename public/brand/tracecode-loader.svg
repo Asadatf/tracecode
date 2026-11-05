@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 418 1346 640" role="img" aria-label="Loading"><style>
+.dim{opacity:.3}
+.d{stroke-dasharray:.3 1;opacity:0;animation:f 1.8s cubic-bezier(.45,0,.55,1) infinite}
+.n{transform-box:fill-box;transform-origin:center;animation:p 1.8s ease-in-out infinite}
+.n0{animation-delay:-1.7s}.n1{animation-delay:-1s}.n2{animation-delay:-.4s}
+@keyframes f{0%{stroke-dashoffset:.3;opacity:0}4%{opacity:1}83%{stroke-dashoffset:-1;opacity:1}88%,100%{stroke-dashoffset:-1;opacity:0}}
+@keyframes p{0%{transform:scale(1)}7%{transform:scale(1.35)}18%,100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.d,.n{animation:none}.d{opacity:0}}
+</style><defs><mask id="hl" maskUnits="userSpaceOnUse" x="150" y="418" width="1346" height="640"><rect x="150" y="418" width="1346" height="640" fill="#fff"/><circle cx="632" cy="985" r="22" fill="#000"/><circle cx="823" cy="738" r="19" fill="#000"/><circle cx="1014" cy="491" r="22" fill="#000"/></mask></defs><path fill="#fff" d="M580 528 180 738l400 210V868L332 738l248-130z"/><path fill="#fff" d="M1066 528l400 210-400 210V868l248-130-248-130z"/><g mask="url(#hl)" fill="none" stroke="#39a67e" stroke-width="30" stroke-linejoin="miter"><path class="dim" d="M632 985 714 781 932 695 1014 491"/><path class="d" pathLength="1" d="M632 985 714 781 932 695 1014 491"/></g><g fill="none" stroke-width="8"><circle class="n n0" cx="632" cy="985" r="26" stroke="#9b4dff"/><circle class="n n1" cx="823" cy="738" r="26" stroke="#ff8c0a" stroke-width="13"/><circle class="n n2" cx="1014" cy="491" r="26" stroke="#9b4dff"/></g></svg>
