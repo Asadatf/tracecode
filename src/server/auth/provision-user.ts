@@ -12,10 +12,14 @@ import { seatRoleForEmail } from '@/lib/rbac/staff-bootstrap'
 // non-staff user gets a User row and no seat. An existing seat is never downgraded here — (re)seating or
 // elevation is a deliberate access.manage action, not a side effect of signing in.
 export async function provisionUser({ id, email }: { id: string; email: string }): Promise<void> {
+	// `select` is deliberate: without it Prisma reads EVERY column, so a column added by a
+	// migration that has not run yet (profile settings, leaderboard consent) would make
+	// every sign-in write fail. The id is all this needs.
 	await db.user.upsert({
 		where: { id },
 		create: { id, email },
-		update: { email }
+		update: { email },
+		select: { id: true }
 	})
 
 	const seatRole = seatRoleForEmail(email)

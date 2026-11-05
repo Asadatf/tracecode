@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
@@ -9,6 +10,11 @@ import { buildProblemSummaries } from '@/lib/problems/problem-summary'
 import { getFirstAttemptDates, getLearningProgress } from '@/server/learning/progress'
 import { getRecommendation, isRecommendationAiEnabled } from '@/server/learning/recommendation'
 import { AppShell } from '@/components/app-shell/app-shell'
+import { DueReviewCallout } from '@/components/reviews/due-review-callout'
+import { DueReviewsCard } from '@/components/reviews/due-reviews-card'
+import { DueReviewsSkeleton } from '@/components/reviews/due-reviews-skeleton'
+import { ActivityHeatmapSlot } from '@/components/activity/activity-heatmap-slot'
+import { ActivityHeatmapSkeleton } from '@/components/activity/activity-heatmap-skeleton'
 import { PracticeNextWidget } from '@/components/dashboard/practice-next-widget'
 import { ExploreProblems } from '@/components/dashboard/explore-problems'
 import { ProgressCard } from '@/components/dashboard/progress-card'
@@ -31,8 +37,10 @@ export default async function DashboardPage() {
 		return null
 	}
 	// Independent reads start together. getRecommendation never calls the model.
-	const [t, progress, recommendation, firstAttempts] = await Promise.all([
+	const [t, ta, tr, progress, recommendation, firstAttempts] = await Promise.all([
 		getTranslations('Dashboard'),
+		getTranslations('Activity'),
+		getTranslations('Dashboard.reviews'),
 		getLearningProgress(),
 		getRecommendation(),
 		getFirstAttemptDates()
@@ -65,6 +73,16 @@ export default async function DashboardPage() {
 					) : (
 						<>
 							<SummaryStrip summary={view.summary} />
+							<div className={styles.reviews}>
+								<Suspense fallback={<DueReviewsSkeleton label={tr('loading')} />}>
+									<DueReviewsCard />
+								</Suspense>
+							</div>
+							<div className={styles.activity}>
+								<Suspense fallback={<ActivityHeatmapSkeleton label={ta('loading')} />}>
+									<ActivityHeatmapSlot />
+								</Suspense>
+							</div>
 							{sections == null ? null : (
 								<>
 									<div className={styles.yours}>
@@ -82,6 +100,9 @@ export default async function DashboardPage() {
 					<aside className={styles.side}>
 						<div className={`${styles.mergedCard} ${styles.float}`}>
 							<TopicPanel topics={view.topics} />
+							<Suspense fallback={null}>
+								<DueReviewCallout />
+							</Suspense>
 							{recommendation.authenticated && recommendation.available ? (
 								<PracticeNextWidget
 									recommendation={recommendation.recommendation}

@@ -123,6 +123,17 @@ export const FLAGS = {
 		description: 'Which dashboard layout a user sees.',
 		owner: 'web-team'
 	},
+	// M9B competitive grading kill-switch (ADR-0007). OFF by default and everywhere:
+	// while it is off, no challenge submission is ever graded or scored, regardless of
+	// whether the Vercel Sandbox SDK is present. Competitive scoring turns on only when
+	// this is deliberately enabled AND the sandbox grader is available.
+	challenge_competitive_grading: {
+		default: false,
+		kind: 'ops',
+		description:
+			'Enables server-side sandbox grading of daily challenge submissions (off until the grader is verified).',
+		owner: 'web-team'
+	},
 	// An experiment — same variant machinery, but the tuple must lead with
 	// 'control' so PostHog's experiment analysis has a baseline. Read it like any
 	// flag; PostHog handles randomization, exposure, and the statistics.

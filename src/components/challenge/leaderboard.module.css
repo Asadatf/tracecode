@@ -1,0 +1,113 @@
+/* The weekly leaderboard. Tokens only. */
+.page {
+	min-height: 100vh;
+	background: var(--bg);
+	color: var(--text);
+}
+.top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	max-width: 52rem;
+	margin: 0 auto;
+	padding: 18px 16px 0;
+}
+.brand {
+	color: var(--text);
+	font: 700 17px var(--font-sans);
+	letter-spacing: -0.02em;
+	text-decoration: none;
+}
+.main {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-width: 52rem;
+	margin: 0 auto;
+	padding: 20px 16px 48px;
+}
+.eyebrow {
+	margin: 0;
+	color: var(--accent-hover);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+.title {
+	margin: 0;
+	font-size: clamp(24px, 4vw, 32px);
+	font-weight: 700;
+	letter-spacing: -0.03em;
+}
+.card {
+	min-width: 0;
+	padding: 18px 20px;
+	border: 1px solid var(--border);
+	border-radius: 16px;
+	background: var(--surface);
+}
+.card p {
+	margin: 0 0 8px;
+	line-height: 1.55;
+}
+.cardTitle {
+	margin: 0 0 12px;
+	font-size: 17px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+.note {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 13.5px;
+	line-height: 1.55;
+}
+.tableWrap {
+	overflow-x: auto;
+}
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14.5px;
+}
+.table th,
+.table td {
+	padding: 9px 10px;
+	border-bottom: 1px solid var(--border);
+	text-align: left;
+	white-space: nowrap;
+}
+.table thead th {
+	color: var(--text-muted);
+	font-size: 12.5px;
+	font-weight: 600;
+}
+.table tbody th {
+	font-weight: 600;
+}
+.table td:first-child {
+	width: 3.5rem;
+	font-family: var(--font-mono);
+	font-weight: 700;
+}
+.table a {
+	color: var(--accent-hover);
+}
+.rules {
+	margin: 0 0 10px;
+	padding-left: 20px;
+	line-height: 1.65;
+}
+.weeks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.weeks a {
+	color: var(--accent-hover);
+}

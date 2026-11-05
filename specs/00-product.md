@@ -69,9 +69,15 @@ against one contract: [`specs/02-trace-contract.md`](02-trace-contract.md).
 - More than one language.
 - Problem authoring UI, user-submitted problems.
 - Instructor/cohort dashboards, classrooms, teams.
-- Competitive features: leaderboards, contests, timed rounds.
+- Competitive features beyond the daily challenge and weekly leaderboard
+  (`specs/features/daily-challenge.md`): contests, tournaments, head-to-head
+  matches and team play.
 - Payments/subscriptions.
-- Server-side, anti-cheat grading (practice only — see ADR-0001).
+- Server-side grading of PRACTICE, and anti-cheat or proctoring of any kind
+  (practice stays browser-side and untrusted, ADR-0001). The one exception is the
+  daily challenge, whose competitive score comes only from server-verified
+  execution in an isolated sandbox (ADR-0007); it makes no claim to detect
+  external help.
 - Objects/classes/recursion-tree visualisation beyond variables, loops and
   array pointers.
 - Mobile-optimised editing (pages must render at phone width; writing code

@@ -125,7 +125,18 @@ describe('Tracy prompt guide — accessibility & isolation', () => {
 
 	it('focuses the heading on open and restores focus to the trigger on close', () => {
 		assert.match(guideSrc, /titleRef\.current\?\.focus\(\)/)
-		assert.match(guideSrc, /document\.getElementById\(anchorId\)\?\.focus\(\)/)
+		// Focus goes back to the info button from the close action in the panel.
+		assert.match(panelSrc, /function closeGuide\(\)/)
+		assert.match(panelSrc, /document\.getElementById\('tutor-guide-trigger'\)\?\.focus\(\)/)
+		assert.match(panelSrc, /onClose=\{closeGuide\}/)
+	})
+
+	it('never moves focus from an effect cleanup (it would steal focus under StrictMode)', () => {
+		// A cleanup also runs once after mount in dev, so a focus call there moves
+		// focus off the heading the moment the dialog opens (this failed in CI).
+		assert.doesNotMatch(guideSrc, /return \(\) =>/)
+		assert.doesNotMatch(guideSrc, /getElementById/)
+		assert.doesNotMatch(guideSrc, /anchorId/)
 	})
 
 	it('trigger in the panel header is an info button with correct ARIA', () => {
@@ -142,7 +153,7 @@ describe('Tracy prompt guide — accessibility & isolation', () => {
 	it('opening the guide does NOT send a message or call the API', () => {
 		// The trigger toggles a local useState; it never calls fetch, never
 		// invokes tutor.send, never touches /api/tutor.
-		assert.match(panelSrc, /setGuideOpen\(\(o\) => !o\)/)
+		assert.match(panelSrc, /guideOpen \? closeGuide\(\) : setGuideOpen\(true\)/)
 		assert.doesNotMatch(guideSrc, /fetch\(/)
 		assert.doesNotMatch(guideSrc, /\/api\/tutor/)
 		assert.doesNotMatch(guideSrc, /tutor\.send/)

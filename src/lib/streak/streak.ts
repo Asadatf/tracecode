@@ -5,8 +5,10 @@
 // "UTC" chip use, so the flame, the popover calendar and the daily problem can
 // never disagree about where a day starts. A day is ACTIVE when the learner saved
 // at least one attempt on it that ran to completion (status "completed", whether
-// or not every test passed). Logins, syntax errors, engine errors and timeouts do
-// not count, and a day counts once however many attempts it holds.
+// or not every test passed) AND was real work: not untouched starter code, and not
+// a whitespace/comment-only edit of it (the server decides, see attempt-meaning.ts).
+// Logins, syntax errors, engine errors and timeouts do not count, and a day counts
+// once however many attempts it holds.
 
 export const STREAK_ACTIVE_FROM = 3
 export const STREAK_WINDOW_DAYS = 730
@@ -29,13 +31,22 @@ export function addDays(iso: string, days: number): string {
 export interface AttemptStamp {
 	createdAt: Date | string
 	status: string
+	// The server's verdict at save time (Attempt.meaningful). null/undefined is a
+	// legacy attempt saved before the column existed: it cannot be re-judged, so it
+	// keeps counting exactly as it did. Only an explicit false disqualifies.
+	meaningful?: boolean | null
 }
 
-// The distinct active days, oldest first. Only completed attempts qualify.
+// Whether one attempt earns its day.
+export function attemptQualifies(attempt: AttemptStamp): boolean {
+	return attempt.status === 'completed' && attempt.meaningful !== false
+}
+
+// The distinct active days, oldest first. Only qualifying attempts count.
 export function activeDaysOf(attempts: readonly AttemptStamp[]): string[] {
 	const days = new Set<string>()
 	for (const attempt of attempts) {
-		if (attempt.status === 'completed') days.add(utcDay(attempt.createdAt))
+		if (attemptQualifies(attempt)) days.add(utcDay(attempt.createdAt))
 	}
 	return [...days].sort()
 }

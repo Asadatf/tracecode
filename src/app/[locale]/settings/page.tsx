@@ -3,7 +3,11 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
 import { getPreferences } from '@/server/notifications/inbox'
+import { getProfileSettings } from '@/server/profile/profile'
+import { getLeaderboardConsent } from '@/server/challenge/leaderboard'
 import { AppShell } from '@/components/app-shell/app-shell'
+import { PublicProfileForm } from '@/components/settings/public-profile-form'
+import { LeaderboardOptIn } from '@/components/settings/leaderboard-opt-in'
 import { ReminderPreferences } from '@/components/notifications/reminder-preferences'
 import { Input } from '@/components/ui/input'
 
@@ -18,7 +22,12 @@ export default async function SettingsPage() {
 		redirect({ href: '/login?next=%2Fsettings', locale: await getLocale() })
 		return null
 	}
-	const [t, preferences] = await Promise.all([getTranslations('SettingsPage'), getPreferences()])
+	const [t, preferences, profile, consent] = await Promise.all([
+		getTranslations('SettingsPage'),
+		getPreferences(),
+		getProfileSettings(),
+		getLeaderboardConsent()
+	])
 	return (
 		<AppShell current="settings">
 			<div className="mx-auto flex w-full max-w-3xl flex-col gap-8 pb-12">
@@ -48,6 +57,18 @@ export default async function SettingsPage() {
 					</p>
 					<p className="text-text-muted mt-5 text-sm">{t('profileDeferred')}</p>
 				</section>
+				{profile.authenticated && profile.available ? (
+					<PublicProfileForm
+						initial={{ username: profile.username, visibility: profile.visibility }}
+					/>
+				) : (
+					<p role="status" className="border-border bg-surface text-warning rounded-lg border p-6">
+						{t('unavailable')}
+					</p>
+				)}
+				{consent.authenticated && consent.available ? (
+					<LeaderboardOptIn initial={consent.optIn} hasUsername={consent.hasUsername} />
+				) : null}
 				{preferences.authenticated && preferences.available ? (
 					<ReminderPreferences
 						initial={{ inAppEnabled: preferences.inAppEnabled, emailOptIn: preferences.emailOptIn }}
