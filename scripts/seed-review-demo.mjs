@@ -10,7 +10,7 @@ const DAY = 86_400_000
 // [problemSlug, reviewsDone, days overdue (0 = due today)]
 const SEEDS = [
 	['two-sum', 0, 1],
-	['contains-duplicate', 1, 0],
+	['contains-duplicate', 1, 0]
 ]
 
 try {
@@ -29,7 +29,14 @@ try {
 				create: { userId: user.id, problemSlug, reviewsDone, dueDay },
 				update: { reviewsDone, dueDay, completedAt: null, remindedAt: null }
 			})
-			console.log('seeded', problemSlug, 'stage', reviewsDone + 1, 'due', dueDay.toISOString().slice(0, 10))
+			console.log(
+				'seeded',
+				problemSlug,
+				'stage',
+				reviewsDone + 1,
+				'due',
+				dueDay.toISOString().slice(0, 10)
+			)
 		}
 	}
 } finally {
