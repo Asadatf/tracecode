@@ -116,9 +116,14 @@ describe('grading is off unless deliberately enabled and verified', () => {
 		assert.match(grade, /factory == null\) return null/)
 	})
 
-	it('the Sandbox SDK is not yet a dependency, so no sandbox can be reached', () => {
-		const deps = { ...packageJson.dependencies, ...packageJson.devDependencies }
-		assert.equal('@vercel/sandbox' in deps, false)
+	it('the Sandbox SDK is installed, but only reachable behind the off-by-default flag', () => {
+		assert.ok('@vercel/sandbox' in packageJson.dependencies)
+		assert.match(grade, /challenge_competitive_grading/)
+		assert.ok(
+			grade.indexOf('challenge_competitive_grading') < grade.indexOf('loadSandboxFactory()')
+		)
+		const flags = read('../../lib/flags/flags.ts')
+		assert.match(flags, /challenge_competitive_grading: \{\s*default: false/)
 	})
 
 	it('without a grader a submission is stored and waits; nothing else produces a score', () => {

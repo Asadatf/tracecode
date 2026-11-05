@@ -2,6 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
 	GRADING_CLAIM_TTL_MS,
+	GRADING_RETRY_BACKOFF_MS,
+	MAX_GRADING_TRIES,
+	triesOf,
 	gradeAttempt,
 	startAttempt,
 	submitAttempt,
@@ -50,6 +53,7 @@ function fakeStore() {
 				testsTotal: null,
 				score: null,
 				gradeError: null,
+				gradingClaimedAt: null,
 				source: null,
 				claimedAt: null,
 				weekStart
@@ -82,7 +86,7 @@ function fakeStore() {
 			if (!row) return false
 			const stale = row.status === 'grading' && row.claimedAt != null && row.claimedAt < staleBefore
 			if (!(row.status === 'submitted' || row.status === 'grader_error' || stale)) return false
-			Object.assign(row, { status: 'grading', claimedAt: now })
+			Object.assign(row, { status: 'grading', claimedAt: now, gradingClaimedAt: now })
 			return true
 		},
 		async completeGrading(userId, date, record: GradeRecord) {
@@ -338,7 +342,19 @@ test('a grader failure is recoverable: no score now, retried later, then scored 
 	assert.equal(row.status, 'grader_error')
 	assert.equal(row.score, null, 'a grader error never gives or removes points on its own')
 	assert.equal(toAttemptView(row, at(80_000)).score, null)
-	const retry = await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(90_000))
+	assert.equal(
+		(await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', at(90_000))).status,
+		'retry_later',
+		'an immediate retry waits out the backoff'
+	)
+	const retry = await gradeAttempt(
+		store,
+		pass(12, 12),
+		'u1',
+		D,
+		'two-sum',
+		at(70_000 + GRADING_RETRY_BACKOFF_MS)
+	)
 	assert.equal(retry.status, 'graded')
 })
 
@@ -458,4 +474,75 @@ test('an attempt started late in the day can be submitted after UTC midnight, ju
 	await startAttempt(s2, 'u2', D, lateStart)
 	const late = await submitAttempt(s2, 'u2', D, 'x = 1', new Date('2026-11-11T00:21:00.000Z'))
 	assert.ok(late.ok && !late.accepted && late.reason === 'expired')
+})
+
+test('retries are bounded: backoff between tries, then it gives up and creates no more sandboxes', async () => {
+	const { store, rows } = fakeStore()
+	await startAttempt(store, 'u1', D, T0)
+	await submitAttempt(store, 'u1', D, 'code', at(60_000))
+	let calls = 0
+	const broken: Grader = {
+		grade: async () => {
+			calls += 1
+			return { ok: false, code: 'sandbox_unavailable' }
+		}
+	}
+	let now = 70_000
+	for (let attempt = 1; attempt <= MAX_GRADING_TRIES; attempt += 1) {
+		const result = await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now))
+		assert.equal(result.status, 'grader_error', `try ${attempt}`)
+		assert.equal(triesOf(rows.get(`u1|${D}`)!.gradeError), attempt)
+		// Too soon after a failure: nothing runs.
+		assert.equal(
+			(await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now + 1_000))).status,
+			attempt === MAX_GRADING_TRIES ? 'gave_up' : 'retry_later'
+		)
+		now += GRADING_RETRY_BACKOFF_MS * attempt + 1
+	}
+	assert.equal(calls, MAX_GRADING_TRIES)
+	// Long after: still given up, no further execution, and no score either way.
+	assert.equal(
+		(await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now + 24 * 3600_000))).status,
+		'gave_up'
+	)
+	assert.equal(calls, MAX_GRADING_TRIES)
+	assert.equal(rows.get(`u1|${D}`)?.score, null)
+})
+
+test('concurrent triggers of one submission run the grader exactly once', async () => {
+	const { store, solves } = fakeStore()
+	await startAttempt(store, 'u1', D, T0)
+	await submitAttempt(store, 'u1', D, 'code', at(60_000))
+	let calls = 0
+	const counting: Grader = {
+		grade: async () => {
+			calls += 1
+			await new Promise((r) => setImmediate(r))
+			return { ok: true, testsPassed: 12, testsTotal: 12, graderVersion: 'test' }
+		}
+	}
+	const results = await Promise.all(
+		Array.from({ length: 6 }, () => gradeAttempt(store, counting, 'u1', D, 'two-sum', at(70_000)))
+	)
+	assert.equal(calls, 1)
+	assert.equal(results.filter((r) => r.status === 'graded').length, 1)
+	assert.equal(solves.length, 1)
+})
+
+test('grader errors and exhausted retries never award points and never destroy the submitted source', async () => {
+	const { store, rows } = fakeStore()
+	await startAttempt(store, 'u1', D, T0)
+	await submitAttempt(store, 'u1', D, 'MY SOURCE', at(60_000))
+	const broken: Grader = { grade: async () => ({ ok: false, code: 'runner_failed' }) }
+	let now = 70_000
+	for (let i = 1; i <= MAX_GRADING_TRIES + 2; i += 1) {
+		await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now))
+		now += GRADING_RETRY_BACKOFF_MS * MAX_GRADING_TRIES + 1
+		const row = rows.get(`u1|${D}`)!
+		assert.equal(row.score, null)
+		assert.equal(row.testsPassed, null)
+		assert.equal(await store.readSource('u1', D), 'MY SOURCE')
+		assert.equal(toAttemptView(row, at(now)).score, null)
+	}
+	assert.equal(rows.get(`u1|${D}`)?.status, 'grader_error')
 })

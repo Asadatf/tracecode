@@ -1,29 +1,34 @@
 import 'server-only'
-import type {
-	SandboxCreateOptions,
-	SandboxFactory,
-	SandboxLike
-} from '@/lib/challenge/sandbox-grader'
+import type { SandboxFactory } from '@/lib/challenge/sandbox-grader'
 
-// The loader for Vercel Sandbox (ADR-0007). The SDK is NOT a dependency yet, so the app
-// builds without it and this returns null — which keeps competitive grading off by
-// construction. The specifier is a variable and the import is marked ignored, so the
-// bundler never tries to resolve a package that is not installed. Adding the dependency
-// (after the platform has been verified) is the only change needed to make it available.
-
-const SANDBOX_MODULE = '@vercel/sandbox'
+// The Vercel Sandbox binding (ADR-0007). It is a thin, typed adapter: it only maps our
+// narrow SandboxLike contract onto the SDK. Nothing here creates a sandbox until a
+// submission is actually graded, and grading itself only runs when the
+// `challenge_competitive_grading` flag is on (see grade.ts).
+//
+// Auth is the SDK's own: on Vercel it uses the project's OIDC token automatically; locally
+// it needs `vercel link` + `vercel env pull`. No credential is read or passed here.
 
 export async function loadSandboxFactory(): Promise<SandboxFactory | null> {
 	try {
-		const mod: unknown = await import(
-			/* webpackIgnore: true */ /* turbopackIgnore: true */ SANDBOX_MODULE
-		)
-		const Sandbox = (
-			mod as { Sandbox?: { create?: (o: SandboxCreateOptions) => Promise<SandboxLike> } }
-		).Sandbox
-		const create = Sandbox?.create
-		if (typeof create !== 'function') return null
-		return (options) => create.call(Sandbox, options)
+		// Lazy so the SDK is not loaded for any request that never grades.
+		const { Sandbox } = await import('@vercel/sandbox')
+		return async (options) => {
+			const sandbox = await Sandbox.create({
+				timeout: options.timeout,
+				resources: options.resources,
+				networkPolicy: options.networkPolicy,
+				persistent: options.persistent
+			})
+			return {
+				writeFiles: (files) => sandbox.writeFiles(files),
+				runCommand: async ({ cmd, args, timeoutMs }) => {
+					const finished = await sandbox.runCommand({ cmd, args, timeoutMs })
+					return { exitCode: finished.exitCode, stdout: () => finished.stdout() }
+				},
+				stop: () => sandbox.stop()
+			}
+		}
 	} catch {
 		return null
 	}

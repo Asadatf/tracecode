@@ -34,6 +34,8 @@ export interface SandboxCreateOptions {
 export type SandboxFactory = (options: SandboxCreateOptions) => Promise<SandboxLike>
 
 export const SANDBOX_TIMEOUT_MS = 2 * 60 * 1000
+// The runner prints one small JSON line; anything bigger is not our runner's output.
+export const MAX_RUNNER_STDOUT_CHARS = 2_000_000
 
 export interface GradingSubject {
 	problem: ProblemDefinition
@@ -68,7 +70,9 @@ export function createSandboxGrader(
 					timeoutMs: (job.caseTimeoutSeconds * job.cases.length + 20) * 1000
 				})
 				if (run.exitCode !== 0) return { ok: false, code: 'runner_failed' }
-				const judged = judgeOutputs(parseRunnerStdout(await run.stdout()), subject.cases)
+				const stdout = await run.stdout()
+				if (stdout.length > MAX_RUNNER_STDOUT_CHARS) return { ok: false, code: 'runner_failed' }
+				const judged = judgeOutputs(parseRunnerStdout(stdout), subject.cases)
 				if (!judged.ok) return { ok: false, code: judged.code }
 				return {
 					ok: true,

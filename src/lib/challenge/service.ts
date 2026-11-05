@@ -32,6 +32,7 @@ export interface AttemptRow {
 	testsTotal: number | null
 	score: number | null
 	gradeError: string | null
+	gradingClaimedAt: Date | null
 }
 
 export interface GradeRecord {
@@ -190,9 +191,23 @@ export interface Grader {
 // A grading claim older than this is a crashed worker and may be taken over.
 export const GRADING_CLAIM_TTL_MS = 2 * 60 * 1000
 
+// Bounded retries. A failed grading is retried with a growing delay, and given up on after
+// MAX_GRADING_TRIES, so an outage or a submission that always breaks the runner cannot
+// create sandboxes (a quota) forever. The count rides on gradeError as `code#n`, which
+// needs no schema change; giving up leaves the attempt a `grader_error` with no score.
+export const MAX_GRADING_TRIES = 3
+export const GRADING_RETRY_BACKOFF_MS = 60 * 1000
+
+export function triesOf(gradeError: string | null): number {
+	const match = /#(\d+)$/.exec(gradeError ?? '')
+	return match == null ? 0 : Number(match[1])
+}
+
 export type GradingResult =
 	| { status: 'graded'; score: number }
 	| { status: 'grader_error'; code: string }
+	| { status: 'retry_later' }
+	| { status: 'gave_up' }
 	| { status: 'not_claimed' }
 	| { status: 'no_grader' }
 
@@ -207,6 +222,15 @@ export async function gradeAttempt(
 	// No grader configured: the submission waits. It is never scored from anything else.
 	if (grader == null) return { status: 'no_grader' }
 
+	const before = await store.find(userId, date)
+	if (before?.status === 'grader_error') {
+		const tries = triesOf(before.gradeError)
+		if (tries >= MAX_GRADING_TRIES) return { status: 'gave_up' }
+		const last = before.gradingClaimedAt?.getTime() ?? 0
+		if (now.getTime() < last + GRADING_RETRY_BACKOFF_MS * Math.max(tries, 1))
+			return { status: 'retry_later' }
+	}
+
 	const claimed = await store.claimGrading(
 		userId,
 		date,
@@ -217,10 +241,12 @@ export async function gradeAttempt(
 
 	const row = await store.find(userId, date)
 	const source = await store.readSource(userId, date)
-	if (row == null || source == null || row.elapsedMs == null) {
-		await store.failGrading(userId, date, 'missing_submission')
-		return { status: 'grader_error', code: 'missing_submission' }
+	const tries = triesOf(row?.gradeError ?? null)
+	const fail = async (code: string): Promise<GradingResult> => {
+		await store.failGrading(userId, date, `${code}#${tries + 1}`)
+		return { status: 'grader_error', code }
 	}
+	if (row == null || source == null || row.elapsedMs == null) return fail('missing_submission')
 
 	let outcome: GradeOutcome
 	try {
@@ -228,10 +254,7 @@ export async function gradeAttempt(
 	} catch {
 		outcome = { ok: false, code: 'grader_exception' }
 	}
-	if (!outcome.ok) {
-		await store.failGrading(userId, date, outcome.code)
-		return { status: 'grader_error', code: outcome.code }
-	}
+	if (!outcome.ok) return fail(outcome.code)
 	const score = dailyScore({
 		testsPassed: outcome.testsPassed,
 		testsTotal: outcome.testsTotal,

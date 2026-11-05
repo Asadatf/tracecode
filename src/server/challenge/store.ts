@@ -39,7 +39,8 @@ const ATTEMPT_SELECT = {
 	testsPassed: true,
 	testsTotal: true,
 	score: true,
-	gradeError: true
+	gradeError: true,
+	gradingClaimedAt: true
 } as const
 
 export const attemptStore: ChallengeAttemptStore = {

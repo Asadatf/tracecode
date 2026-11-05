@@ -74,7 +74,8 @@ server-verified results are ever scored or ranked.
 - **AC15** — GIVEN no grader is configured THEN a submission is stored and shown as
   "saved, awaiting grading", is never scored, and the leaderboard stays empty. The grader
   runs only if the `challenge_competitive_grading` flag is on AND the sandbox is available;
-  the flag defaults off and the sandbox SDK is not yet a dependency.
+  the flag defaults off. `@vercel/sandbox` is installed but nothing creates a sandbox
+  while the flag is off.
 - **AC16** — GIVEN the hidden suites THEN they live only under `src/server/challenge/`
   (server-only wrapper), are not part of the client bundle, and are separate from the public
   practice tests. A suite is validated against the verified reference solutions: every
@@ -116,9 +117,12 @@ server-verified results are ever scored or ranked.
 Built and tested: daily assignment and the calendar, the timed lifecycle and page, the
 grading architecture (orchestration, runner, comparator, sandbox adapter, hidden suites),
 the leaderboard and consent, and the weekly archive. **Not active:** competitive grading.
-It needs (1) a reviewed set of hidden suites, (2) `@vercel/sandbox` added and verified on
-the project's plan and credentials, and (3) the flag turned on, none of which this change
-does. Until then no submission is graded and no score or ranking exists.
+`@vercel/sandbox` is installed and bound by a typed adapter; the runner is hardened
+(`sandbox-runner-v3`) and grading retries are bounded (3 tries, growing backoff, then the
+attempt stays `grader_error` with no score). Activation still needs (1) a human review of
+the hidden suites, (2) one live run of `scripts/verify-sandbox-grading.mts --confirm` on the
+project's plan and credentials (it creates real sandboxes), and (3) the flag turned on.
+Until then no submission is graded and no score or ranking exists.
 
 ## Data / API
 
@@ -133,6 +137,8 @@ leaderboardOptIn` (`prisma/schema/challenges.prisma`). Each new table needs the
 ## Edge cases
 
 - A catalogue of six problems means challenges repeat within days.
+- A submission whose grading keeps failing is retried at most three times, then left
+  unscored (`grader_error`); it never costs more sandboxes and never gets points by default.
 - Burst submissions can exceed the sandbox's concurrency; a submission waits in
   `submitted` and is retried on the next status poll.
 - A learner who deletes their account cascades their attempts and standings.

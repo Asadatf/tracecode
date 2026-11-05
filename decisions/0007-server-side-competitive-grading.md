@@ -71,3 +71,15 @@ produced can count. Three constraints shape the design:
   create migration and the hand-written RLS-enable migration.
 - **Reversal.** Competitive grading can be switched off instantly by the flag; submissions
   are kept and simply stop being graded.
+
+## Update — Phase 2 (implementation)
+
+`@vercel/sandbox` 3.9.1 is installed and bound in `src/server/challenge/sandbox.ts`
+(lazy import; it passes only timeout, one vCPU, `deny-all` and `persistent: false`, and no
+credential). The runner (`sandbox-runner-v3`) deletes its job file before any learner code
+runs, gives each case an empty environment, CPU/memory/file-size limits and a size-limited
+output file, and kills the case's process group on timeout. Retries are bounded (three
+tries, growing backoff) so an outage cannot create sandboxes without limit. The grader and
+flag were verified only against a local CPython stand-in and the SDK's type declarations:
+no real sandbox has been created. The flag stays off until `scripts/verify-sandbox-grading.mts
+--confirm` has been run against the real project.

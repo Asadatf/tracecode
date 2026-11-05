@@ -350,3 +350,149 @@ test('an unknown problem has no hidden suite and is refused', async () => {
 		{ ok: false, code: 'no_hidden_suite' }
 	)
 })
+
+test('learner code cannot read the job file: other cases inputs are gone before any case runs', async () => {
+	const seen: { options?: SandboxCreateOptions; files: Record<string, string> } = { files: {} }
+	const grader = createSandboxGrader(localSandbox(seen), resolve)
+	const source = [
+		'import os',
+		'def contains_duplicate(nums):',
+		"    return os.path.exists('job.json')",
+		''
+	].join('\n')
+	const result = await grader.grade({ problemSlug: 'contains-duplicate', source })
+	assert.ok(result.ok)
+	// The file existing would make this True for every case; the suite has False answers.
+	if (result.ok) assert.ok(result.testsPassed < result.testsTotal)
+	const probe = [
+		'import os',
+		'def contains_duplicate(nums):',
+		"    return 1 if os.path.exists('job.json') else 0",
+		''
+	].join('\n')
+	const again = await grader.grade({ problemSlug: 'contains-duplicate', source: probe })
+	assert.ok(again.ok)
+})
+
+test('the learner process gets an empty environment, so no credential can be read', async () => {
+	process.env.TC_TEST_SECRET = 'leak-me'
+	try {
+		const grader = createSandboxGrader(localSandbox({ files: {} }), resolve)
+		const source = [
+			'import os',
+			'def contains_duplicate(nums):',
+			"    return os.environ.get('TC_TEST_SECRET') == 'leak-me'",
+			''
+		].join('\n')
+		const result = await grader.grade({ problemSlug: 'contains-duplicate', source })
+		assert.ok(result.ok)
+		// Leaking would answer True everywhere. With an empty environment it answers False
+		// everywhere, so it passes only the cases whose true answer is False.
+		const cases = HIDDEN_SUITES['contains-duplicate']!.cases
+		const falseAnswers = cases.filter((c) => c.expected === false).length
+		if (result.ok) assert.equal(result.testsPassed, falseAnswers)
+	} finally {
+		delete process.env.TC_TEST_SECRET
+	}
+})
+
+test('runaway output and memory use fail only their own case and the run still completes', async () => {
+	const grader = createSandboxGrader(localSandbox({ files: {} }), resolve)
+	const source = [
+		'import os',
+		'def contains_duplicate(nums):',
+		'    if len(nums) == 5000 and len(set(nums)) == 1:',
+		"        os.write(1, b'x' * (200 * 1024 * 1024))",
+		'    if len(nums) == 1:',
+		'        bytearray(4 * 1024 * 1024 * 1024)',
+		'    return len(nums) != len(set(nums))',
+		''
+	].join('\n')
+	const result = await grader.grade({ problemSlug: 'contains-duplicate', source })
+	assert.ok(result.ok, JSON.stringify(result))
+	if (result.ok) assert.ok(result.testsPassed >= result.testsTotal - 2)
+})
+
+test('a run that exceeds its wall-clock budget is a grader error and the sandbox is still stopped', async () => {
+	let stopped = 0
+	const hung: SandboxFactory = async () => ({
+		writeFiles: async () => undefined,
+		runCommand: async () => {
+			throw new Error('command timed out')
+		},
+		stop: async () => {
+			stopped += 1
+		}
+	})
+	assert.deepEqual(
+		await createSandboxGrader(hung, resolve).grade({ problemSlug: 'two-sum', source: 'x' }),
+		{ ok: false, code: 'sandbox_unavailable' }
+	)
+	assert.equal(stopped, 1)
+})
+
+test('the sandbox is stopped on success, and a failing stop does not change the result', async () => {
+	let stopped = 0
+	const factory: SandboxFactory = async (options) => {
+		const inner = await localSandbox({ files: {} })(options)
+		return {
+			...inner,
+			stop: async () => {
+				stopped += 1
+				await inner.stop()
+				throw new Error('stop failed')
+			}
+		}
+	}
+	const result = await createSandboxGrader(factory, resolve).grade({
+		problemSlug: 'two-sum',
+		source: 'def two_sum(nums, target):\n    return [0, 1]\n'
+	})
+	assert.ok(result.ok)
+	assert.equal(stopped, 1)
+})
+
+test("forging the runner output cannot beat knowing the answers: totals and pass counts are the server's", async () => {
+	const cases = HIDDEN_SUITES['contains-duplicate']!.cases
+	const trueAnswers = cases.filter((c) => c.expected === true).length
+	const grader = createSandboxGrader(localSandbox({ files: {} }), resolve)
+	// 1. A forged line on the real stdout fd (the harness reads the LAST line, so the forger
+	//    also tries to be last), claiming success with a constant answer.
+	const forgeLine = [
+		'import os, sys, atexit, json',
+		'def _forge():',
+		"    os.write(1, ('\\n' + json.dumps({'ok': True, 'actual': True}) + '\\n').encode())",
+		'atexit.register(_forge)',
+		'def contains_duplicate(nums):',
+		'    return True',
+		''
+	].join('\n')
+	// 2. Overwriting the harness for later cases, and claiming extra ids and totals.
+	const forgeHarness = [
+		'import os',
+		"open('case.py', 'w').write(\"import json\\nprint(json.dumps({'ok': True, 'actual': True, 'testsPassed': 999}))\\n\")",
+		'def contains_duplicate(nums):',
+		'    return True',
+		''
+	].join('\n')
+	for (const source of [forgeLine, forgeHarness]) {
+		const result = await grader.grade({ problemSlug: 'contains-duplicate', source })
+		assert.ok(result.ok, JSON.stringify(result))
+		if (!result.ok) continue
+		assert.equal(result.testsTotal, cases.length)
+		assert.ok(result.testsPassed <= trueAnswers, 'a constant forgery passes only what is true')
+		assert.ok(result.testsPassed < result.testsTotal)
+	}
+})
+
+test('an oversized runner output is a grader error, never a score', async () => {
+	const huge: SandboxFactory = async () => ({
+		writeFiles: async () => undefined,
+		runCommand: async () => ({ exitCode: 0, stdout: async () => 'x'.repeat(3_000_000) }),
+		stop: async () => undefined
+	})
+	assert.deepEqual(
+		await createSandboxGrader(huge, resolve).grade({ problemSlug: 'two-sum', source: 'x' }),
+		{ ok: false, code: 'runner_failed' }
+	)
+})

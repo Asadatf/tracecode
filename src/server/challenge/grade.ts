@@ -8,8 +8,8 @@ import { loadSandboxFactory } from './sandbox'
 
 // The competitive grader in effect, or null. Null — and therefore NO grading and NO
 // scores — unless BOTH the `challenge_competitive_grading` flag is on AND the Sandbox
-// SDK is available. The flag defaults off and the SDK is not installed, so today this is
-// always null (ADR-0007).
+// SDK is available. The flag defaults off everywhere, so until it is deliberately enabled
+// (after live verification, ADR-0007) this is always null.
 export async function activeGrader(): Promise<Grader | null> {
 	const enabled = await getFlag('challenge_competitive_grading').catch(() => false)
 	if (enabled !== true) return null

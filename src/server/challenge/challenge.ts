@@ -7,6 +7,7 @@ import { captureError } from '@/lib/observability/capture-error'
 import { resolveChallenge, type ChallengeLookup } from '@/lib/challenge/assignment'
 import {
 	GRADING_CLAIM_TTL_MS,
+	MAX_GRADING_TRIES,
 	gradeAttempt,
 	startAttempt,
 	submitAttempt,
@@ -168,7 +169,11 @@ export async function gradePendingAttempts(limit = 20): Promise<{ attempted: num
 		where: {
 			OR: [
 				{ status: 'submitted' },
-				{ status: 'grader_error' },
+				// An attempt the grader has given up on is left alone (it would only fill the batch).
+				{
+					status: 'grader_error',
+					OR: [{ gradeError: null }, { NOT: { gradeError: { endsWith: `#${MAX_GRADING_TRIES}` } } }]
+				},
 				{
 					status: 'grading',
 					gradingClaimedAt: { lt: new Date(now.getTime() - GRADING_CLAIM_TTL_MS) }
