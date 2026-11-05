@@ -456,6 +456,11 @@
 	font-size: 14px;
 	text-decoration: none;
 }
+/* A date that has not begun: visible, but not an entry point. */
+.dayLocked {
+	color: rgba(255, 255, 255, 0.32);
+	cursor: not-allowed;
+}
 a.day:hover {
 	background: rgba(255, 255, 255, 0.12);
 	color: #fff;

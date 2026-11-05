@@ -114,6 +114,14 @@ fixed 1 / 3 / 7 day review cycle (`spaced-review.md`, ADR-0006): successful revi
 far (0–3), the UTC due date and timestamps; no score or text. Due-review reminders reuse
 `learning_notifications` and `notification_deliveries` under their own kind and channel.
 
+### M9B — daily challenge and weekly leaderboard
+
+`daily_challenges` pins one problem per UTC date; `challenge_attempts` holds one competitive
+attempt per learner per challenge (unique key), with a server-set deadline, a private
+source and server-verified results; `weekly_standings` archives closed weeks;
+`User.leaderboardOptIn` is the separate leaderboard consent (`daily-challenge.md`,
+ADR-0007). A score is written only by the server-side sandbox grader, never from a browser.
+
 ### M7.1 — code features on attempts
 
 `Attempt.codeFeatures` (`Json?`, nullable, no default) holds a versioned,

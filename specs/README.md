@@ -107,6 +107,7 @@ Update this table in the same PR that changes a status.
 | [`features/public-profile-settings.md`](features/public-profile-settings.md)     | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/spaced-review.md`](features/spaced-review.md)                         | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/streak.md`](features/streak.md)                                       | Agreed (Umair; no teammate sign-off)           | Umair       |
+| [`features/daily-challenge.md`](features/daily-challenge.md)                     | Agreed (Umair; grading disabled)               | Umair       |
 | [`features/dashboard-page.md`](features/dashboard-page.md)                       | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/practice-workspace-layout.md`](features/practice-workspace-layout.md) | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/contextual-ai-tutor.md`](features/contextual-ai-tutor.md)             | In progress (no teammate sign-off)             | Umair       |

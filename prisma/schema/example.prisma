@@ -34,6 +34,13 @@ model User {
 	// M9C spaced review (prisma/schema/reviews.prisma).
 	problemReviews  ProblemReview[]
 
+	// M9B daily challenges (prisma/schema/challenges.prisma). `leaderboardOptIn` is the
+	// SEPARATE explicit consent to appear on the public weekly leaderboard: a public
+	// profile alone never implies it, and it defaults to false for every account.
+	leaderboardOptIn  Boolean            @default(false)
+	challengeAttempts ChallengeAttempt[]
+	weeklyStandings   WeeklyStanding[]
+
 	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
 	recommendationCache RecommendationCache?
 

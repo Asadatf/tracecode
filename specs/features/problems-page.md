@@ -49,7 +49,7 @@ one click to start.
   previous and next arrows around a hexagon month badge (month number and
   abbreviation) that pops up out of the strip. Below it: the full month and
   year, one UTC month of dates (Sunday first) with today marked, and a "Today's
-  problem" row with a link. There is no premium, redeem or rules content.
+  challenge" row with a link. There is no premium, redeem or rules content.
 - **AC9a** — GIVEN any month THEN the card, header strip, text and shadows are
   identical (graphite background, neutral text); only the accent hue changes,
   keyed to the month shown: Jan emerald, Feb sapphire, Mar violet, Apr pink, May
@@ -59,10 +59,12 @@ one click to start.
   opacity), and is reserved for any future practice-streak or completion
   indicator. Today's-date text stays dark enough for contrast on every hue
   (including lemon and pink).
-- **AC10** — GIVEN any date in the calendar THEN it is a link to
-  `/practice/<slug>` for that date's problem, chosen as a pure function of the
-  ISO date over the catalogue (the same date always opens the same problem),
-  and its accessible name is "<date>: <title>".
+- **AC10** — GIVEN any date up to today in the calendar THEN it is a link to that
+  date's daily challenge page (`/challenge/<date>`, `daily-challenge.md`); a date after
+  today is a locked, non-link cell. The problem a date names is its PINNED assignment
+  (never recomputed), so the same date always opens the same problem even after the
+  catalogue changes, and its accessible name is "<date>: <title>" (or "<date>: daily
+  challenge" until that day has been pinned).
 - **AC11** — GIVEN the list card THEN it has no heading. Its header holds topic
   filter chips on the left ("All topics", then each topic the catalogue has, in
   catalogue order; one at a time, `aria-pressed`), and on the right a Status

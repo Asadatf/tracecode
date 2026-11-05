@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { Link } from '@/i18n/routing'
 import { ArrowRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/ui/icons'
 import { monthLayout, monthOf, shiftMonth, dayIso } from '@/lib/calendar/month-grid'
-import { problemForDate } from '@/lib/problems/daily-problem'
+import { CHALLENGE_EPOCH } from '@/lib/challenge/assignment'
 import styles from './problems.module.css'
 
 export interface CalendarLabels {
@@ -17,6 +17,14 @@ export interface CalendarLabels {
 	timeLeft: string
 	// "{date}: {title}" for a day's link, spoken by screen readers.
 	dayLabel: string
+	// "{date}" alone, for a past day whose assignment is not yet pinned.
+	dayLabelPlain: string
+	// "{date}: locked until it begins", for a future day.
+	dayLocked: string
+	// "{date}: no challenge" for a date before the product launched.
+	dayNone: string
+	// Shown on today's row until the assignment has been pinned.
+	openToday: string
 }
 
 // One shared clock tick per second. The server snapshot is null, so the first
@@ -63,13 +71,17 @@ function timeUntilUtcMidnight(now: number): string {
 // AC8–AC10). Dates are UTC days, like the "UTC" chip says, and "today" comes
 // from the server so the first render matches it.
 export function ProblemCalendar({
-	slugs,
 	titles,
+	pinned,
 	todayIso,
 	labels
 }: {
-	slugs: string[]
+	// Problem titles by slug.
 	titles: Record<string, string>
+	// The pinned daily challenge per UTC date (YYYY-MM-DD -> slug), today and earlier only.
+	// Assignments are read from here, never recomputed, so a catalogue change cannot
+	// change a date's problem; a future date is not in it and cannot be opened.
+	pinned: Record<string, string>
 	todayIso: string
 	labels: CalendarLabels
 }) {
@@ -95,7 +107,7 @@ export function ProblemCalendar({
 		setView((current) => shiftMonth(current, by))
 	}
 
-	const todaySlug = problemForDate(slugs, todayIso)
+	const todaySlug = pinned[todayIso]
 
 	return (
 		<section
@@ -164,26 +176,55 @@ export function ProblemCalendar({
 					{Array.from({ length: daysInMonth }, (_, index) => {
 						const day = index + 1
 						const iso = dayIso(view, day)
-						const slug = problemForDate(slugs, iso)
+						const slug = pinned[iso]
 						const title = slug == null ? undefined : titles[slug]
 						const isToday = iso === todayIso
-						return (
-							<span key={iso} role="gridcell">
-								{slug == null ? (
-									<span className={styles.day}>{day}</span>
-								) : (
-									<Link
-										href={`/practice/${slug}`}
-										className={isToday ? `${styles.day} ${styles.dayToday}` : styles.day}
-										aria-current={isToday ? 'date' : undefined}
-										aria-label={labels.dayLabel
-											.replace('{date}', dayFormat.format(new Date(iso)))
-											.replace('{title}', title ?? slug)}
-										title={title}
+						const date = dayFormat.format(new Date(iso))
+						// Before launch there is no challenge: shown, never a link.
+						if (iso < CHALLENGE_EPOCH) {
+							return (
+								<span key={iso} role="gridcell">
+									<span
+										className={`${styles.day} ${styles.dayLocked}`}
+										aria-disabled="true"
+										aria-label={labels.dayNone.replace('{date}', date)}
+										title={labels.dayNone.replace('{date}', date)}
 									>
 										{day}
-									</Link>
-								)}
+									</span>
+								</span>
+							)
+						}
+						// A date that has not begun is locked: shown, never a link.
+						if (iso > todayIso) {
+							return (
+								<span key={iso} role="gridcell">
+									<span
+										className={`${styles.day} ${styles.dayLocked}`}
+										aria-disabled="true"
+										aria-label={labels.dayLocked.replace('{date}', date)}
+										title={labels.dayLocked.replace('{date}', date)}
+									>
+										{day}
+									</span>
+								</span>
+							)
+						}
+						return (
+							<span key={iso} role="gridcell">
+								<Link
+									href={`/challenge/${iso}`}
+									className={isToday ? `${styles.day} ${styles.dayToday}` : styles.day}
+									aria-current={isToday ? 'date' : undefined}
+									aria-label={
+										title == null
+											? labels.dayLabelPlain.replace('{date}', date)
+											: labels.dayLabel.replace('{date}', date).replace('{title}', title)
+									}
+									title={title}
+								>
+									{day}
+								</Link>
 							</span>
 						)
 					})}
@@ -192,15 +233,15 @@ export function ProblemCalendar({
 						<span key={`tail-${index}`} role="gridcell" />
 					))}
 				</div>
-				{todaySlug != null ? (
-					<Link href={`/practice/${todaySlug}`} className={styles.todayRow}>
-						<span>
-							<span className={styles.todayLabel}>{labels.todaysProblem}</span>
-							<strong>{titles[todaySlug] ?? todaySlug}</strong>
-						</span>
-						<ArrowRightIcon size={18} />
-					</Link>
-				) : null}
+				<Link href={`/challenge/${todayIso}`} className={styles.todayRow}>
+					<span>
+						<span className={styles.todayLabel}>{labels.todaysProblem}</span>
+						<strong>
+							{todaySlug == null ? labels.openToday : (titles[todaySlug] ?? todaySlug)}
+						</strong>
+					</span>
+					<ArrowRightIcon size={18} />
+				</Link>
 			</div>
 		</section>
 	)

@@ -1,0 +1,179 @@
+/* The timed challenge page. Tokens only, so light and dark both work. */
+.page {
+	min-height: 100vh;
+	background: var(--bg);
+	color: var(--text);
+}
+.top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	max-width: 72rem;
+	margin: 0 auto;
+	padding: 18px 16px 0;
+}
+.brand {
+	color: var(--text);
+	font: 700 17px var(--font-sans);
+	letter-spacing: -0.02em;
+	text-decoration: none;
+}
+.main {
+	max-width: 72rem;
+	margin: 0 auto;
+	padding: 20px 16px 48px;
+}
+.eyebrow {
+	margin: 0 0 6px;
+	color: var(--accent-hover);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+.title {
+	margin: 0 0 18px;
+	font-size: clamp(24px, 4vw, 32px);
+	font-weight: 700;
+	letter-spacing: -0.03em;
+}
+
+.exam {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+	gap: 18px;
+	align-items: start;
+}
+.statement,
+.card {
+	min-width: 0;
+	padding: 20px;
+	border: 1px solid var(--border);
+	border-radius: 16px;
+	background: var(--surface);
+}
+.statement p,
+.card p {
+	margin: 0 0 10px;
+	line-height: 1.55;
+}
+.problemTitle {
+	margin: 0 0 12px;
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+.sub {
+	margin: 16px 0 8px;
+	font-size: 15px;
+	font-weight: 700;
+}
+.card .sub:first-child {
+	margin-top: 0;
+}
+.examples {
+	margin: 0;
+	padding-left: 18px;
+	font-size: 14px;
+	line-height: 1.7;
+}
+.examples code,
+.rules code {
+	font-family: var(--font-mono);
+	font-size: 13px;
+}
+.rules {
+	margin: 0 0 16px;
+	padding-left: 18px;
+	line-height: 1.6;
+}
+.work {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	min-width: 0;
+}
+.bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+.timer {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 8px;
+}
+.timerLabel {
+	color: var(--text-muted);
+	font-size: 13px;
+}
+.timer strong {
+	font: 700 26px var(--font-mono);
+	letter-spacing: 0.02em;
+}
+.timer strong[data-low='true'] {
+	color: var(--danger);
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.editor {
+	height: 420px;
+	min-height: 260px;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	background: #0f1412;
+}
+.results {
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	background: var(--surface-subtle);
+	font-size: 14px;
+}
+.results p {
+	margin: 6px 0 0;
+}
+.confirm {
+	margin: 0;
+	padding: 10px 12px;
+	border: 1px solid color-mix(in srgb, var(--warning) 45%, var(--border));
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--warning) 10%, transparent);
+	font-size: 14px;
+}
+.error {
+	margin: 0;
+	color: var(--danger);
+	font-size: 14px;
+}
+.muted {
+	color: var(--text-muted);
+	font-size: 13px;
+}
+.score {
+	font-size: 22px;
+	font-weight: 700;
+}
+.back {
+	margin: 6px 0 0;
+	font-size: 14px;
+}
+.back a {
+	color: var(--accent-hover);
+}
+
+@media (max-width: 880px) {
+	.exam {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.editor {
+		height: 340px;
+	}
+}

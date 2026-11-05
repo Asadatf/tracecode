@@ -7,6 +7,7 @@ import { buildProgressView } from '@/lib/progress/progress-view'
 import { buildProblemSummaries } from '@/lib/problems/problem-summary'
 import { getFirstAttemptDates, getLearningProgress } from '@/server/learning/progress'
 import { AppShell } from '@/components/app-shell/app-shell'
+import { getChallenge, getPinnedChallenges } from '@/server/challenge/challenge'
 import { ProblemCalendar } from '@/components/problems/problem-calendar'
 import { ProblemList } from '@/components/problems/problem-list'
 import dashboard from '@/components/dashboard/dashboard.module.css'
@@ -26,10 +27,14 @@ export default async function ProblemsPage() {
 		redirect({ href: '/login?next=%2Fproblems', locale: await getLocale() })
 		return null
 	}
-	const [t, progress, firstAttempts] = await Promise.all([
+	const todayIso = new Date().toISOString().slice(0, 10)
+	const [t, progress, firstAttempts, pinned] = await Promise.all([
 		getTranslations('ProblemsPage'),
 		getLearningProgress(),
-		getFirstAttemptDates()
+		getFirstAttemptDates(),
+		// Today's challenge is pinned the first time it is needed, so the calendar can
+		// name it; the pinned map covers today and earlier only, never a future date.
+		getChallenge(todayIso).then(() => getPinnedChallenges())
 	])
 	const problems = Object.values(PROBLEMS)
 	// Statuses are shown only when saved progress could actually be read.
@@ -49,16 +54,20 @@ export default async function ProblemsPage() {
 				</div>
 				<aside className={styles.sideCal}>
 					<ProblemCalendar
-						slugs={problems.map((problem) => problem.slug)}
+						pinned={pinned}
 						titles={Object.fromEntries(problems.map((problem) => [problem.slug, problem.title]))}
-						todayIso={new Date().toISOString().slice(0, 10)}
+						todayIso={todayIso}
 						labels={{
 							dayHeading: t('calendar.dayHeading', { day: '{day}' }),
 							timeLeft: t('calendar.timeLeft', { time: '{time}' }),
 							previous: t('calendar.previous'),
 							next: t('calendar.next'),
 							todaysProblem: t('calendar.todaysProblem'),
-							dayLabel: t('calendar.dayLabel', { date: '{date}', title: '{title}' })
+							dayLabel: t('calendar.dayLabel', { date: '{date}', title: '{title}' }),
+							dayLabelPlain: t('calendar.dayLabelPlain', { date: '{date}' }),
+							dayLocked: t('calendar.dayLocked', { date: '{date}' }),
+							dayNone: t('calendar.dayNone', { date: '{date}' }),
+							openToday: t('calendar.openToday')
 						}}
 					/>
 				</aside>

@@ -4,8 +4,10 @@ import { redirect } from '@/i18n/routing'
 import { currentAccountSafe } from '@/server/auth/session'
 import { getPreferences } from '@/server/notifications/inbox'
 import { getProfileSettings } from '@/server/profile/profile'
+import { getLeaderboardConsent } from '@/server/challenge/leaderboard'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { PublicProfileForm } from '@/components/settings/public-profile-form'
+import { LeaderboardOptIn } from '@/components/settings/leaderboard-opt-in'
 import { ReminderPreferences } from '@/components/notifications/reminder-preferences'
 import { Input } from '@/components/ui/input'
 
@@ -20,10 +22,11 @@ export default async function SettingsPage() {
 		redirect({ href: '/login?next=%2Fsettings', locale: await getLocale() })
 		return null
 	}
-	const [t, preferences, profile] = await Promise.all([
+	const [t, preferences, profile, consent] = await Promise.all([
 		getTranslations('SettingsPage'),
 		getPreferences(),
-		getProfileSettings()
+		getProfileSettings(),
+		getLeaderboardConsent()
 	])
 	return (
 		<AppShell current="settings">
@@ -63,6 +66,9 @@ export default async function SettingsPage() {
 						{t('unavailable')}
 					</p>
 				)}
+				{consent.authenticated && consent.available ? (
+					<LeaderboardOptIn initial={consent.optIn} hasUsername={consent.hasUsername} />
+				) : null}
 				{preferences.authenticated && preferences.available ? (
 					<ReminderPreferences
 						initial={{ inAppEnabled: preferences.inAppEnabled, emailOptIn: preferences.emailOptIn }}

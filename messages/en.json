@@ -330,6 +330,99 @@
 		"unavailablePage": "This page can't be loaded right now. Try again in a moment.",
 		"footnote": "Recorded by TraceCode as this learner practises, from runs in their browser. It shows what someone has practised, not a verified skill assessment."
 	},
+	"Challenge": {
+		"metaTitle": "Daily challenge | TraceCode",
+		"eyebrow": "Daily challenge",
+		"pastEyebrow": "Past challenge",
+		"pastNote": "This challenge has ended. Past challenges are for practice and do not affect the weekly competition.",
+		"practice": "Practise this problem",
+		"back": "Back to problems",
+		"leaderboardLink": "Leaderboard",
+		"unavailable": "The daily challenge is unavailable right now. Try again in a moment.",
+		"examples": "Examples",
+		"workArea": "Your attempt",
+		"editor": "Challenge code editor",
+		"rules": {
+			"heading": "Before you start",
+			"time": "You have {minutes} minutes from the moment you press Start. The clock runs on our server and keeps running if you close or refresh this page.",
+			"once": "You get ONE final submission. Press Submit when you are done: it cannot be undone or repeated, and a late submission earns nothing.",
+			"run": "Run checks your code against the public examples only, in your browser. It never counts toward your score.",
+			"noHelp": "Tracy, hints, replay and solutions are not available during the challenge.",
+			"hidden": "Your score comes from hidden tests that we run on our servers. You will see how many passed after grading.",
+			"gradingOff": "Competitive grading is not switched on yet. A submission is saved and waits for grading; nothing is scored or ranked from unverified results."
+		},
+		"start": "Start the challenge",
+		"starting": "Starting…",
+		"timeLeft": "Time left",
+		"timeLeftLabel": "Time left in the challenge",
+		"run": "Run examples",
+		"running": "Running…",
+		"submit": "Submit final answer",
+		"confirmSubmit": "Yes, submit final answer",
+		"cancel": "Keep working",
+		"submitting": "Submitting…",
+		"confirmText": "This is your one final submission. You cannot change it or submit again.",
+		"exampleResult": "Public examples passed: {passed} of {total}",
+		"exampleNote": "These are only the examples shown on the left. Your score is decided by hidden tests.",
+		"runProblem": "Your code could not run to completion. Check it and try again.",
+		"submittedHeading": "Submitted",
+		"awaitingGrading": "Your answer is saved and waiting to be graded.",
+		"grading": "Grading your answer…",
+		"savedNotScored": "Your answer is saved. Competitive grading is not switched on yet, so it has not been scored.",
+		"gradedHeading": "Graded",
+		"graded": "{passed} of {total} hidden tests passed.",
+		"score": "Score: {score}",
+		"timeTaken": "Time taken: {time}",
+		"graderErrorHeading": "Not graded yet",
+		"graderError": "We could not grade your answer yet. It is saved and will be retried. No points are awarded until it is verified.",
+		"expiredHeading": "Time ran out",
+		"expired": "The time ran out before a submission, so this challenge earns no score.",
+		"errors": {
+			"generic": "Something went wrong. Try again.",
+			"unauthenticated": "Sign in again to continue.",
+			"notLive": "Only today’s challenge can be attempted.",
+			"notStarted": "Start the challenge before submitting.",
+			"empty": "Write some code before submitting.",
+			"tooLarge": "Your code is too long to submit."
+		}
+	},
+	"Leaderboard": {
+		"metaTitle": "Weekly leaderboard | TraceCode",
+		"eyebrow": "Weekly leaderboard",
+		"heading": "Week of {start} – {end}",
+		"weekRule": "Weeks run from Monday 00:00 to Sunday 23:59 UTC. Only server-verified scores count.",
+		"toProblems": "Problems",
+		"unavailable": "The leaderboard is unavailable right now.",
+		"top": "Top {count}",
+		"caption": "Top learners for the week of {start} to {end}",
+		"empty": "No verified results yet this week.",
+		"gradingOff": "Competitive grading is not switched on yet, so nothing can appear here until submissions are verified.",
+		"competitors": "{count, plural, =0 {No opted-in learners have a verified result.} one {# opted-in learner has a verified result.} other {# opted-in learners have a verified result.}}",
+		"cols": {
+			"rank": "Rank",
+			"user": "Learner",
+			"score": "Score",
+			"solved": "Solved",
+			"time": "Time"
+		},
+		"you": {
+			"heading": "Your result",
+			"rank": "Your rank: {rank} of {competitors}.",
+			"notListed": "You have a verified result this week.",
+			"numbers": "Score {score} · {days, plural, one {# day} other {# days}} solved · {time} total time on solved days.",
+			"private": "Only you can see this. You are not on the public board unless you opt in from Settings."
+		},
+		"rules": {
+			"heading": "How ranking works",
+			"score": "Each day: up to 1000 points for the share of hidden tests passed, plus up to 100 more for a full pass, scaled by the time left. A week is the sum of its days.",
+			"tie1": "Ties go to the learner with more days fully solved,",
+			"tie2": "then to the lower total time on those days,",
+			"tie3": "then to the earlier final scoring submission.",
+			"shared": "Learners equal on all of these share a rank.",
+			"verified": "Scores come from tests run on our servers. Results reported by a browser are never used."
+		},
+		"archive": { "heading": "Past weeks", "current": "This week" }
+	},
 	"Streak": {
 		"heading": "Your streak",
 		"open": "Streak details",
@@ -503,6 +596,19 @@
 		"saving": "Saving…",
 		"cadence": "Frequency",
 		"daily": "Daily",
+		"leaderboard": {
+			"heading": "Weekly leaderboard",
+			"description": "Choose whether you appear on the public weekly leaderboard.",
+			"label": "Show me on the public weekly leaderboard",
+			"help": "Your username and your verified weekly score would be shown to anyone. Sharing a public profile does not do this by itself. Off unless you turn it on, and you can turn it off at any time.",
+			"needsUsername": "Choose a username above first: it is the name you appear under.",
+			"saving": "Saving…",
+			"status": {
+				"saved": "Saved.",
+				"username_required": "Choose a username before opting in.",
+				"failed": "Couldn’t save. Try again."
+			}
+		},
 		"publicProfile": {
 			"heading": "Public profile",
 			"description": "Choose a username and whether other people can see your learning profile.",
@@ -549,8 +655,12 @@
 		"calendar": {
 			"previous": "Previous month",
 			"next": "Next month",
-			"todaysProblem": "Today’s problem",
+			"todaysProblem": "Today’s challenge",
 			"dayLabel": "{date}: {title}",
+			"dayLabelPlain": "{date}: daily challenge",
+			"dayLocked": "{date}: locked until it begins",
+			"dayNone": "{date}: no challenge",
+			"openToday": "Open today’s challenge",
 			"dayHeading": "Day {day}",
 			"timeLeft": "{time} left"
 		},

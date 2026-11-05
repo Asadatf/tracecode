@@ -1,0 +1,94 @@
+// M9B daily coding challenges and the weekly leaderboard (specs/features/daily-challenge.md,
+// ADR-0007). Three tables and one consent flag on User.
+//
+// Trust boundary: a competitive score is written ONLY by the server-side grader
+// (src/server/challenge/), from outputs it produced in an isolated sandbox and judged
+// against hidden expected answers that never leave the server. Nothing a browser
+// reports ever becomes a score. `source` is private to its owner; no public query
+// selects it.
+//
+// All three tables are user-scoped or referenced by user-scoped rows, so each create
+// migration must be followed by the sanctioned hand-written ENABLE ROW LEVEL SECURITY
+// migration (no policy, never FORCE — docs/rules/migrations.md); `pnpm check:rls` keeps
+// CI red until it exists.
+
+// One challenge per UTC date, pinned the first time the date is needed. Once a row
+// exists it never changes, so editing the problem catalogue cannot rewrite history.
+model DailyChallenge {
+	challengeDate DateTime @id @db.Date
+	problemSlug   String
+	createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+	attempts ChallengeAttempt[]
+
+	@@map("daily_challenges")
+}
+
+// A learner's single competitive attempt at one challenge. The unique key is what
+// makes "one attempt per learner per challenge" a database guarantee.
+//
+// status: started -> submitted -> grading -> graded | grader_error
+//         started -> expired   (never submitted in time; scores nothing)
+model ChallengeAttempt {
+	id            String   @id @default(uuid()) @db.Uuid
+	userId        String   @db.Uuid
+	challengeDate DateTime @db.Date
+
+	// Both set by the server on Start; the browser countdown is display only.
+	startedAt  DateTime @db.Timestamptz(6)
+	deadlineAt DateTime @db.Timestamptz(6)
+
+	status String
+
+	// The one final submission. Private to the owner; never on a public surface.
+	source      String?
+	submittedAt DateTime? @db.Timestamptz(6)
+	// Whole milliseconds from start to submit, set by the server and capped at the limit.
+	elapsedMs   Int?
+
+	// Grading. All null until the grader has verified the submission.
+	gradingClaimedAt DateTime? @db.Timestamptz(6)
+	gradedAt         DateTime? @db.Timestamptz(6)
+	testsPassed      Int?
+	testsTotal       Int?
+	score            Int?
+	graderVersion    String?
+	// A short error CODE for a failed grading try (never a message or source).
+	gradeError       String?
+
+	// The Monday (UTC) of challengeDate's week, stored for the weekly aggregate.
+	weekStart DateTime @db.Date
+
+	// The Attempt row created when a fully-passing submission was verified, so the
+	// streak and activity count that event exactly once.
+	attemptId String? @unique @db.Uuid
+
+	createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+	user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+	challenge DailyChallenge @relation(fields: [challengeDate], references: [challengeDate])
+
+	@@unique([userId, challengeDate])
+	@@index([weekStart, status])
+	@@map("challenge_attempts")
+}
+
+// The archive of a closed week, written once, so past standings survive later edits.
+// `rank` is among the opted-in participants only; null for a participant who had not
+// opted in when the week closed (they are never shown publicly).
+model WeeklyStanding {
+	weekStart  DateTime @db.Date
+	userId     String   @db.Uuid
+	rank       Int?
+	isPublic   Boolean
+	score      Int
+	daysSolved Int
+	totalMs    Int
+	createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@id([weekStart, userId])
+	@@index([weekStart, isPublic, rank])
+	@@map("weekly_standings")
+}

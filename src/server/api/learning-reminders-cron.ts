@@ -4,6 +4,8 @@ import { createCronRoute } from './route-factory'
 import { captureError } from '@/lib/observability/capture-error'
 import { runDailyReminders } from '@/server/notifications/daily-reminders'
 import { runReviewReminders } from '@/server/notifications/review-reminders'
+import { closeFinishedWeeks } from '@/server/challenge/leaderboard'
+import { gradePendingAttempts } from '@/server/challenge/challenge'
 
 // GET /api/cron/learning-reminders — the single daily scheduler run: the M7.5B daily
 // suggestion, then the M9C due-review reminders.
@@ -22,7 +24,23 @@ export const learningRemindersCron = createCronRoute(async () => {
 			captureError(error, { area: 'review-reminders-cron' })
 			reviews = { error: 'Review reminder run failed' }
 		}
-		return NextResponse.json({ ...daily, reviews })
+		// Retry submissions still waiting for grading (M9B); a no-op while no grader is configured.
+		let grading: Awaited<ReturnType<typeof gradePendingAttempts>> | { error: string }
+		try {
+			grading = await gradePendingAttempts()
+		} catch (error) {
+			captureError(error, { area: 'challenge-grading-cron' })
+			grading = { error: 'Pending grading retry failed' }
+		}
+		// Weekly leaderboard archive (M9B): freezes any finished week once, idempotently.
+		let weeks: Awaited<ReturnType<typeof closeFinishedWeeks>> | { error: string }
+		try {
+			weeks = await closeFinishedWeeks()
+		} catch (error) {
+			captureError(error, { area: 'leaderboard-close-cron' })
+			weeks = { error: 'Weekly close failed' }
+		}
+		return NextResponse.json({ ...daily, reviews, grading, weeks })
 	} catch (error) {
 		const { status } = captureError(error, { area: 'learning-reminders-cron' })
 		return NextResponse.json({ error: 'Reminder run failed' }, { status })
