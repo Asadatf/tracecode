@@ -9,7 +9,16 @@ import { splitResults, visibleTestIds } from './visible-tests.ts'
 import { HIDDEN_SUITES } from '../../server/challenge/hidden-suites.data.ts'
 
 const skip = !pythonAvailable() && 'python3 not available'
-const slugs = Object.keys(PROBLEMS)
+// The original six problems; the ten catalogue-expansion problems are covered in
+// catalog-expansion.test.mts.
+const slugs = [
+	'two-sum',
+	'contains-duplicate',
+	'valid-anagram',
+	'move-zeroes',
+	'binary-search',
+	'valid-parentheses'
+]
 const json = (value: unknown) => JSON.stringify(value)
 
 // Test counts BEFORE this change, so the validation set can never be quietly shrunk: the four

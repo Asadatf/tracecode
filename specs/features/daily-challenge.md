@@ -160,7 +160,7 @@ and needs the deployment's Sandbox credentials); until then a final submission i
 
 ## Edge cases
 
-- A catalogue of six problems means challenges repeat within days.
+- Only problems with a verified server-only hidden suite are eligible (today the original six), so challenges repeat within days. The ten catalogue-expansion problems are Practice-only until their hidden suites are authored and verified.
 - A grader that keeps failing is retried a bounded number of times, then the submission stays
   saved as pending (never a fail) for the cron to retry later.
 - A learner who submits and closes the tab still gets graded: the status poll, the next visit

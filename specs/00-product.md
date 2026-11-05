@@ -56,7 +56,7 @@ against one contract: [`specs/02-trace-contract.md`](02-trace-contract.md).
 | In                                          | Notes                                                              |
 | ------------------------------------------- | ------------------------------------------------------------------ |
 | Sign up / sign in (Supabase Auth)           | Email + password at `/login` (M4); session and `users` row only    |
-| Problem list + problem page with editor     | ~10–15 curated problems, seeded, no authoring UI                   |
+| Problem list + problem page with editor     | 16 curated problems, seeded, no authoring UI                       |
 | Run against tests, show pass/fail per test  |                                                                    |
 | Step-by-step trace replay of a failing test | Variables, loop iterations, array index pointers                   |
 | Progressive hints, 3 levels                 | _(open)_ hand-authored per problem vs. AI-generated from the trace |

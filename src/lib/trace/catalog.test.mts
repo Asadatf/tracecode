@@ -11,15 +11,25 @@ const NEW_SLUGS = ['valid-anagram', 'move-zeroes', 'binary-search', 'valid-paren
 const RUN_LIMITS = { timeoutMs: 5000 }
 const havePython = pythonAvailable()
 
-test('catalog: six problems, unique slugs, every definition valid', () => {
+test('catalog: sixteen problems, unique slugs, every definition valid', () => {
 	const problems = Object.values(PROBLEMS)
-	assert.equal(problems.length, 6)
+	assert.equal(problems.length, 16)
 	assert.deepEqual(Object.keys(PROBLEMS).sort(), [
+		'best-time-to-buy-and-sell-stock',
 		'binary-search',
+		'climbing-stairs',
 		'contains-duplicate',
+		'first-unique-character',
+		'longest-common-prefix',
+		'majority-element',
+		'maximum-subarray',
+		'merge-two-sorted-arrays',
+		'missing-number',
 		'move-zeroes',
+		'reverse-string',
 		'two-sum',
 		'valid-anagram',
+		'valid-palindrome',
 		'valid-parentheses'
 	])
 	for (const [key, problem] of Object.entries(PROBLEMS)) {

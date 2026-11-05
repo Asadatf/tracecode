@@ -152,7 +152,7 @@
 			"unknown": "-"
 		},
 		"empty": "No problems yet.",
-		"signIn": "Sign in to track your progress and unlock all six problems.",
+		"signIn": "Sign in to track your progress and unlock every problem.",
 		"locked": "Sign in to unlock",
 		"lockedLabel": "{title}: sign in to unlock",
 		"free": "Free to try"
@@ -497,7 +497,7 @@
 		},
 		"registerPage": {
 			"title": "Create your account",
-			"description": "Save attempts and progress across devices, and unlock all six problems.",
+			"description": "Save attempts and progress across devices, and unlock every problem.",
 			"switchPrompt": "Already have an account?",
 			"switchLink": "Sign in"
 		},

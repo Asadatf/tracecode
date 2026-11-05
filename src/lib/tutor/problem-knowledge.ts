@@ -241,6 +241,360 @@ const K: Record<string, ProblemKnowledge> = {
 		teachingGuidance: [
 			'Insist on walking a failing input character-by-character before writing code.'
 		]
+	},
+	'valid-palindrome': {
+		coreConcepts: [
+			'two pointers moving inward',
+			'filtering characters',
+			'case-insensitive comparison'
+		],
+		prerequisites: ['strings', 'indexing', 'str.isalnum / str.lower'],
+		straightforward: {
+			approach:
+				'Build a cleaned lowercase list of letters and digits and compare it with its reverse',
+			time: 'O(n)',
+			space: 'O(n)'
+		},
+		optimized: {
+			approach:
+				'Two indexes from both ends; skip characters that are not letters or digits; compare the rest ignoring case',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Comparing the raw string with its reverse (punctuation and spaces count against it).',
+			'Removing digits as well as punctuation (the contract keeps letters AND digits).',
+			'Forgetting that upper and lower case match.'
+		],
+		commonErrors: [
+			'Moving a pointer past the other one while skipping characters.',
+			'Treating the empty or all-punctuation string as not a palindrome.',
+			'Skipping only spaces and leaving punctuation or underscores in.'
+		],
+		edgeCases: [
+			'"" and " " are palindromes.',
+			'Punctuation only, e.g. ".,!?".',
+			'"0P" is not a palindrome (digit vs letter).'
+		],
+		hintStrategy: [
+			'Which characters should your code actually compare? Try the phrase "A man, a plan" and say which characters count.',
+			'Two comparisons can start at opposite ends and move toward each other. What should happen when one of them lands on a comma or a space?',
+			'Move each index inward past characters that are not letters or digits, compare the two remaining characters in lowercase, and stop when the indexes meet.'
+		],
+		pythonNotes: ['str.isalnum() tests letters and digits; str.lower() lowers case.'],
+		teachingGuidance: [
+			'Ask the learner to say aloud which characters are ignored before writing code.'
+		]
+	},
+	'reverse-string': {
+		coreConcepts: ['in-place mutation', 'swapping with two pointers', 'list identity vs rebinding'],
+		prerequisites: ['lists', 'indexing', 'tuple assignment'],
+		straightforward: {
+			approach:
+				'Build a reversed copy and assign it back into the same list using slice assignment',
+			time: 'O(n)',
+			space: 'O(n)'
+		},
+		optimized: {
+			approach: 'Swap the characters at two indexes that move toward each other from the ends',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Returning a reversed list: the caller is judged on the original list, not the return value.',
+			'Writing s = s[::-1], which rebinds the local name and leaves the caller’s list unchanged.'
+		],
+		commonErrors: [
+			'Looping over the whole list while swapping, which swaps each pair twice and restores the original.',
+			'Going one step too far on odd lengths.'
+		],
+		edgeCases: ['Empty list.', 'A single character.', 'Odd and even lengths.'],
+		hintStrategy: [
+			'After your function runs, look at the original list the caller holds. Did that list change?',
+			'Which two positions end up swapped when you reverse a list? Do you need to touch the middle element of an odd-length list?',
+			'Keep two indexes, left and right. Swap the elements they point at, move them toward each other, and stop when they meet or cross.'
+		],
+		pythonNotes: [
+			'a, b = b, a swaps two values.',
+			's[:] = ... changes the list in place; s = ... only rebinds a name.'
+		],
+		teachingGuidance: ['Use the replay to show the list changing between steps.']
+	},
+	'maximum-subarray': {
+		coreConcepts: ["Kadane's algorithm", 'best run ending at each position', 'contiguity'],
+		prerequisites: ['loops', 'max()', 'running totals'],
+		straightforward: {
+			approach: 'Try every start and end index and keep the largest sum',
+			time: 'O(n²)',
+			space: 'O(1)'
+		},
+		optimized: {
+			approach:
+				'One pass keeping the best sum of a run ending here (extend the previous run or start fresh) and the best seen',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Adding every positive number (the run must be contiguous).',
+			'Starting the best at 0, which wrongly returns 0 for an all-negative list.'
+		],
+		commonErrors: [
+			'Resetting the running sum to 0 instead of to the current element.',
+			'Skipping the first element or forgetting a final comparison.'
+		],
+		edgeCases: [
+			'A single element.',
+			'All negative numbers (answer is the largest single value).',
+			'The best run at the very end.'
+		],
+		hintStrategy: [
+			'What is the answer for [-3, -2, -1]? Is an empty run allowed?',
+			'For each position, the best run that ends there either starts at that element or extends the best run that ended just before it. Which is larger?',
+			'Carry two variables through one loop: the best sum ending at the current element and the best sum seen so far.'
+		],
+		pythonNotes: ['max(a, b) picks the larger value.'],
+		teachingGuidance: ['Trace [-2, 1, -3, 4] and watch the running value restart.']
+	},
+	'best-time-to-buy-and-sell-stock': {
+		coreConcepts: ['single-pass tracking', 'running minimum', 'order matters (sell after buy)'],
+		prerequisites: ['loops', 'min()/max()', 'initial values'],
+		straightforward: {
+			approach: 'Compare every buy day with every later sell day',
+			time: 'O(n²)',
+			space: 'O(1)'
+		},
+		optimized: {
+			approach: 'Scan once, tracking the lowest price so far and the best profit so far',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Using highest minus lowest price, which ignores that the sale must come after the purchase.',
+			'Returning a negative number when every trade loses money (the answer is 0).'
+		],
+		commonErrors: [
+			'Reading prices[0] on an empty list.',
+			'Updating the minimum after computing profit, or computing profit against a later low.'
+		],
+		edgeCases: [
+			'Empty or single-day list.',
+			'Strictly decreasing prices (0).',
+			'The low price after the high price.'
+		],
+		hintStrategy: [
+			'For the prices [2, 4, 1], which day can you sell on if you buy on the day priced 1?',
+			'If you sell today, the best day to have bought is the cheapest one before today. How could you keep that value as you go?',
+			'Loop once, updating the lowest price seen so far and the largest difference between today and that low; start the profit at 0.'
+		],
+		pythonNotes: [
+			'float("inf") or the first price can start the minimum; check the list is not empty first.'
+		],
+		teachingGuidance: ['Ask what the lowest price must be before today, not overall.']
+	},
+	'merge-two-sorted-arrays': {
+		coreConcepts: ['merging with two pointers', 'in-place mutation', 'filling from the back'],
+		prerequisites: ['lists', 'indexing', 'while loops'],
+		straightforward: {
+			approach:
+				'Combine the real values, sort them, and write them back into nums1 (nums1[:] = ...)',
+			time: 'O((m+n) log(m+n))',
+			space: 'O(m+n)'
+		},
+		optimized: {
+			approach:
+				'Three indexes: last real value of nums1, last value of nums2, last slot of nums1; write the larger value at the last slot and move back',
+			time: 'O(m+n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Returning a merged list: the caller is judged on nums1 after the call.',
+			'Sorting all of nums1, including the placeholder zeros.',
+			'Merging from the front, which overwrites values of nums1 not yet used.'
+		],
+		commonErrors: [
+			'Stopping when nums1’s real values run out and forgetting the rest of nums2.',
+			'Rebinding nums1 instead of changing it.',
+			'Off-by-one starting indexes (m - 1, n - 1, m + n - 1).'
+		],
+		edgeCases: ['m = 0 or n = 0.', 'All of nums2 smaller than nums1.', 'Duplicates and negatives.'],
+		hintStrategy: [
+			'After your function runs, what does nums1 hold? Are the placeholder zeros gone and every value in order?',
+			'The free slots are at the end of nums1. Where does the largest of all the values belong?',
+			'Compare the last real value of each list, put the larger into the last free slot of nums1, and move that list’s index and the write index back; when nums2 is used up, you are done.'
+		],
+		pythonNotes: ['nums1[:] = ... assigns into the same list; nums1 = ... rebinds the name.'],
+		teachingGuidance: ['Use the replay to watch nums1 fill from the right.']
+	},
+	'first-unique-character': {
+		coreConcepts: ['frequency counting', 'hash maps', 'two passes'],
+		prerequisites: ['dictionaries', 'enumerate', 'strings'],
+		straightforward: {
+			approach:
+				'For each character, count it in the whole string (s.count) and return the first with count 1',
+			time: 'O(n²)',
+			space: 'O(1)'
+		},
+		optimized: {
+			approach: 'Count every character once in a dict, then scan again for the first count of 1',
+			time: 'O(n)',
+			space: 'O(1) (at most 26 letters)'
+		},
+		commonMisconceptions: [
+			'Only checking a character’s neighbours (a repeat can be far away).',
+			'Returning the character instead of its index.'
+		],
+		commonErrors: [
+			'Returning 0 instead of -1 when nothing is unique.',
+			'Returning the last unique character.',
+			'Crashing on the empty string.'
+		],
+		edgeCases: [
+			'Empty string (-1).',
+			'No unique character, e.g. "aabb".',
+			'The only unique character is last.'
+		],
+		hintStrategy: [
+			'In "abcabc" no neighbours are equal. Is any letter unique?',
+			'To know whether a letter is unique you must know how often it appears in the whole string. What could store that for every letter?',
+			'Count the letters in one pass, then go through the string from the front and return the first index whose letter has count 1; otherwise -1.'
+		],
+		pythonNotes: ['dict.get(ch, 0) + 1 counts; collections.Counter is another way.'],
+		teachingGuidance: ['Ask the learner to predict the counts before running.']
+	},
+	'missing-number': {
+		coreConcepts: ['range arithmetic', 'sum formula', 'XOR cancelling'],
+		prerequisites: ['sum()', 'range()', 'sets'],
+		straightforward: {
+			approach: 'Put the numbers in a set and return the first value in 0..n that is not in it',
+			time: 'O(n)',
+			space: 'O(n)'
+		},
+		optimized: {
+			approach:
+				'Expected sum n(n+1)/2 minus the actual sum, or XOR all indexes and values together with n',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Assuming the list is sorted.',
+			'Thinking the missing number is always within the list’s indexes (it can be n).'
+		],
+		commonErrors: [
+			'Summing 0..n-1 instead of 0..n (off by n).',
+			'Forgetting to include n when XOR-ing.',
+			'Returning len(nums) always.'
+		],
+		edgeCases: ['Empty list (0).', 'Missing 0.', 'Missing n.'],
+		hintStrategy: [
+			'For [1, 2, 3], which number from the range 0 to 3 is missing?',
+			'Numbers 0 through n have a total you can compute without looking at the list. What does the actual total of the list differ by?',
+			'Compute n * (n + 1) // 2, where n is the list length, and subtract sum(nums).'
+		],
+		pythonNotes: ['// is integer division; ^ is XOR.'],
+		teachingGuidance: ['Let the learner discover that n itself can be the answer.']
+	},
+	'majority-element': {
+		coreConcepts: ['frequency counting', 'Boyer–Moore voting', 'majority definition'],
+		prerequisites: ['dictionaries', 'loops', 'integer division'],
+		straightforward: {
+			approach: 'Count every value in a dict and return the one whose count exceeds len // 2',
+			time: 'O(n)',
+			space: 'O(n)'
+		},
+		optimized: {
+			approach: 'Boyer–Moore: keep a candidate and a vote count; reset the candidate at 0 votes',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Assuming the majority is the first, largest or middle element of an unsorted list.',
+			'Thinking the most common value is enough (it must appear MORE than half the time; here it is guaranteed).'
+		],
+		commonErrors: [
+			'Not resetting the candidate when the vote count hits zero.',
+			'Using >= len // 2 instead of > len // 2.'
+		],
+		edgeCases: ['A single element.', 'Negative numbers.', 'Majority at the end of the list.'],
+		hintStrategy: [
+			'In [6, 5, 5] the first and the largest values are not the answer. What makes 5 the answer?',
+			'A majority appears more often than all the others combined. How could you track how often values appear?',
+			'Count with a dict, or keep one candidate and a counter: +1 when you see the candidate again, -1 for a different value, and pick a new candidate at 0.'
+		],
+		pythonNotes: ['dict.get(x, 0) + 1; the conditional expression a if c else b.'],
+		teachingGuidance: ['Trace Boyer–Moore on [2, 2, 1, 1, 1, 2, 2] step by step.']
+	},
+	'longest-common-prefix': {
+		coreConcepts: ['vertical scanning', 'prefixes', 'early exit'],
+		prerequisites: ['strings', 'indexing', 'nested loops'],
+		straightforward: {
+			approach:
+				'Start with the first string and shorten it until every other string starts with it',
+			time: 'O(total characters)',
+			space: 'O(1)'
+		},
+		optimized: {
+			approach:
+				'Compare position i of every string to the first, returning at the first mismatch or short string',
+			time: 'O(total characters)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Looking only at the first two strings.',
+			'Looking for any shared substring instead of one starting at index 0.'
+		],
+		commonErrors: [
+			'Indexing past the end of a shorter string (IndexError).',
+			'Crashing on an empty list.',
+			'Returning a prefix of the first string without checking all others.'
+		],
+		edgeCases: ['Empty list.', 'Empty strings in the list.', 'One string is a prefix of another.'],
+		hintStrategy: [
+			'For ["ab", "a"], how long can the common prefix be at most?',
+			'The prefix can never be longer than the shortest string. At each position, what must be true of every string?',
+			'Walk positions 0, 1, 2, ... and compare the character of every string to the first string’s; return what you have collected when any string differs or ends.'
+		],
+		pythonNotes: ['str.startswith(prefix) and slicing s[:i].'],
+		teachingGuidance: ['Ask what happens for [] and [""] before any code is written.']
+	},
+	'climbing-stairs': {
+		coreConcepts: [
+			'recurrence relation',
+			'dynamic programming',
+			'memoization / two running values'
+		],
+		prerequisites: ['loops', 'recursion basics', 'tuple assignment'],
+		straightforward: {
+			approach:
+				'Recursion where ways(n) = ways(n - 1) + ways(n - 2), with a memo table so each value is computed once',
+			time: 'O(n)',
+			space: 'O(n)'
+		},
+		optimized: {
+			approach: 'Bottom-up with two running values, repeatedly replacing (a, b) with (b, a + b)',
+			time: 'O(n)',
+			space: 'O(1)'
+		},
+		commonMisconceptions: [
+			'Thinking there are 2^(n-1) ways (each step is not an independent choice).',
+			'Plain recursion without memoization, which recomputes the same values and becomes very slow.'
+		],
+		commonErrors: [
+			'Wrong base cases (ways(1) = 1 and ways(2) = 2).',
+			'Off-by-one in the number of loop repeats.',
+			'Using n for small inputs and then a wrong recurrence.'
+		],
+		edgeCases: [
+			'n = 1 and n = 2 (base cases).',
+			'n = 3 (first interesting case).',
+			'Larger n up to 35.'
+		],
+		hintStrategy: [
+			'List the ways for n = 1, 2, 3, 4 by hand. How do the counts grow?',
+			'Your last move was either 1 step or 2 steps. What step were you on before each of those moves?',
+			'The answer for n is the answer for n - 1 plus the answer for n - 2. Start from the first two answers and build upward, keeping only the last two values.'
+		],
+		pythonNotes: ['a, b = b, a + b updates both values at once.'],
+		teachingGuidance: ['Have the learner write the first six answers before coding.']
 	}
 }
 

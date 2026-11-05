@@ -1,6 +1,6 @@
 # Feature: Curated problem pack — Valid Anagram, Move Zeroes, Binary Search, Valid Parentheses
 
-Status: In progress (scope agreed in the 2026-11-02 task brief; no teammate sign-off yet)
+Status: In progress (scope agreed in the 2026-11-02 task brief; no teammate sign-off yet). Extended to 16 problems by `problem-catalogue-expansion.md`.
 Owner: Umair
 Related: `specs/00-product.md`, `specs/02-trace-contract.md` (unchanged — see § Judging in-place problems), `specs/features/fail-and-replay.md`, `specs/features/learning-recommendations.md`
 

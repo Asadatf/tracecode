@@ -3,6 +3,16 @@ import { validAnagram } from './catalog/valid-anagram'
 import { moveZeroes } from './catalog/move-zeroes'
 import { binarySearch } from './catalog/binary-search'
 import { validParentheses } from './catalog/valid-parentheses'
+import { validPalindrome } from './catalog/valid-palindrome'
+import { reverseString } from './catalog/reverse-string'
+import { maximumSubarray } from './catalog/maximum-subarray'
+import { bestTimeToBuyAndSellStock } from './catalog/best-time-to-buy-and-sell-stock'
+import { mergeTwoSortedArrays } from './catalog/merge-two-sorted-arrays'
+import { firstUniqueCharacter } from './catalog/first-unique-character'
+import { missingNumber } from './catalog/missing-number'
+import { majorityElement } from './catalog/majority-element'
+import { longestCommonPrefix } from './catalog/longest-common-prefix'
+import { climbingStairs } from './catalog/climbing-stairs'
 
 // The curated problem set. Two Sum and Contains Duplicate live here; the four
 // later problems are one file each under ./catalog. Ported from the prototype's tracecode-problems.json, with named test
@@ -89,5 +99,15 @@ export const PROBLEMS: Record<string, ProblemDefinition> = {
 	[validAnagram.slug]: validAnagram,
 	[moveZeroes.slug]: moveZeroes,
 	[binarySearch.slug]: binarySearch,
-	[validParentheses.slug]: validParentheses
+	[validParentheses.slug]: validParentheses,
+	[validPalindrome.slug]: validPalindrome,
+	[reverseString.slug]: reverseString,
+	[maximumSubarray.slug]: maximumSubarray,
+	[bestTimeToBuyAndSellStock.slug]: bestTimeToBuyAndSellStock,
+	[mergeTwoSortedArrays.slug]: mergeTwoSortedArrays,
+	[firstUniqueCharacter.slug]: firstUniqueCharacter,
+	[missingNumber.slug]: missingNumber,
+	[majorityElement.slug]: majorityElement,
+	[longestCommonPrefix.slug]: longestCommonPrefix,
+	[climbingStairs.slug]: climbingStairs
 }

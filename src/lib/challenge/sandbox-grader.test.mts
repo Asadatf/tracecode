@@ -18,6 +18,14 @@ import { PROBLEMS } from '../trace/problems.ts'
 import { REFERENCE_SOLUTIONS, type ReferenceSolution } from '../trace/reference-solutions.ts'
 
 const PYTHON = process.env.TRACECODE_PYTHON ?? 'python3'
+const ORIGINAL_SIX = [
+	'two-sum',
+	'contains-duplicate',
+	'valid-anagram',
+	'move-zeroes',
+	'binary-search',
+	'valid-parentheses'
+]
 
 function localSandbox(seen: {
 	options?: SandboxCreateOptions
@@ -199,7 +207,11 @@ const resolve = (slug: string) => {
 }
 
 test('every eligible problem has a hidden suite, and the ids are unique within it', () => {
-	assert.deepEqual([...ELIGIBLE_SLUGS].sort(), Object.keys(PROBLEMS).sort())
+	// Only problems with a verified server-only hidden suite are eligible; the ten catalogue-expansion
+	// problems have none yet, so they are not (they must never reuse browser-visible Practice tests).
+	assert.deepEqual([...ELIGIBLE_SLUGS].sort(), [...ORIGINAL_SIX].sort())
+	for (const slug of ELIGIBLE_SLUGS)
+		assert.ok(PROBLEMS[slug] != null, `${slug} is in the catalogue`)
 	for (const slug of ELIGIBLE_SLUGS) {
 		const ids = HIDDEN_SUITES[slug]!.cases.map((c) => c.id)
 		assert.equal(new Set(ids).size, ids.length, slug)
