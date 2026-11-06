@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from '@/i18n/routing'
 import dashboard from '@/components/dashboard/dashboard.module.css'
 import styles from './preview.module.css'
@@ -16,19 +16,26 @@ interface Row {
 
 const NOT_CHECKED: Row = { state: 'idle', detail: 'Not checked yet' }
 
-function support(): Row {
-	if (typeof navigator === 'undefined') return NOT_CHECKED
+// What this browser cannot do, as a primitive string so the external-store snapshot is stable:
+// '' means everything is supported, 'pending' is the server render (nothing is known yet).
+function missingFeatures(): string {
 	const md = navigator.mediaDevices
 	const missing: string[] = []
 	if (md == null || typeof md.getUserMedia !== 'function')
 		missing.push('camera and microphone access')
 	if (md == null || typeof md.getDisplayMedia !== 'function') missing.push('screen sharing')
 	if (typeof document.documentElement.requestFullscreen !== 'function') missing.push('fullscreen')
-	return missing.length === 0
+	return missing.join(', ')
+}
+const subscribeNone = () => () => undefined
+
+function supportRow(missing: string): Row {
+	if (missing === 'pending') return NOT_CHECKED
+	return missing === ''
 		? { state: 'ok', detail: 'This browser supports every required check' }
 		: {
 				state: 'bad',
-				detail: `Not supported here: ${missing.join(', ')}. Use a current desktop Chrome, Edge or Firefox.`
+				detail: `Not supported here: ${missing}. Use a current desktop Chrome, Edge or Firefox.`
 			}
 }
 
@@ -45,7 +52,7 @@ function failure(name: string): string {
 }
 
 export function PreflightPanel() {
-	const [browser] = useState<Row>(() => support())
+	const browser = supportRow(useSyncExternalStore(subscribeNone, missingFeatures, () => 'pending'))
 	const [camera, setCamera] = useState<Row>(NOT_CHECKED)
 	const [mic, setMic] = useState<Row>(NOT_CHECKED)
 	const [screen, setScreen] = useState<Row>(NOT_CHECKED)
