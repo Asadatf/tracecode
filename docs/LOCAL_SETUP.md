@@ -99,6 +99,27 @@ statistics appear after you run code while signed in.
 Before pushing any change: `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 (or `/local-review`).
 
+## Optional: Google and GitHub sign-in
+
+The buttons are hidden until you switch them on, so email sign-in works
+without any of this (`specs/features/oauth-sign-in.md`).
+
+1. Create the OAuth apps. The callback URL to give each provider is Supabase's,
+   not the app's: `https://<project-ref>.supabase.co/auth/v1/callback` for a
+   hosted project, `http://127.0.0.1:54321/auth/v1/callback` for local Supabase.
+   - **GitHub:** github.com → Settings → Developer settings → OAuth Apps → New.
+   - **Google:** console.cloud.google.com → APIs & Services → Credentials →
+     Create credentials → OAuth client ID (Web application).
+2. Give Supabase the client ID and secret: **Authentication → Providers** in the
+   dashboard, or for local Supabase `[auth.external.github]` /
+   `[auth.external.google]` in `supabase/config.toml` with
+   `secret = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET)"`. Never put them in
+   this repo.
+3. In Supabase **Authentication → URL Configuration**, add
+   `http://localhost:3000/api/auth/callback` to the Redirect URLs.
+4. Set `AUTH_GITHUB_ENABLED="true"` and/or `AUTH_GOOGLE_ENABLED="true"` in
+   `.env.local` and restart `pnpm dev`.
+
 ## Known limitations
 
 - Without Supabase variables the site still runs and you can practise

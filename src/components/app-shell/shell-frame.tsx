@@ -54,8 +54,9 @@ export function ShellFrame({
 		if (persistCollapsed) document.cookie = sidebarCookie(next)
 	}
 
+	// The app's home is the dashboard, never the marketing page (home-page AC16).
 	const brand = (
-		<Link href="/" aria-label={labels.home} className={styles.brand}>
+		<Link href="/dashboard" aria-label={labels.home} className={styles.brand}>
 			<BrandMark tone="dark" />
 			<span className={styles.brandName}>tracecode</span>
 		</Link>

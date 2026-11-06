@@ -25,6 +25,75 @@ export interface ReferenceSolution {
 const py = (lines: string[]): string => lines.join('\n') + '\n'
 
 export const REFERENCE_SOLUTIONS: Record<string, ReferenceSolution[]> = {
+	// Two Sum and Contains Duplicate: shown in the Solutions tab
+	// (specs/features/solutions-tab.md); not measured by reference-solutions.test.
+	'two-sum': [
+		{
+			name: 'Check every pair',
+			kind: 'straightforward',
+			passes: true,
+			time: 'O(n²)',
+			space: 'O(1)',
+			source: py([
+				'def two_sum(nums, target):',
+				'    for i in range(len(nums)):',
+				'        for j in range(i + 1, len(nums)):',
+				'            if nums[i] + nums[j] == target:',
+				'                return [i, j]',
+				'    return []'
+			])
+		},
+		{
+			name: "Remember what you've seen",
+			kind: 'optimized',
+			passes: true,
+			time: 'O(n)',
+			space: 'O(n)',
+			source: py([
+				'def two_sum(nums, target):',
+				'    seen = {}',
+				'    for i, n in enumerate(nums):',
+				'        need = target - n',
+				'        if need in seen:',
+				'            return [seen[need], i]',
+				'        seen[n] = i',
+				'    return []'
+			])
+		}
+	],
+	'contains-duplicate': [
+		{
+			name: 'Compare every pair',
+			kind: 'straightforward',
+			passes: true,
+			time: 'O(n²)',
+			space: 'O(1)',
+			source: py([
+				'def contains_duplicate(nums):',
+				'    for i in range(len(nums)):',
+				'        for j in range(i + 1, len(nums)):',
+				'            if nums[i] == nums[j]:',
+				'                return True',
+				'    return False'
+			])
+		},
+		{
+			name: 'Set of values seen',
+			kind: 'optimized',
+			passes: true,
+			time: 'O(n)',
+			space: 'O(n)',
+			source: py([
+				'def contains_duplicate(nums):',
+				'    seen = set()',
+				'    for n in nums:',
+				'        if n in seen:',
+				'            return True',
+				'        seen.add(n)',
+				'    return False'
+			])
+		}
+	],
 	'valid-anagram': [
 		{
 			name: 'Sort both strings',

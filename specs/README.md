@@ -117,6 +117,13 @@ Update this table in the same PR that changes a status.
 | [`features/learning-recommendations.md`](features/learning-recommendations.md)       | In progress (M7.1 built; no teammate sign-off) | Umair       |
 | [`features/problem-catalogue-expansion.md`](features/problem-catalogue-expansion.md) | Agreed (Umair; no teammate sign-off)           | Umair       |
 | [`features/curated-problem-pack.md`](features/curated-problem-pack.md)               | In progress (no teammate sign-off)             | Umair       |
+| [`features/solutions-tab.md`](features/solutions-tab.md)                             | In progress (built; for Umair to review)       | Asad        |
+| [`features/editor-drafts.md`](features/editor-drafts.md)                             | In progress (built; for Umair to review)       | Asad        |
+| [`features/workspace-shortcuts.md`](features/workspace-shortcuts.md)                 | In progress (built; for Umair to review)       | Asad        |
+| [`features/compare-attempts.md`](features/compare-attempts.md)                       | In progress (built; for Umair to review)       | Asad        |
+| [`features/problem-notes.md`](features/problem-notes.md)                             | In progress (built; for Umair to review)       | Asad        |
+| [`features/study-plans.md`](features/study-plans.md)                                 | In progress (built; for Umair to review)       | Asad        |
+| [`features/oauth-sign-in.md`](features/oauth-sign-in.md)                             | In progress (built; for Umair to review)       | Asad        |
 | [ADR-0001](../decisions/0001-in-browser-python-execution.md)                         | Proposed                                       | Team        |
 | [ADR-0002](../decisions/0002-self-host-pyodide.md)                                   | Proposed                                       | Team        |
 | [ADR-0003](../decisions/0003-browser-ast-and-cached-recommendations.md)              | Accepted (Umair; no teammate sign-off)         | Team        |

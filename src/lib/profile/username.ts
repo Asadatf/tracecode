@@ -37,6 +37,7 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
 	'login',
 	'manifest',
 	'opengraph-image',
+	'plans',
 	'practice',
 	'problems',
 	'progress',

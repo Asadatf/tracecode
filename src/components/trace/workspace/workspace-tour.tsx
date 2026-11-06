@@ -17,7 +17,7 @@ const STEPS = [
 	{
 		target: 'tour-left-tabs',
 		title: 'Tabs',
-		body: 'Description, Hints and History live here. Hints unlock after you replay a failing test.'
+		body: 'Description, Hints, History, Solutions and Notes live here. Hints unlock after you replay a failing test.'
 	},
 	{
 		target: 'tour-split-v',
