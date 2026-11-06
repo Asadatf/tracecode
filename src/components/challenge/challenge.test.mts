@@ -250,11 +250,16 @@ describe('the leaderboard is hidden, not deleted', () => {
 })
 
 describe('the calendar and the (hidden) leaderboard', () => {
-	it('a past day links straight to Practice for its problem; only today opens the challenge', () => {
+	it('a past day links straight to Practice for its problem; today is the Daily Exam entry', () => {
+		// Past days are unchanged (Practice, or the challenge URL for an unpinned day)...
 		assert.match(
 			calendar,
-			/href=\{isToday \|\| slug == null \? `\/challenge\/\$\{iso\}` : `\/practice\/\$\{slug\}`\}/
+			/isToday\s*\?\s*'\/exam\/preview'\s*:\s*slug == null\s*\?\s*`\/challenge\/\$\{iso\}`\s*:\s*`\/practice\/\$\{slug\}`/
 		)
+		// ...while today, in the date cell and the card, goes to the Daily Exam and names no problem.
+		assert.match(calendar, /<Link href="\/exam\/preview" className=\{styles\.todayRow\}>/)
+		assert.match(calendar, /const title = slug == null \|\| isToday \? undefined/)
+		assert.doesNotMatch(calendar, /titles\[todaySlug\]/)
 	})
 
 	it('the calendar never links a future date and reads assignments from the pinned map', () => {
