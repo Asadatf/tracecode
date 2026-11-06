@@ -7,6 +7,16 @@ import type { ProblemDefinition } from '@/lib/trace/problem'
 // exam on it is open or not yet credited (AC49's Practice lock). Returns the public practice set as
 // `tests`; hidden cases and reference solutions are never selected.
 export async function publishedExamProblem(slug: string): Promise<ProblemDefinition | null> {
+	// Practice must behave exactly as before for any slug that is not a published exam problem:
+	// a lookup failure (no database, tables absent) is "not found", so unknown slugs still 404.
+	try {
+		return await lookup(slug)
+	} catch {
+		return null
+	}
+}
+
+async function lookup(slug: string): Promise<ProblemDefinition | null> {
 	const p = await db.examProblem.findUnique({
 		where: { slug },
 		select: {
