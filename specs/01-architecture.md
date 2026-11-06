@@ -122,6 +122,33 @@ source and server-verified results; `weekly_standings` archives closed weeks;
 `User.leaderboardOptIn` is the separate leaderboard consent (`daily-challenge.md`,
 ADR-0007). A score is written only by the server-side sandbox grader, never from a browser.
 
+### M10 — Daily Exam (Agreed, ADR-0010 amended by ADR-0011; not built)
+
+Built behind the disabled `daily_exam` flag; it replaces M9B's learning challenge only from a
+`launchDate` set after isolated end-to-end verification. M9B tables stay read-only for history.
+
+- **Tables.** `daily_exams` (one per UTC date, stored lifecycle `scheduled → open → grading →
+finalizing → published → archived | cancelled`; "closed" is the time condition `now ≥ closesAt`;
+  timestamps from the fixed schedule in code, `src/lib/exam/schedule.ts`, stored with its version; the problem is drawn from the reusable private pool by `selection@1` (a progressive 7-day cooldown, recency- and frequency-weighted, `crypto.randomInt`) in the same write that opens the exam, and stored with its selection record; problems repeat, labelled as repeats, and Practice of the exam's problem is locked while it is examined, ADR-0012). `exam_problems` (the private pool, held **only in
+  the database** and seeded from git-ignored files because the repository is public; hidden cases
+  and reference solutions are never served). `exam_attempts` (one per learner per exam, manual or
+  auto submission, integer scores out of 10,000, rank, cached AI assessment, learning-credit link).
+  `exam_autosaves`. `exam_integrity_events` (deduplicated, server-timestamped, rate-limited,
+  allow-listed metadata, no media). `exam_integrity_decisions` (append-only, versioned policy).
+  `exam_challenges`. `exam_standings` (the published leaderboard). `exam_audit`. The durable queue
+  `exam_jobs` / `exam_job_slots`: idempotency keys, optimistic conditional claims, 6-minute fenced
+  leases, exponential backoff, dead letter, dependency gates and bounded Sandbox slots.
+- **Workers.** Bounded invocations of `GET /api/cron/exam-tick` (`CRON_SECRET`, 300 s, 240 s claim
+  budget), called every 5 minutes in the processing windows by a GitHub Actions schedule, by the
+  daily Vercel cron as a backstop, and by participant nudges. There is no long-running worker.
+- **Learning credit** (Attempt, progress, streak, M9C review), dated at submission, is written at
+  next-day publication so the problem stays private. The problem goes public only once that credit
+  is written. Learning views resolve published exam problems through a server-side lookup, not the
+  static catalogue.
+- **Proctoring facts** (preflight flags, media availability) are client-reported observations, not
+  attestations.
+- All tables get RLS with no policies. There is no exam admin UI or RBAC permission: the exam runs unattended, and exceptions use audited maintenance scripts (`scripts/exam-maintenance.mts`, `scripts/load-exam-pool.mts`). The AI assessment reads all four evidence categories and never changes a score. Details: `specs/features/daily-exam.md` § Data / API.
+
 ### M7.1 — code features on attempts
 
 `Attempt.codeFeatures` (`Json?`, nullable, no default) holds a versioned,

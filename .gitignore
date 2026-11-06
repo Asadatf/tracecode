@@ -54,3 +54,8 @@ pnpm-debug.log*
 
 # Pyodide runtime, copied from node_modules on postinstall (scripts/copy-pyodide.mjs)
 public/pyodide/
+
+# M10 Daily Exam: the private exam pool (specs/features/daily-exam.md AC6, AC42). The
+# repository is public; unreleased exam problems, hidden suites and reference solutions
+# must never be committed.
+/private/

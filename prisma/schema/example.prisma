@@ -41,6 +41,11 @@ model User {
 	challengeAttempts ChallengeAttempt[]
 	weeklyStandings   WeeklyStanding[]
 
+	// M10 Daily Exam (prisma/schema/exams.prisma). `leaderboardOptIn` above is reused as the
+	// explicit consent to a public leaderboard identity; without it a learner is anonymous.
+	examAttempts  ExamAttempt[]
+	examStandings ExamStanding[]
+
 	// M7.5 recommendation persistence (prisma/schema/recommendations.prisma).
 	recommendationCache RecommendationCache?
 

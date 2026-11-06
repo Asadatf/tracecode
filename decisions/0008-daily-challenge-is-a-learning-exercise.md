@@ -1,6 +1,7 @@
 # 0008 — The daily challenge is a learning exercise, not a competition
 
-Status: Accepted (Umair, 2026-11-05)
+Status: Superseded by 0010 (2026-11-06). Accepted (Umair, 2026-11-05); remains the record for the
+learning challenge, which stays live until the M10 cutover.
 Builds on: 0007 (the Sandbox grader is reused for the final result, without scores or ranks)
 
 ## Context

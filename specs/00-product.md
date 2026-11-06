@@ -69,16 +69,24 @@ against one contract: [`specs/02-trace-contract.md`](02-trace-contract.md).
 - More than one language.
 - Problem authoring UI, user-submitted problems.
 - Instructor/cohort dashboards, classrooms, teams.
-- Competitive features of any kind: rankings, leaderboards, contests, tournaments,
-  head-to-head matches and team play. The daily challenge
-  (`specs/features/daily-challenge.md`) is a personal learning exercise; its
-  leaderboard code is built but hidden (ADR-0008).
+- Competitive features beyond the Daily Exam: tournaments, head-to-head matches,
+  team play, seasons and cross-exam rankings. The Daily Exam
+  (`specs/features/daily-exam.md`, ADR-0010, accepted by Umair with teammate
+  sign-off outstanding) is the one competitive feature: one scheduled exam per UTC
+  day, a deterministic score and a per-exam public leaderboard. It is built behind
+  the disabled `daily_exam` flag and replaces the Daily Learning Challenge
+  (ADR-0008, superseded) only at an approved cutover. Until then the learning
+  challenge stays live.
 - Payments/subscriptions.
-- Server-side grading of PRACTICE, and anti-cheat or proctoring of any kind
-  (practice stays browser-side and untrusted, ADR-0001). The one exception is the
-  Daily Learning Challenge's single final Submit, which is graded on the server in
-  an isolated sandbox against hidden tests (ADR-0007, ADR-0008) and shown as
-  counts only; it makes no claim to detect external help.
+- Server-side grading of PRACTICE, and anti-cheat or proctoring of PRACTICE
+  (practice stays browser-side, untrusted and unmonitored, ADR-0001). The Daily
+  Exam (ADR-0010) is graded on the server in an isolated sandbox against private
+  hidden tests and monitors browser-observable, client-reported integrity signals
+  (visibility, focus, fullscreen, blocked paste, permitted camera, microphone and
+  screen-share availability). It never records, stores or analyses media and never
+  claims to detect all outside help.
+- Recording or storing learners' camera, microphone or screen content, and any
+  face, voice, emotion or biometric analysis.
 - Objects/classes/recursion-tree visualisation beyond variables, loops and
   array pointers.
 - Mobile-optimised editing (pages must render at phone width; writing code

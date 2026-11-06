@@ -1,0 +1,323 @@
+// M10 Daily Exam (specs/features/daily-exam.md, ADR-0010). Built behind the disabled
+// `daily_exam` flag; nothing here is read or written until it is enabled.
+//
+// Trust boundaries:
+// - The exam problem pool (`exam_problems`) lives ONLY in this database. The repository is
+//   public, so no exam content is ever committed. `hiddenCases` and `referenceSolutions`
+//   are never selected by any public query; statement/examples/practiceTests become public
+//   only after the exam's next-day publication (AC30).
+// - Every score is written by the server: grading in an isolated sandbox, a pure versioned
+//   integrity policy, integer arithmetic. Nothing a browser reports becomes a score.
+// - Integrity events and preflight flags are CLIENT-REPORTED observations (AC21, AC24), never
+//   attestations. No media is ever stored here or anywhere.
+//
+// Every table is user-scoped or referenced by user-scoped rows, so each create migration must
+// be followed by the sanctioned hand-written ENABLE ROW LEVEL SECURITY migration (no policy,
+// never FORCE — docs/rules/migrations.md); `pnpm check:rls` keeps CI red until it exists.
+
+// The private pool. Loaded from git-ignored files by scripts/load-exam-pool.mts (AC42), which
+// validates every problem (reference solutions pass the hidden suite, deliberately wrong ones
+// fail) and only then inserts it as `eligible`. There is no per-exam approval step. Problems are
+// REUSED: each exam draws one by selection@1 (ADR-0012); its history lives in daily_exams.
+model ExamProblem {
+	id                 String    @id @default(uuid()) @db.Uuid
+	slug               String    @unique
+	title              String
+	// string[] paragraphs.
+	statement          Json
+	// Public examples, shown to admitted participants and published next day.
+	examples           Json
+	// A public practice set for after publication; never the hidden cases.
+	practiceTests      Json
+	starter            String
+	entry              String
+	// SERVER-ONLY. Never selected by a public query, never sent to a browser or a model.
+	hiddenCases        Json
+	// SERVER-ONLY. Used to verify the pool at seeding; never published.
+	referenceSolutions Json
+	// eligible | retired (retired only by the protected maintenance script, e.g. a leak)
+	status             String    @default("eligible")
+	// When the loader's validation passed; a problem is never inserted unvalidated.
+	validatedAt        DateTime  @db.Timestamptz(6)
+	// sha256 of the seeded content, so a re-seed of changed content is visible.
+	contentHash        String
+	createdAt          DateTime  @default(now()) @db.Timestamptz(6)
+	updatedAt          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+	exams DailyExam[]
+
+	@@index([status])
+	@@map("exam_problems")
+}
+
+// One exam per UTC date, created automatically. Its timestamps come from the fixed schedule in
+// code (src/lib/exam/schedule.ts) and are stored at creation with the schedule version (AC1).
+//
+// status: scheduled -> open -> grading -> finalizing -> published -> archived
+//         scheduled -> cancelled (before opensAt only)
+//         scheduled -> grading   (an exam that never opened, AC47)
+// "Closed" is the time condition now() >= closesAt, never a stored status (AC2).
+model DailyExam {
+	examDate             DateTime  @id @db.Date
+	status               String
+	opensAt              DateTime  @db.Timestamptz(6)
+	closesAt             DateTime  @db.Timestamptz(6)
+	lateEntryUntil       DateTime  @db.Timestamptz(6)
+	resultsDueAt         DateTime  @db.Timestamptz(6)
+	publishAt            DateTime  @db.Timestamptz(6)
+	retentionDays        Int
+	policyVersion        String
+	scheduleVersion      String
+	// Null until the exam opens (AC7): drawn by selection@1 in the same conditional write that
+	// opens the exam, and never changed after. NOT unique: problems repeat (ADR-0012).
+	problemId            String?   @db.Uuid
+	// The problem had appeared in an earlier exam (AC50); fixed at selection.
+	isRepeat             Boolean   @default(false)
+	// The audit record of the draw (AC51): version, cooldown, candidates, weights, total, draw.
+	selection            Json?
+	
+	openedAt             DateTime? @db.Timestamptz(6)
+	gradingAt            DateTime? @db.Timestamptz(6)
+	finalizingAt         DateTime? @db.Timestamptz(6)
+	publishedAt          DateTime? @db.Timestamptz(6)
+	archivedAt           DateTime? @db.Timestamptz(6)
+	cancelledAt          DateTime? @db.Timestamptz(6)
+	cancelReason         String?
+	// The current standings version; each audited correction increments it (AC26).
+	correctionCount      Int       @default(0)
+	createdAt            DateTime  @default(now()) @db.Timestamptz(6)
+
+	problem ExamProblem? @relation(fields: [problemId], references: [id])
+	attempts           ExamAttempt[]
+	standings          ExamStanding[]
+	jobs               ExamJob[]
+
+	@@index([status])
+	@@index([problemId, examDate])
+	@@map("daily_exams")
+}
+
+// A learner's one attempt at one exam. The (examDate, userId) key is the database guarantee of
+// one attempt per learner per exam; every state change is a conditional write on the expected
+// prior status.
+//
+// status: admitted -> submitted -> graded | grading_failed
+//         admitted -> no_submission (closeout with no usable autosave, AC15)
+model ExamAttempt {
+	id         String   @id @default(uuid()) @db.Uuid
+	examDate   DateTime @db.Date
+	userId     String   @db.Uuid
+	status     String
+	admittedAt DateTime @db.Timestamptz(6)
+	// Client-reported support and pass flags only (AC21). Never media.
+	preflight  Json?
+
+	// The one final submission. Private to the owner; never on a public surface.
+	source         String?
+	submittedAt    DateTime? @db.Timestamptz(6)
+	// manual | auto
+	submissionKind String?
+
+	// Grading (server-verified only).
+	testsPassed   Int?
+	testsTotal    Int?
+	graderVersion String?
+	gradedAt         DateTime? @db.Timestamptz(6)
+	// Aggregate failure categories from the Sandbox, counts only and never which case
+	// ({ wrong_answer, exception, timeout, memory, recursion, entry_not_found, other }).
+	failureCounts    Json?
+
+	// Integer score units, 10,000 max (AC18). Null until computed.
+	correctnessScore Int?
+	speedScore       Int?
+	codingScore      Int?
+	deductions       Int?
+	finalScore       Int?
+	rank             Int?
+	ranked           Boolean?
+
+	// The cached AI learning assessment (AC28). pending | ready | unavailable
+	assessment       Json?
+	assessmentStatus String @default("pending")
+
+	// The learning-credit Attempt written at publication (AC31); unique, so credit is once.
+	attemptId String? @unique @db.Uuid
+
+	createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+	user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+	exam      DailyExam               @relation(fields: [examDate], references: [examDate])
+	autosave  ExamAutosave?
+	events    ExamIntegrityEvent[]
+	decisions ExamIntegrityDecision[]
+	challenge ExamChallenge?
+	jobs      ExamJob[]
+
+	@@unique([examDate, userId])
+	@@index([examDate, status])
+	@@map("exam_attempts")
+}
+
+// The latest durably saved code (AC11). A monotonic client sequence wins; older saves are ignored.
+model ExamAutosave {
+	attemptId String   @id @db.Uuid
+	source    String
+	clientSeq Int
+	savedAt   DateTime @db.Timestamptz(6)
+
+	attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@map("exam_autosaves")
+}
+
+// One client-reported integrity observation (AC24). `receivedAt` is the server's clock and the
+// only authoritative time; `occurredAt` is informational. `meta` is allow-listed per type and
+// never holds clipboard content, free text or media.
+model ExamIntegrityEvent {
+	id            String    @id @default(uuid()) @db.Uuid
+	attemptId     String    @db.Uuid
+	type          String
+	receivedAt    DateTime  @default(now()) @db.Timestamptz(6)
+	occurredAt    DateTime? @db.Timestamptz(6)
+	clientSeq     Int
+	clientEventId String
+	// observed | indicator | unsupported
+	confidence    String
+	meta          Json?
+
+	attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@unique([attemptId, clientEventId])
+	@@index([attemptId, receivedAt])
+	@@map("exam_integrity_events")
+}
+
+// Append-only integrity decisions (AC25, AC26). The automatic one is written once by
+// EXAM_INTEGRITY_SCORE; admin corrections add rows and never edit earlier ones.
+model ExamIntegrityDecision {
+	id            String   @id @default(uuid()) @db.Uuid
+	attemptId     String   @db.Uuid
+	policyVersion String
+	// auto | admin
+	kind          String
+	deductions    Int
+	flags         Json
+	inputSummary  Json
+	reason        String?
+	actorId       String?  @db.Uuid
+	createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+	attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@index([attemptId, createdAt])
+	@@map("exam_integrity_decisions")
+}
+
+// A learner's one challenge of an integrity decision (AC44).
+model ExamChallenge {
+	id         String    @id @default(uuid()) @db.Uuid
+	attemptId  String    @unique @db.Uuid
+	reasonCode String
+	// At most 500 characters, validated on input.
+	text       String
+	// open | resolved
+	status     String
+	createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+	resolvedAt DateTime? @db.Timestamptz(6)
+	decisionId String?   @db.Uuid
+
+	attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@index([status, createdAt])
+	@@map("exam_challenges")
+}
+
+// The published leaderboard, one row per participant per standings version (AC29). The public
+// leaderboard reads only this table. `displayName` is a username snapshot ONLY for a learner who
+// opted in to a public leaderboard identity; null renders "Anonymous participant". A deleted
+// account keeps its row with userId null ("Removed participant", AC46), so others keep their rank.
+model ExamStanding {
+	id             String   @id @default(uuid()) @db.Uuid
+	examDate       DateTime @db.Date
+	version        Int
+	userId         String?  @db.Uuid
+	rank           Int?
+	ranked         Boolean
+	displayName    String?
+	codingScore    Int
+	deductions     Int
+	finalScore     Int
+	testsPassed    Int
+	testsTotal     Int
+	elapsedSeconds Int?
+	// full_pass | partial | no_submission | grading_failed
+	status         String
+	createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+	exam DailyExam @relation(fields: [examDate], references: [examDate])
+	user User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+	@@unique([examDate, version, userId])
+	@@index([examDate, version, rank])
+	@@map("exam_standings")
+}
+
+// The durable exam job queue (AC35–AC41). A row per unit of work with a unique idempotency key,
+// claimed by an optimistic conditional update, leased with a fencing token, retried with bounded
+// exponential backoff and parked as `dead` when exhausted. Workers are bounded invocations of
+// /api/cron/exam-tick; there is no long-running worker.
+//
+// status: pending -> running -> succeeded | pending (retry) | dead
+//         pending -> cancelled
+model ExamJob {
+	id             String    @id @default(uuid()) @db.Uuid
+	type           String
+	// type:examDate[:attemptId][:correction]
+	idempotencyKey String    @unique
+	examDate       DateTime  @db.Date
+	attemptId      String?   @db.Uuid
+	status         String
+	runAfter       DateTime  @db.Timestamptz(6)
+	attempts       Int       @default(0)
+	maxAttempts    Int
+	leaseToken     String?   @db.Uuid
+	leaseExpiresAt DateTime? @db.Timestamptz(6)
+	// A short error CODE, never a message, source or problem content (AC45).
+	lastErrorCode  String?
+	createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+	startedAt      DateTime? @db.Timestamptz(6)
+	finishedAt     DateTime? @db.Timestamptz(6)
+
+	exam    DailyExam    @relation(fields: [examDate], references: [examDate])
+	attempt ExamAttempt? @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+	@@index([status, runAfter])
+	@@index([examDate, type, status])
+	@@map("exam_jobs")
+}
+
+// A fixed set of global Sandbox grading slots (AC37). An EXAM_GRADE job runs only while holding
+// one, leased like a job, so concurrent invocations can never exceed the configured bound.
+model ExamJobSlot {
+	slot           Int       @id
+	leaseToken     String?   @db.Uuid
+	leaseExpiresAt DateTime? @db.Timestamptz(6)
+	jobId          String?   @db.Uuid
+
+	@@map("exam_job_slots")
+}
+
+// Append-only audit of the exceptional, protected maintenance actions (AC33): dead-job retries,
+// voiding an exam for a security incident, retiring a leaked problem, pool loads, appeal decisions
+// and reads of an attempt's event timeline. Normal days write nothing here.
+model ExamAudit {
+	id        String   @id @default(uuid()) @db.Uuid
+	actorId   String   @db.Uuid
+	action    String
+	target    String
+	reason    String?
+	createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+	@@index([createdAt])
+	@@map("exam_audit")
+}

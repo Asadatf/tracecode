@@ -135,6 +135,17 @@ export const FLAGS = {
 			'Grades the one final Daily Challenge submission on the server in a sandbox (off until enabled).',
 		owner: 'web-team'
 	},
+	// M10 Daily Exam (specs/features/daily-exam.md, ADR-0010, ADR-0011). OFF by default and
+	// everywhere: while it is off nothing about the exam is created or shown and the Daily
+	// Learning Challenge is unchanged. A plain switch: the schedule is fixed in code
+	// (src/lib/exam/schedule.ts), never configured through this flag.
+	daily_exam: {
+		default: false,
+		kind: 'ops',
+		description:
+			'Runs the scheduled Daily Exam in place of the Daily Learning Challenge (off until the approved cutover).',
+		owner: 'web-team'
+	},
 	// An experiment — same variant machinery, but the tuple must lead with
 	// 'control' so PostHog's experiment analysis has a baseline. Read it like any
 	// flag; PostHog handles randomization, exposure, and the statistics.
