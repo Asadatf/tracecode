@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from '@/i18n/routing'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/cn'
@@ -8,7 +8,6 @@ import { analyzeCode, isEngineBooted, runCode, traceCode, warmUpEngine } from '@
 import { withCodeFeatures } from '@/lib/learning/attempt-features'
 import { problemMeta, type ProblemDefinition } from '@/lib/trace/problem'
 import { PROBLEMS } from '@/lib/trace/problems'
-import { isGuestPracticeSlug } from '@/lib/auth/access'
 import { optimizationPrompt, teach, type TeachingPrompt } from '@/lib/trace/teach'
 import { buildRunRequest } from '@/lib/trace/grading'
 import { acceptTestResult, startLiveRun, type LiveRun } from '@/lib/trace/live-run'
@@ -99,12 +98,15 @@ export function PracticeWorkspace({
 	slug,
 	isAuthenticated = false,
 	userId = null,
-	initialLayout
+	initialLayout,
+	guestHeader = null
 }: {
 	slug: string
 	isAuthenticated?: boolean
 	userId?: string | null
 	initialLayout: LayoutState
+	// The top bar a signed-out visitor sees, rendered on the server (the landing header).
+	guestHeader?: ReactNode
 }) {
 	const problem = PROBLEMS[slug]
 	if (problem == null) return null
@@ -118,6 +120,7 @@ export function PracticeWorkspace({
 			isAuthenticated={isAuthenticated}
 			userId={userId}
 			initialLayout={initialLayout}
+			guestHeader={guestHeader}
 		/>
 	)
 }
@@ -170,12 +173,14 @@ function ProblemWorkspace({
 	problem,
 	isAuthenticated,
 	userId,
-	initialLayout
+	initialLayout,
+	guestHeader
 }: {
 	problem: ProblemDefinition
 	isAuthenticated: boolean
 	userId: string | null
 	initialLayout: LayoutState
+	guestHeader: ReactNode
 }) {
 	const router = useRouter()
 	const meta = problemMeta(problem)
@@ -675,28 +680,33 @@ function ProblemWorkspace({
 
 	return (
 		<div className={cn(styles.page, styles.workspacePage)} data-workspace>
-			<header className={styles.top}>
-				<Link className={styles.brand} href="/">
-					<BrandMark tone="light" /> tracecode<span className={styles.dot}>.</span>
-				</Link>
-				<div className={styles.topData}>
-					<select
-						className={styles.select}
-						value={problem.slug}
-						aria-label="Choose problem"
-						onChange={(e) => router.push(`/practice/${e.target.value}`)}
-					>
-						{Object.values(PROBLEMS).map((p) => (
-							<option key={p.slug} value={p.slug}>
-								{!isAuthenticated && !isGuestPracticeSlug(p.slug) ? `${p.title} 🔒` : p.title}
-							</option>
-						))}
-					</select>
-					<Link className={styles.topLink} href="/dashboard">
-						Overview
+			{isAuthenticated ? (
+				<header className={styles.top}>
+					<Link className={styles.brand} href="/">
+						<BrandMark tone="light" /> tracecode<span className={styles.dot}>.</span>
 					</Link>
-				</div>
-			</header>
+					<div className={styles.topData}>
+						<select
+							className={styles.select}
+							value={problem.slug}
+							aria-label="Choose problem"
+							onChange={(e) => router.push(`/practice/${e.target.value}`)}
+						>
+							{Object.values(PROBLEMS).map((p) => (
+								<option key={p.slug} value={p.slug}>
+									{p.title}
+								</option>
+							))}
+						</select>
+						<Link className={styles.topLink} href="/dashboard">
+							Overview
+						</Link>
+					</div>
+				</header>
+			) : (
+				// A guest gets the landing header itself (brand, Sign in, Register), server-rendered.
+				guestHeader
+			)}
 
 			<div className={styles.toolbar}>
 				<div className={styles.stages} role="list" aria-label="Learning journey">

@@ -13,7 +13,12 @@ import { LandingHeader } from '@/components/home/landing-header'
 import { LandingCursor } from '@/components/home/landing-cursor'
 import { ScrollReveal } from '@/components/home/scroll-reveal'
 import { ExecutionTour } from '@/components/home/execution-tour'
-import { ClosingCta, LearningLoop, TraceNarrative } from '@/components/home/landing-sections'
+import {
+	ClosingCta,
+	LandingFooter,
+	LearningLoop,
+	TraceNarrative
+} from '@/components/home/landing-sections'
 import styles from '@/components/home/landing.module.css'
 
 // specs/features/home-page.md. The failing Two Sum test the step table shows.
@@ -67,6 +72,7 @@ export default async function HomePage() {
 					<ProblemTable table={table} authenticated={progress.authenticated} />
 					<ClosingCta />
 				</main>
+				<LandingFooter />
 			</div>
 		</Surface>
 	)

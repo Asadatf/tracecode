@@ -1592,8 +1592,7 @@
 
 .headerRail,
 .heroShell,
-.loopSection,
-.closing {
+.loopSection {
 	color-scheme: dark;
 	--bg: #0f1412;
 	--surface: #161c19;
@@ -1612,6 +1611,36 @@
 	--danger: #e5806f;
 	--danger-soft: #3a2724;
 	color: var(--text);
+}
+
+/* The closing CTA is the one light-mint band: pale green ground, deep-green ink and a pill button. */
+.closing {
+	color-scheme: light;
+	--bg: #dcebdd;
+	--surface: #e9f3ea;
+	--border: #b9d1bf;
+	--border-strong: #8fb59b;
+	--text: #14261c;
+	--text-muted: #4f6457;
+	--accent: #2f7d5b;
+	--accent-hover: #1f5a40;
+	--accent-ink: #ffffff;
+	color: var(--text);
+}
+
+.closing .primaryCta {
+	border-radius: 999px;
+	background: #1d3d2c;
+	color: #ffffff;
+}
+
+.closing .primaryCta:hover {
+	background: #14301f;
+}
+
+.closing .secondaryCta {
+	border-radius: 999px;
+	background: transparent;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1661,4 +1690,100 @@
 }
 .nav a:hover {
 	text-decoration-color: currentColor;
+}
+
+/* ── Landing footer: deep green, the last thing on the page ── */
+.footer {
+	color-scheme: dark;
+	background: #16261e;
+	color: #e7efe9;
+}
+
+.footerInner,
+.footerBar {
+	width: min(100% - 40px, 1180px);
+	margin: 0 auto;
+}
+
+.footerInner {
+	display: grid;
+	grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
+	gap: 40px;
+	padding: 64px 0 56px;
+}
+
+.footerLogo {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	color: #e7efe9;
+	font-size: 26px;
+	font-weight: 700;
+	letter-spacing: -0.04em;
+}
+
+.footerBrand p {
+	max-width: 280px;
+	margin: 18px 0 0;
+	color: #9db3a5;
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+.footerColumn {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.footerColumn h2 {
+	margin: 0 0 6px;
+	color: #8fb59b;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+.footerColumn a {
+	width: fit-content;
+	color: #e7efe9;
+	font-size: 15px;
+	text-decoration: underline;
+	text-decoration-color: transparent;
+	text-underline-offset: 5px;
+	transition: text-decoration-color 180ms ease;
+}
+
+.footerColumn a:hover {
+	text-decoration-color: currentColor;
+}
+
+.footerBar {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 24px 0 32px;
+	border-top: 1px solid #2b4034;
+	color: #8fa699;
+	font-family: var(--font-mono);
+	font-size: 12px;
+}
+
+@media (max-width: 760px) {
+	.footerInner {
+		grid-template-columns: 1fr 1fr;
+		padding: 48px 0 40px;
+	}
+
+	.footerBrand {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Keeps the actions on the right when the header has no section links (the practice page). */
+.navSpacer {
+	flex: 1;
 }

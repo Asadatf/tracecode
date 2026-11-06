@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/routing'
+import { BrandMark } from '@/components/ui/brand-mark'
 import type { TwoSumDemo } from '@/lib/home/two-sum-demo'
 import styles from './landing.module.css'
 import motion from './landing-motion.module.css'
@@ -108,5 +109,43 @@ export async function ClosingCta() {
 				</a>
 			</div>
 		</section>
+	)
+}
+
+// The landing page's own footer: the last thing on the page, below the closing band.
+export async function LandingFooter() {
+	const t = await getTranslations('LandingSections')
+
+	return (
+		<footer className={styles.footer} data-cursor-dark>
+			<div className={styles.footerInner}>
+				<div className={styles.footerBrand}>
+					<Link href="/" aria-label={t('footer.home')} className={styles.footerLogo}>
+						<BrandMark tone="dark" width={56} />
+						tracecode
+					</Link>
+					<p>{t('footer.tagline')}</p>
+				</div>
+				<nav aria-label={t('footer.exploreHeading')} className={styles.footerColumn}>
+					<h2>{t('footer.exploreHeading')}</h2>
+					<Link href="/practice/two-sum">{t('footer.twoSum')}</Link>
+					<a href="#problems">{t('footer.problems')}</a>
+					<a href="#narrative-title">{t('footer.how')}</a>
+				</nav>
+				<nav aria-label={t('footer.aboutHeading')} className={styles.footerColumn}>
+					<h2>{t('footer.aboutHeading')}</h2>
+					<a href="https://github.com/Asadatf/tracecode" rel="noopener noreferrer" target="_blank">
+						{t('footer.github')} <span aria-hidden="true">↗</span>
+					</a>
+					<a href="#landing-title">
+						{t('footer.top')} <span aria-hidden="true">↑</span>
+					</a>
+				</nav>
+			</div>
+			<div className={styles.footerBar}>
+				<span>{t('footer.copyright', { year: new Date().getFullYear() })}</span>
+				<span>{t('footer.motto')}</span>
+			</div>
+		</footer>
 	)
 }

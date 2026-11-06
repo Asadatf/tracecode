@@ -8,6 +8,7 @@ import { practiceAccess } from '@/lib/auth/access'
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { PROBLEMS } from '@/lib/trace/problems'
 import { AppShell } from '@/components/app-shell/app-shell'
+import { LandingHeader } from '@/components/home/landing-header'
 import { PracticeWorkspace } from '@/components/trace/practice-workspace'
 import { CodeFeatureBackfill } from '@/components/trace/code-feature-backfill'
 import { currentUserIdSafe } from '@/server/auth/session'
@@ -66,6 +67,7 @@ export default async function PracticePage({
 			isAuthenticated={isAuthenticated}
 			userId={userId}
 			initialLayout={initialLayout}
+			guestHeader={<LandingHeader showNav={false} />}
 		/>
 	)
 

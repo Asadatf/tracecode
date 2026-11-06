@@ -27,14 +27,19 @@ export function topicLabel(tag: string): string {
 	return tag.charAt(0).toUpperCase() + tag.slice(1)
 }
 
+// The landing page is an introduction, not the catalogue: it shows this many problems however
+// large the registry grows, and links to /problems for the rest.
+export const LANDING_PROBLEM_LIMIT = 6
+
 export function buildProblemTable(
 	problems: readonly ProblemDefinition[],
-	progress: LearningProgressView
+	progress: LearningProgressView,
+	limit: number = LANDING_PROBLEM_LIMIT
 ): ProblemTable {
 	const tracked = progress.authenticated && progress.available
 	const statusBySlug = new Map(progress.progress.map((row) => [row.problemSlug, row.status]))
 
-	const rows = problems.map((problem, index): ProblemRow => {
+	const rows = problems.slice(0, limit).map((problem, index): ProblemRow => {
 		const saved = statusBySlug.get(problem.slug)
 		let status: ProblemStatus = 'unknown'
 		if (tracked) status = saved === 'solved' || saved === 'attempted' ? saved : 'not_started'

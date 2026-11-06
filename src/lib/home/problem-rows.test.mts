@@ -1,17 +1,19 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { PROBLEMS } from '../trace/problems'
-import { buildProblemTable } from './problem-rows'
+import { buildProblemTable, LANDING_PROBLEM_LIMIT } from './problem-rows'
 
 const problems = Object.values(PROBLEMS)
 const signedOut = { authenticated: false, available: false, progress: [], recentAttempts: [] }
 
-test('AC6: one row per registry problem, in registry order, with topics and difficulty', () => {
+test('AC6: the first six registry problems, in registry order, with topics and difficulty', () => {
 	const { rows } = buildProblemTable(problems, signedOut)
-	assert.equal(rows.length, problems.length)
+	assert.equal(LANDING_PROBLEM_LIMIT, 6)
+	assert.ok(problems.length > LANDING_PROBLEM_LIMIT, 'the cap is exercised by a larger registry')
+	assert.equal(rows.length, LANDING_PROBLEM_LIMIT)
 	assert.deepEqual(
 		rows.map((row) => [row.number, row.slug]),
-		problems.map((problem, index) => [index + 1, problem.slug])
+		problems.slice(0, LANDING_PROBLEM_LIMIT).map((problem, index) => [index + 1, problem.slug])
 	)
 	const twoSum = rows.find((row) => row.slug === 'two-sum')
 	assert.equal(twoSum?.topics, 'Arrays, Loops')
@@ -74,5 +76,5 @@ test('edge: a slug in saved progress but not in the registry adds no row', () =>
 		],
 		recentAttempts: []
 	})
-	assert.equal(rows.length, problems.length)
+	assert.equal(rows.length, LANDING_PROBLEM_LIMIT)
 })

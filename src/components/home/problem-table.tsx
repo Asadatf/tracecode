@@ -91,6 +91,15 @@ export async function ProblemTable({
 					</tbody>
 				</table>
 			</div>
+			{/* /problems is a signed-in page, so a signed-out visitor is sent to sign in and then on to it. */}
+			<p className={styles.signIn}>
+				<Link
+					href={authenticated ? '/problems' : authHref('login', '/problems')}
+					className={styles.problemTitle}
+				>
+					{t('viewAll')} <span aria-hidden="true">→</span>
+				</Link>
+			</p>
 			{table.tracked ? null : <p className={styles.signIn}>{t('signIn')}</p>}
 		</section>
 	)

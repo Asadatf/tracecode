@@ -839,11 +839,16 @@ test('the recommendation engine resolves every new slug and the new concept tags
 	)
 })
 
-test('the Practice listing and the home table include all sixteen with readable topics', () => {
-	const table = buildProblemTable(Object.values(PROBLEMS), {
-		authenticated: false,
-		progress: []
-	} as never)
+test('the problem table builder covers all sixteen with readable topics (the home page caps it at six)', () => {
+	const all = Object.values(PROBLEMS)
+	const table = buildProblemTable(
+		all,
+		{
+			authenticated: false,
+			progress: []
+		} as never,
+		all.length
+	)
 	assert.equal(table.rows.length, 16)
 	assert.deepEqual(
 		table.rows.slice(6).map((r) => r.slug),

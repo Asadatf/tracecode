@@ -11,7 +11,7 @@ import styles from './landing.module.css'
 
 // Resolved on the server from the verified session (specs/features/auth-access.md
 // AC1/AC2), so the first paint is already the right header for this visitor.
-export async function LandingHeader() {
+export async function LandingHeader({ showNav = true }: { showNav?: boolean } = {}) {
 	const [t, account] = await Promise.all([getTranslations('LandingHeader'), currentAccountSafe()])
 	const authenticated = account != null
 	const nav = headerNav(authenticated)
@@ -24,10 +24,14 @@ export async function LandingHeader() {
 					<BrandMark tone="dark" />
 					tracecode
 				</Link>
-				<nav aria-label={t('nav')} className={styles.nav}>
-					{nav.links.includes('how') && <a href="#how-it-works">{t('how')}</a>}
-					{nav.links.includes('problems') && <a href="#problems">{t('problems')}</a>}
-				</nav>
+				{showNav ? (
+					<nav aria-label={t('nav')} className={styles.nav}>
+						{nav.links.includes('how') && <a href="#how-it-works">{t('how')}</a>}
+						{nav.links.includes('problems') && <a href="#problems">{t('problems')}</a>}
+					</nav>
+				) : (
+					<span className={styles.navSpacer} />
+				)}
 				{authenticated ? (
 					<div className={styles.headerActions}>
 						{nav.cta != null && (

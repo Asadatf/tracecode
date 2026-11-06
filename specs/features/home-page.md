@@ -55,11 +55,13 @@ to execute Python on the landing page.
   are `0`, both pointers target the first array cell, and the sum is `3 + 3 = 6`.
   No Python runs on the landing page.
 - **AC6** — GIVEN the problem registry (`PROBLEMS`) WHEN the home page
-  renders THEN the problem table has one row per problem, in registry
-  order, with columns #, Title (linking to `/practice/<slug>`), Topics
+  renders THEN the problem table has one row for each of the first six
+  problems, in registry order (the page is an introduction; a "View all
+  problems" link goes to `/problems`, or through Sign In to it for a
+  signed-out visitor; the heading copy never states a problem count), with columns #, Title (linking to `/practice/<slug>`), Topics
   (concept tags, capitalised, comma-separated), Difficulty (Easy /
-  Medium / Hard) and Status. Adding a problem to the registry adds a row
-  with no home-page change.
+  Medium / Hard) and Status. Adding problems to the registry never makes
+  the home table longer than six rows.
 - **AC7** — GIVEN a signed-in learner with saved progress WHEN the home
   page renders THEN each row's Status shows "Solved", "Attempted" or
   "Not started" from their `problem_progress`.

@@ -110,6 +110,19 @@
 			"body": "Start with one small problem and see every state change that leads to the result.",
 			"primary": "Start with Two Sum",
 			"secondary": "View all problems"
+		},
+		"footer": {
+			"home": "TraceCode home",
+			"tagline": "Learn algorithms by writing code and investigating real execution.",
+			"exploreHeading": "Explore",
+			"twoSum": "Two Sum",
+			"problems": "Problems",
+			"how": "How we teach",
+			"aboutHeading": "About this build",
+			"github": "Project on GitHub",
+			"top": "Back to top",
+			"copyright": "© {year} TraceCode · Exploratory learning prototype",
+			"motto": "Built around curiosity, evidence, and iteration."
 		}
 	},
 	"SiteHeader": {
@@ -132,7 +145,7 @@
 	"ProblemTable": {
 		"heading": "Problems",
 		"kicker": "Choose your next trace",
-		"description": "Six focused Python problems, each ready to run, replay and understand.",
+		"description": "A growing library of focused Python problems, each ready to run, replay and understand.",
 		"columns": {
 			"number": "#",
 			"title": "Title",
@@ -152,6 +165,7 @@
 			"unknown": "-"
 		},
 		"empty": "No problems yet.",
+		"viewAll": "View all problems",
 		"signIn": "Sign in to track your progress and unlock every problem.",
 		"locked": "Sign in to unlock",
 		"lockedLabel": "{title}: sign in to unlock",
