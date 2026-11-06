@@ -159,13 +159,20 @@ export interface Grader {
 	grade(job: { problemSlug: string; source: string }): Promise<GradeOutcome>
 }
 
-// A grading claim older than this is a crashed worker and may be taken over.
-export const GRADING_CLAIM_TTL_MS = 2 * 60 * 1000
+// A grading claim older than this is a crashed worker and may be taken over. It must outlast
+// one whole grading run (sandbox creation plus a sandbox that lives up to SANDBOX_TIMEOUT_MS)
+// AND the longest a Vercel function can live (300s on Fluid compute), so a claim is only taken
+// over once its worker cannot still be running; otherwise a slow but healthy run could be
+// overlapped by a second one whose failure cancels its result.
+export const GRADING_CLAIM_TTL_MS = 6 * 60 * 1000
+export const MAX_FUNCTION_DURATION_MS = 300 * 1000
 
-// Bounded retries. A failed grading is retried with a growing delay, and given up on after
-// MAX_GRADING_TRIES, so an outage or a submission that always breaks the runner cannot
-// create sandboxes (a quota) forever. The count rides on gradeError as `code#n`, which
-// needs no schema change; giving up leaves the attempt a `grader_error` with no score.
+// Bounded retries. A failed grading is retried with a growing delay, and the request-driven
+// triggers (the submit and the status poll) give up after MAX_GRADING_TRIES, so an outage or a
+// submission that always breaks the runner cannot create sandboxes (a quota) on every poll. The
+// daily cron ('scheduled') still gives such a submission one try per run, so it stays pending,
+// never failed, and a restored grader grades it with no new submission. The count rides on
+// gradeError as `code#n`, which needs no schema change.
 export const MAX_GRADING_TRIES = 3
 export const GRADING_RETRY_BACKOFF_MS = 60 * 1000
 
@@ -190,7 +197,9 @@ export async function gradeAttempt(
 	problemSlug: string,
 	now: Date,
 	// The instant grading FINISHED, for `gradedAt` (defaults to `now`; the server passes its clock).
-	finishedAt: () => Date = () => now
+	finishedAt: () => Date = () => now,
+	// 'bounded' for request-driven triggers; 'scheduled' (the daily cron) ignores the try limit.
+	mode: 'bounded' | 'scheduled' = 'bounded'
 ): Promise<GradingResult> {
 	// No grader configured: the submission waits. It is never scored from anything else.
 	if (grader == null) return { status: 'no_grader' }
@@ -198,7 +207,7 @@ export async function gradeAttempt(
 	const before = await store.find(userId, date)
 	if (before?.status === 'grader_error') {
 		const tries = triesOf(before.gradeError)
-		if (tries >= MAX_GRADING_TRIES) return { status: 'gave_up' }
+		if (tries >= MAX_GRADING_TRIES && mode === 'bounded') return { status: 'gave_up' }
 		const last = before.gradingClaimedAt?.getTime() ?? 0
 		if (now.getTime() < last + GRADING_RETRY_BACKOFF_MS * Math.max(tries, 1))
 			return { status: 'retry_later' }

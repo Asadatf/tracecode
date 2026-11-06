@@ -165,6 +165,10 @@ and needs the deployment's Sandbox credentials); until then a final submission i
   saved as pending (never a fail) for the cron to retry later.
 - A learner who submits and closes the tab still gets graded: the status poll, the next visit
   and the cron all nudge it along.
+- The daily cron gives each waiting submission (including one the poll gave up on) at most one
+  try per run, never-tried and least recently tried first, and starts no new grading once its
+  time budget is spent; the rest wait for the next run. A grading claim is only taken over
+  once its worker can no longer be running (longer than a sandbox run and a function's lifetime).
 - A submit made seconds before UTC midnight and graded after it counts for the submission day.
 - A leftover `expired` row from the earlier exam design is open again (it can be submitted
   once).

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
 	GRADING_CLAIM_TTL_MS,
 	GRADING_RETRY_BACKOFF_MS,
+	MAX_FUNCTION_DURATION_MS,
 	MAX_GRADING_TRIES,
 	triesOf,
 	gradeAttempt,
@@ -15,6 +16,7 @@ import {
 	type GradeRecord
 } from './service.ts'
 import { EXAM_DURATION_MS } from './exam-rules.ts'
+import { SANDBOX_TIMEOUT_MS } from './sandbox-grader.ts'
 import { attemptQualifies } from '../streak/streak.ts'
 import { buildDailyActivity } from '../activity/daily-activity.ts'
 import { computeStreak } from '../streak/streak.ts'
@@ -485,6 +487,48 @@ test('retries are bounded: backoff between tries, then it gives up and creates n
 	)
 	assert.equal(calls, MAX_GRADING_TRIES)
 	assert.equal(rows.get(`u1|${D}`)?.testsPassed, null)
+})
+
+test('the daily cron retries a submission the poll gave up on, and a restored grader grades it once', async () => {
+	const { store, rows, solves } = fakeStore()
+	await startAttempt(store, 'u1', D, T0)
+	await submitAttempt(store, 'u1', D, 'code', at(60_000))
+	const broken: Grader = { grade: async () => ({ ok: false, code: 'sandbox_unavailable' }) }
+	let now = 70_000
+	for (let i = 1; i <= MAX_GRADING_TRIES; i += 1) {
+		await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now))
+		now += GRADING_RETRY_BACKOFF_MS * i + 1
+	}
+	assert.equal((await gradeAttempt(store, broken, 'u1', D, 'two-sum', at(now))).status, 'gave_up')
+	// Still pending, never failed.
+	assert.equal(toAttemptView(rows.get(`u1|${D}`)!).phase, 'grader_error')
+	const nextDay = at(now + 24 * 3600_000)
+	const restored = await gradeAttempt(
+		store,
+		pass(12, 12),
+		'u1',
+		D,
+		'two-sum',
+		nextDay,
+		undefined,
+		'scheduled'
+	)
+	assert.equal(restored.status, 'graded')
+	assert.equal(rows.get(`u1|${D}`)?.testsPassed, 12)
+	assert.equal(solves.length, 1)
+	// A replay after the result changes nothing.
+	assert.equal(
+		(await gradeAttempt(store, pass(12, 12), 'u1', D, 'two-sum', nextDay, undefined, 'scheduled'))
+			.status,
+		'not_claimed'
+	)
+	assert.equal(solves.length, 1)
+})
+
+test('a grading claim outlives a whole sandbox run, so a healthy slow run is never taken over', () => {
+	assert.ok(GRADING_CLAIM_TTL_MS >= SANDBOX_TIMEOUT_MS + 60_000)
+	// Nor while the worker's function can still be alive.
+	assert.ok(GRADING_CLAIM_TTL_MS > MAX_FUNCTION_DURATION_MS)
 })
 
 test('concurrent triggers of one submission run the grader exactly once', async () => {

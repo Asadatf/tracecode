@@ -327,6 +327,15 @@ describe('time and recovery', () => {
 		const retry = challenge.slice(challenge.indexOf('export async function gradePendingAttempts'))
 		assert.match(retry, /if \(grader == null\) return \{ attempted: 0 \}/)
 	})
+
+	it('the cron retries given-up submissions too, least recently tried first, within its budget', () => {
+		const retry = challenge.slice(challenge.indexOf('export async function gradePendingAttempts'))
+		assert.match(retry, /\{ status: 'grader_error' \},/)
+		assert.doesNotMatch(retry, /MAX_GRADING_TRIES/)
+		assert.match(retry, /gradingClaimedAt: \{ sort: 'asc', nulls: 'first' \}/)
+		assert.match(retry, /'scheduled'\n\t\t\)/)
+		assert.match(retry, /> CRON_GRADING_BUDGET_MS\) break/)
+	})
 })
 
 describe('cron', () => {

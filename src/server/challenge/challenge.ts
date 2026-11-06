@@ -7,7 +7,6 @@ import { captureError } from '@/lib/observability/capture-error'
 import { resolveChallenge, type ChallengeLookup } from '@/lib/challenge/assignment'
 import {
 	GRADING_CLAIM_TTL_MS,
-	MAX_GRADING_TRIES,
 	gradeAttempt,
 	startAttempt,
 	submitAttempt,
@@ -166,9 +165,15 @@ export async function challengeStatus(rawDate: string): Promise<ChallengeActionR
 	return { ok: true, view: toAttemptView(row) }
 }
 
-// Retries submissions that are still waiting (never graded, a grader error, or a worker
-// that died mid-grade), so an outage or a closed tab does not leave a verified result
-// undone. Called from the daily cron; with no grader configured it does nothing.
+// The reminders run before this in the same cron function, so no new grading starts after this
+// budget; whatever is left waits for the next run (or the status poll). The route's maxDuration
+// leaves room for a grading already in its sandbox to finish.
+const CRON_GRADING_BUDGET_MS = 25_000
+
+// Retries submissions that are still waiting (never graded, a grader error — including one the
+// request-driven triggers gave up on — or a worker that died mid-grade), so an outage or a
+// closed tab does not leave a verified result undone. Called from the daily cron; with no
+// grader configured it does nothing.
 export async function gradePendingAttempts(limit = 20): Promise<{ attempted: number }> {
 	const grader = await activeGrader()
 	if (grader == null) return { attempted: 0 }
@@ -177,22 +182,23 @@ export async function gradePendingAttempts(limit = 20): Promise<{ attempted: num
 		where: {
 			OR: [
 				{ status: 'submitted' },
-				// An attempt the grader has given up on is left alone (it would only fill the batch).
-				{
-					status: 'grader_error',
-					OR: [{ gradeError: null }, { NOT: { gradeError: { endsWith: `#${MAX_GRADING_TRIES}` } } }]
-				},
+				{ status: 'grader_error' },
 				{
 					status: 'grading',
 					gradingClaimedAt: { lt: new Date(now.getTime() - GRADING_CLAIM_TTL_MS) }
 				}
 			]
 		},
-		orderBy: { submittedAt: 'asc' },
+		// Never-tried first, then the least recently tried, so submissions that keep failing
+		// cannot crowd the rest out of every batch.
+		orderBy: [{ gradingClaimedAt: { sort: 'asc', nulls: 'first' } }, { submittedAt: 'asc' }],
 		take: limit,
 		select: { userId: true, challengeDate: true, challenge: { select: { problemSlug: true } } }
 	})
+	let attempted = 0
 	for (const row of rows) {
+		if (Date.now() - now.getTime() > CRON_GRADING_BUDGET_MS) break
+		attempted += 1
 		await gradeAttempt(
 			attemptStore,
 			grader,
@@ -200,8 +206,9 @@ export async function gradePendingAttempts(limit = 20): Promise<{ attempted: num
 			row.challengeDate.toISOString().slice(0, 10),
 			row.challenge.problemSlug,
 			new Date(),
-			() => new Date()
+			() => new Date(),
+			'scheduled'
 		)
 	}
-	return { attempted: rows.length }
+	return { attempted }
 }
