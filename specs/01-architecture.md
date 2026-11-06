@@ -94,6 +94,14 @@ model ProblemProgress {   // one row per user × problem
 }
 
 enum ProgressStatus { ATTEMPTED SOLVED MASTERED }
+
+model ProblemNote {       // specs/features/problem-notes.md; table problem_notes
+  userId      String   @db.Uuid
+  problemSlug String
+  body        String          // plain text, max 2 000 characters; empty = deleted
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  @@id([userId, problemSlug])
+}
 ```
 
 All tables get RLS enabled with no policies (`docs/rules/auth.md`).

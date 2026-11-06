@@ -1,6 +1,7 @@
-import { getTranslations } from 'next-intl/server'
-import { Link } from '@/i18n/routing'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { Link, redirect } from '@/i18n/routing'
 import { Surface } from '@/components/navigation/navigation-curtain'
+import { currentUserIdSafe } from '@/server/auth/session'
 import { pageMetadata } from '@/lib/seo/metadata'
 import { traceResultSchema } from '@/lib/trace/contract'
 import { PROBLEMS, twoSum } from '@/lib/trace/problems'
@@ -29,6 +30,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function HomePage() {
+	// The landing page is for visitors; a signed-in learner belongs in the app
+	// (specs/features/home-page.md, AC16).
+	if ((await currentUserIdSafe()) != null) {
+		redirect({ href: '/dashboard', locale: await getLocale() })
+	}
 	const [t, progress] = await Promise.all([getTranslations('HomePage'), getLearningProgress()])
 
 	const demoTest = twoSum.tests.find((test) => test.id === DEMO_TEST_ID)

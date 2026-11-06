@@ -78,6 +78,12 @@ const envSchema = z.object({
 	REMINDER_FROM_EMAIL: z.string().optional().or(z.literal('')),
 	RESEND_VERIFIED_DOMAIN: z.string().optional().or(z.literal('')),
 
+	// Google / GitHub sign-in buttons (specs/features/oauth-sign-in.md). "true"
+	// shows a provider's button; set it only once that provider is configured in
+	// Supabase (its client id and secret live there, never here). Server-only.
+	AUTH_GOOGLE_ENABLED: z.enum(['true', 'false']).optional().or(z.literal('')),
+	AUTH_GITHUB_ENABLED: z.enum(['true', 'false']).optional().or(z.literal('')),
+
 	NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
 	// Attached as the app_version property on every analytics event — optional,

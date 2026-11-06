@@ -1,0 +1,92 @@
+/* Study plans (specs/features/study-plans.md). Cards and tables reuse the
+   dashboard's; this file adds the plan grid and the progress bar. */
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+	gap: 18px;
+}
+.plan {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.plan h2 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+.plan h2 a {
+	color: var(--text);
+	text-decoration: none;
+}
+.plan h2 a:hover {
+	color: var(--accent-hover);
+}
+.description {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 14px;
+	line-height: 1.55;
+}
+.meta {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 8px;
+	color: var(--text-muted);
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}
+.bar {
+	height: 8px;
+	overflow: hidden;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.fill {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: var(--accent);
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 4px;
+}
+.primary {
+	padding: 8px 16px;
+	border-radius: 10px;
+	background: var(--accent);
+	color: var(--accent-ink, #fff);
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none;
+}
+.primary:hover {
+	background: var(--accent-hover);
+}
+.secondary {
+	color: var(--accent-hover);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+}
+.back {
+	display: inline-block;
+	margin-bottom: 10px;
+	color: var(--accent-hover);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: none;
+}
+.intro {
+	max-width: 60ch;
+	margin: 8px 0 0;
+	color: var(--text-muted);
+	font-size: 15px;
+	line-height: 1.55;
+}

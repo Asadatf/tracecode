@@ -402,6 +402,50 @@
 	color: #0b231a;
 }
 
+/* Keyboard shortcuts list: the tour's dark card, centred as a modal. */
+.shortcuts {
+	width: min(340px, calc(100vw - 32px));
+	padding: 16px 18px;
+	border: 0;
+	border-radius: 14px;
+	background: #17231e;
+	color: #fff;
+	box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+}
+.shortcuts::backdrop {
+	background: rgba(8, 16, 12, 0.45);
+}
+.shortcuts h2 {
+	margin: 0 0 10px;
+	font-size: 15px;
+}
+.shortcutList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0 0 14px;
+}
+.shortcutRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	color: #cfdad3;
+	font-size: 13px;
+}
+.shortcutRow dd {
+	margin: 0;
+}
+.shortcutRow kbd {
+	padding: 2px 8px;
+	border: 1px solid #3a4a42;
+	border-radius: 6px;
+	background: #22322a;
+	color: #fff;
+	font: 600 12px var(--mono, ui-monospace, monospace);
+	white-space: nowrap;
+}
+
 /* Phone: one view at a time instead of splitters. */
 .views {
 	display: none;
