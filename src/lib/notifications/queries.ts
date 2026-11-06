@@ -99,6 +99,31 @@ export function toNotificationView(row: {
 	createdAt: Date
 }): NotificationView {
 	const base = { id: row.id, createdAt: row.createdAt.toISOString(), read: row.readAt != null }
+	// M10 Daily Exam result (specs/features/daily-exam.md AC32): score and rank, never the problem.
+	if (row.kind === 'exam_result') {
+		const p = (row.payload ?? {}) as {
+			date?: unknown
+			finalScore?: unknown
+			rank?: unknown
+			ranked?: unknown
+			total?: unknown
+		}
+		const date = typeof p.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.date) ? p.date : null
+		const score = typeof p.finalScore === 'number' ? (p.finalScore / 100).toFixed(2) : null
+		const rank =
+			p.ranked === true && typeof p.rank === 'number' && typeof p.total === 'number'
+				? ` · rank ${p.rank} of ${p.total}`
+				: ''
+		return {
+			...base,
+			title: 'Your Daily Exam result is ready',
+			body:
+				score == null ? 'Open the exam to see your result.' : `Final score ${score} / 100${rank}.`,
+			concept: null,
+			href: date == null ? '/dashboard' : `/exam/${date}`,
+			cta: 'See result'
+		}
+	}
 	if (row.kind === CHALLENGE_RESULT_KIND) {
 		const result = parseChallengeResult(row.payload)
 		if (result == null) {

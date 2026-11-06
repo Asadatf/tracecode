@@ -7,6 +7,7 @@ import { authHref } from '@/lib/auth/return-to'
 import { practiceAccess } from '@/lib/auth/access'
 import { DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { PROBLEMS } from '@/lib/trace/problems'
+import { publishedExamProblem } from '@/server/exam/practice'
 import { AppShell } from '@/components/app-shell/app-shell'
 import { LandingHeader } from '@/components/home/landing-header'
 import { PracticeWorkspace } from '@/components/trace/practice-workspace'
@@ -42,7 +43,10 @@ export default async function PracticePage({
 	params: Promise<{ locale: string; slug: string }>
 }) {
 	const { slug } = await params
-	const problem = PROBLEMS[slug]
+	// A published Daily Exam problem is practised like any other once it is public (AC30), and is
+	// locked while it is being examined (AC49). Catalogue problems take the unchanged path.
+	const examProblem = PROBLEMS[slug] == null ? await publishedExamProblem(slug) : null
+	const problem = PROBLEMS[slug] ?? examProblem
 	if (problem == null) notFound()
 
 	// Auth drives whether the workspace syncs to the server. No session (or
@@ -68,6 +72,7 @@ export default async function PracticePage({
 			userId={userId}
 			initialLayout={initialLayout}
 			guestHeader={<LandingHeader showNav={false} />}
+			serverProblem={examProblem}
 		/>
 	)
 

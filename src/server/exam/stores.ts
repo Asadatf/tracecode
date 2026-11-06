@@ -164,9 +164,9 @@ export const openStore: OpenStore = {
 			db.dailyExam.findMany({
 				where: {
 					problemId: { not: null },
-					examDate: { lt: dayColumn(examDate) },
-					// Accelerated test exams never count as history.
-					NOT: { scheduleVersion: { startsWith: 'test' } }
+					examDate: { lt: dayColumn(examDate) }
+					// Test exams count too: their problem has been seen (and may be published), so a later
+					// exam on it is honestly a repeat.
 				},
 				select: { examDate: true, problemId: true }
 			})

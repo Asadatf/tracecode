@@ -99,7 +99,8 @@ export function PracticeWorkspace({
 	isAuthenticated = false,
 	userId = null,
 	initialLayout,
-	guestHeader = null
+	guestHeader = null,
+	serverProblem = null
 }: {
 	slug: string
 	isAuthenticated?: boolean
@@ -107,8 +108,11 @@ export function PracticeWorkspace({
 	initialLayout: LayoutState
 	// The top bar a signed-out visitor sees, rendered on the server (the landing header).
 	guestHeader?: ReactNode
+	// A published Daily Exam problem, supplied by the server (it is not in the static catalog).
+	// Its tests are the PUBLIC practice set only; hidden cases never reach the browser.
+	serverProblem?: ProblemDefinition | null
 }) {
-	const problem = PROBLEMS[slug]
+	const problem = PROBLEMS[slug] ?? serverProblem
 	if (problem == null) return null
 	return (
 		// Keyed by slug so switching problems always starts a fresh workspace (editor,

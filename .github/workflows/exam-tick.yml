@@ -1,0 +1,28 @@
+name: Exam tick
+
+# The M10 Daily Exam scheduler (specs/features/daily-exam.md AC4): calls the CRON_SECRET-guarded
+# tick every 5 minutes through the exam window and the next-day publication window. Best effort:
+# GitHub may run it late; exam timing is enforced by the database on every request regardless.
+# Runs only where EXAM_TICK_URL and CRON_SECRET are configured as repository secrets.
+on:
+  schedule:
+    - cron: '*/5 14-16 * * *'
+    - cron: '*/5 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Call the exam tick
+        env:
+          EXAM_TICK_URL: ${{ secrets.EXAM_TICK_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$EXAM_TICK_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Exam tick secrets not configured here; skipping."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 310 \
+            -H "Authorization: Bearer $CRON_SECRET" "$EXAM_TICK_URL"
