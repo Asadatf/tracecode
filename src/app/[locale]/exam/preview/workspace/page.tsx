@@ -26,7 +26,7 @@ export default async function PreviewWorkspacePage() {
 	const problem = PROBLEMS[PREVIEW_PROBLEM_SLUG]
 	if (problem == null) return null
 	return (
-		<AppShell bare startCollapsed current="exam">
+		<AppShell bare startCollapsed current="problems">
 			<div data-in-shell>
 				<PreviewWorkspace problem={toExamProblem(problem)} />
 			</div>

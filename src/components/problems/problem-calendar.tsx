@@ -71,6 +71,20 @@ function timeUntilUtcMidnight(now: number): string {
 	return `${pad(Math.floor(seconds / 3600))}:${pad(Math.floor((seconds % 3600) / 60))}:${pad(seconds % 60)}`
 }
 
+// Today's Daily Exam status for the card: the real fixed schedule (15:00–15:30 UTC), shown only
+// after hydration so the first render matches the server. No problem is ever named here.
+function examStatus(now: number | null, todayIso: string): string {
+	if (now == null) return 'Opens 15:00 UTC'
+	const opens = Date.parse(`${todayIso}T15:00:00.000Z`)
+	const closes = opens + 30 * 60_000
+	if (now < opens) {
+		const seconds = Math.floor((opens - now) / 1000)
+		return `Opens 15:00 UTC · ${pad(Math.floor(seconds / 3600))}:${pad(Math.floor((seconds % 3600) / 60))}:${pad(seconds % 60)}`
+	}
+	if (now < closes) return 'Open now · closes 15:30 UTC'
+	return 'Closed · results by 16:30 UTC'
+}
+
 // A month of dates, each linking to that date's problem (problems-page
 // AC8–AC10). Dates are UTC days, like the "UTC" chip says, and "today" comes
 // from the server so the first render matches it.
@@ -78,7 +92,6 @@ export function ProblemCalendar({
 	titles,
 	pinned,
 	todayIso,
-	todayState,
 	labels
 }: {
 	// Problem titles by slug.
@@ -88,7 +101,8 @@ export function ProblemCalendar({
 	// change a date's problem; a future date is not in it and cannot be opened.
 	pinned: Record<string, string>
 	todayIso: string
-	todayState: 'open' | 'submitted' | 'completed'
+	// Kept for the page's props; today's card is the Daily Exam, not the M9 challenge state.
+	todayState?: 'open' | 'submitted' | 'completed'
 	labels: CalendarLabels
 }) {
 	const locale = useLocale()
@@ -112,8 +126,6 @@ export function ProblemCalendar({
 	function shift(by: number) {
 		setView((current) => shiftMonth(current, by))
 	}
-
-	const todaySlug = pinned[todayIso]
 
 	return (
 		<section
@@ -183,8 +195,9 @@ export function ProblemCalendar({
 						const day = index + 1
 						const iso = dayIso(view, day)
 						const slug = pinned[iso]
-						const title = slug == null ? undefined : titles[slug]
 						const isToday = iso === todayIso
+						// Today is the Daily Exam: never name today's problem (M10 secrecy).
+						const title = slug == null || isToday ? undefined : titles[slug]
 						const date = dayFormat.format(new Date(iso))
 						// Before launch there is no challenge: shown, never a link.
 						if (iso < CHALLENGE_EPOCH) {
@@ -222,13 +235,21 @@ export function ProblemCalendar({
 									// A past day goes straight to Practice for its problem; only today is the
 									// challenge. (A past day not yet pinned still opens its challenge URL,
 									// which pins it and redirects to Practice.)
-									href={isToday || slug == null ? `/challenge/${iso}` : `/practice/${slug}`}
+									href={
+										isToday
+											? '/exam/preview'
+											: slug == null
+												? `/challenge/${iso}`
+												: `/practice/${slug}`
+									}
 									className={isToday ? `${styles.day} ${styles.dayToday}` : styles.day}
 									aria-current={isToday ? 'date' : undefined}
 									aria-label={
-										title == null
-											? labels.dayLabelPlain.replace('{date}', date)
-											: labels.dayLabel.replace('{date}', date).replace('{title}', title)
+										isToday
+											? `${date}: Daily Exam`
+											: title == null
+												? labels.dayLabelPlain.replace('{date}', date)
+												: labels.dayLabel.replace('{date}', date).replace('{title}', title)
 									}
 									title={title}
 								>
@@ -242,18 +263,11 @@ export function ProblemCalendar({
 						<span key={`tail-${index}`} role="gridcell" />
 					))}
 				</div>
-				<Link href={`/challenge/${todayIso}`} className={styles.todayRow}>
+				<Link href="/exam/preview" className={styles.todayRow}>
 					<span>
-						<span className={styles.todayLabel}>{labels.todaysProblem}</span>
-						<strong>
-							{todaySlug == null ? labels.openToday : (titles[todaySlug] ?? todaySlug)}
-						</strong>
-						{todayState === 'completed' ? (
-							<span className={styles.todayLabel}>✓ {labels.todayDone}</span>
-						) : null}
-						{todayState === 'submitted' ? (
-							<span className={styles.todayLabel}>{labels.todaySubmitted}</span>
-						) : null}
+						<span className={styles.todayLabel}>Daily Exam · preview</span>
+						<strong>{examStatus(now, todayIso)}</strong>
+						<span className={styles.todayLabel}>View exam details</span>
 					</span>
 					<ArrowRightIcon size={18} />
 				</Link>

@@ -533,8 +533,7 @@
 		"nav": {
 			"overview": "Overview",
 			"problems": "Problems",
-			"settings": "Settings",
-			"exam": "Daily Exam"
+			"settings": "Settings"
 		},
 		"search": {
 			"label": "Search problems",

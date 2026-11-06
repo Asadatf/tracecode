@@ -38,7 +38,7 @@ export async function PreviewFrame({
 		return null
 	}
 	return (
-		<AppShell current="exam">
+		<AppShell current="problems">
 			<header className={dashboard.head}>
 				<p className={dashboard.eyebrow}>{eyebrow}</p>
 				<h1 className={dashboard.title}>{title}</h1>

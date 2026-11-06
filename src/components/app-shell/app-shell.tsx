@@ -39,8 +39,7 @@ export async function AppShell({
 			heading: t('groups.learn'),
 			items: [
 				{ key: 'overview', href: '/dashboard', label: t('nav.overview') },
-				{ key: 'problems', href: '/problems', label: t('nav.problems') },
-				{ key: 'exam', href: '/exam/preview', label: t('nav.exam') }
+				{ key: 'problems', href: '/problems', label: t('nav.problems') }
 			]
 		},
 		{
