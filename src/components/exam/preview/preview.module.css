@@ -1,0 +1,319 @@
+/* Daily Exam preview screens. Only existing tokens and the dashboard/problems modules' look:
+   cards come from dashboard.module.css, pills and tables from problems.module.css. */
+
+.banner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	margin-bottom: 14px;
+	padding: 10px 14px;
+	border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--warning) 10%, transparent);
+	color: var(--text);
+	font-size: 14px;
+}
+.banner strong {
+	color: var(--warning);
+	font-weight: 700;
+}
+.steps {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0 0 18px;
+	padding: 0;
+	list-style: none;
+}
+.step {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 13px;
+	border: 1px solid var(--border-strong);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--text-muted);
+	font: 600 13px var(--font-sans);
+	text-decoration: none;
+}
+.step:hover {
+	background: var(--surface-hover);
+	color: var(--text);
+}
+.step[aria-current='page'] {
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	color: var(--accent-hover);
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 18px;
+	align-items: start;
+}
+@media (min-width: 960px) {
+	.grid2 {
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+	}
+	.grid3 {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.countdown {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px 14px;
+}
+.clock {
+	color: var(--text);
+	font: 700 40px/1.1 var(--font-mono);
+	letter-spacing: 0;
+}
+.clockLabel {
+	color: var(--text-muted);
+	font-size: 14px;
+	font-weight: 600;
+}
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 14px;
+}
+.list {
+	margin: 0;
+	padding-left: 20px;
+	list-style: disc;
+	color: var(--text);
+	font-size: 14px;
+	line-height: 1.7;
+}
+.muted {
+	color: var(--text-muted);
+	font-size: 13px;
+	line-height: 1.55;
+}
+.muted + .list {
+	margin-top: 10px;
+}
+.note {
+	margin: 12px 0 0;
+	color: var(--text-muted);
+	font-size: 13px;
+	line-height: 1.55;
+}
+
+/* Check rows (preflight). */
+.checks {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.check {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	background: var(--surface);
+}
+.checkIcon {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--text) 7%, transparent);
+	color: var(--text-muted);
+	font-weight: 700;
+}
+.checkOk .checkIcon {
+	background: color-mix(in srgb, var(--success) 14%, transparent);
+	color: var(--success);
+}
+.checkWarn .checkIcon {
+	background: color-mix(in srgb, var(--warning) 16%, transparent);
+	color: var(--warning);
+}
+.checkBad .checkIcon {
+	background: var(--danger-soft);
+	color: var(--danger);
+}
+.checkName {
+	margin: 0;
+	color: var(--text);
+	font-size: 15px;
+	font-weight: 600;
+}
+.checkDetail {
+	margin: 2px 0 0;
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
+/* Score block (result). */
+.bigScore {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px 12px;
+}
+.bigScore strong {
+	color: var(--accent);
+	font: 700 56px/1 var(--font-mono);
+}
+.bigScore span {
+	color: var(--text-muted);
+	font-size: 18px;
+	font-weight: 600;
+}
+.breakdown {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+	gap: 10px;
+	margin: 16px 0 0;
+}
+.part {
+	padding: 12px 14px;
+	border: 1px solid var(--border);
+	border-radius: 14px;
+	background: var(--surface);
+}
+.part dt {
+	color: var(--text-muted);
+	font-size: 13px;
+	font-weight: 600;
+}
+.part dd {
+	margin: 4px 0 0;
+	color: var(--text);
+	font: 700 22px var(--font-mono);
+}
+.minus dd {
+	color: var(--danger);
+}
+
+/* Tagged statements (AI evaluation): fact vs estimate vs unverified. */
+.section {
+	padding: 16px 0;
+	border-top: 1px solid var(--border);
+}
+.section:first-of-type {
+	border-top: 0;
+	padding-top: 0;
+}
+.sectionHead {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 8px;
+}
+.sectionHead h3 {
+	margin: 0;
+	color: var(--text);
+	font-size: 16px;
+	font-weight: 700;
+}
+.statements {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.statement {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: start;
+	gap: 10px;
+	color: var(--text);
+	font-size: 14px;
+	line-height: 1.55;
+}
+.tag {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 9px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.tagFact {
+	background: color-mix(in srgb, var(--success) 12%, transparent);
+	color: var(--success);
+}
+.tagEstimate {
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	color: var(--accent-hover);
+}
+.tagUnverified {
+	background: color-mix(in srgb, var(--warning) 14%, transparent);
+	color: var(--warning);
+}
+
+/* Leaderboard. */
+.you td {
+	background: color-mix(in srgb, var(--accent) 9%, transparent);
+	font-weight: 700;
+}
+.num {
+	text-align: right;
+	white-space: nowrap;
+}
+td.num {
+	font-family: var(--font-mono);
+}
+.minusText {
+	color: var(--danger);
+}
+.scroll {
+	overflow-x: auto;
+}
+
+/* Workspace side panel. */
+.monitor {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.monitorRow {
+	display: flex;
+	justify-content: space-between;
+	gap: 10px;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+.monitorRow strong {
+	color: var(--text);
+	font-family: var(--font-mono);
+}
+.alert {
+	margin: 0 0 10px;
+	padding: 10px 12px;
+	border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+	border-radius: 12px;
+	background: color-mix(in srgb, var(--warning) 11%, transparent);
+	color: var(--text);
+	font-size: 13px;
+	line-height: 1.5;
+}
+.dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-right: 6px;
+	border-radius: 999px;
+	background: var(--success);
+}
