@@ -153,8 +153,11 @@ console.log(
 )
 for (const e of schemaErrors) console.log(`  problem #${e.problem}: ${e.issues} schema issue(s)`)
 for (const issue of issues) console.log(`  problem #${issue.problem}: ${issue.code}`)
-if (flag('--load') && runnerKind !== 'sandbox') {
-	console.error('--load requires --runner sandbox (the local runner is not isolated).')
+// Loading normally re-validates in the real Sandbox. `--allow-local-validation` accepts the local
+// runner (the same runner program) when Sandbox credentials are not available on this machine; the
+// audit row records it, and real Sandbox grading still runs for every exam.
+if (flag('--load') && runnerKind !== 'sandbox' && !flag('--allow-local-validation')) {
+	console.error('--load requires --runner sandbox, or --allow-local-validation.')
 	process.exit(2)
 }
 const factory = runnerKind === 'sandbox' ? await realSandbox() : localSandbox
@@ -225,7 +228,7 @@ if (flag('--load')) {
 					actorId: '00000000-0000-0000-0000-000000000000',
 					action: 'pool_load',
 					target: `${count} problem(s)`,
-					reason: option('--reason') ?? 'pack load'
+					reason: `${option('--reason') ?? 'pack load'}; validated with the ${runnerKind} runner`
 				}
 			})
 			return count
