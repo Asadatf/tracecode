@@ -206,15 +206,12 @@ export function PreflightPanel() {
 				</div>
 				<p className={styles.muted}>
 					Your exam session is monitored for browser activity and device interruptions. Confirmed
-					rule violations may affect your final score. Camera, microphone and screen content are not
-					recorded or stored.
+					rule violations may affect your final score.
 				</p>
-				<ul className={styles.list}>
-					<li>No audio, video or screen image is read, uploaded or kept.</li>
-					<li>Nobody can watch your camera, microphone or screen.</li>
-					<li>No face, voice or attention analysis.</li>
-					<li>Devices are used only to see that they stay connected, and stop when you finish.</li>
-				</ul>
+				<p className={styles.muted} style={{ marginTop: 10 }}>
+					Each audio, video and screen session is removed from storage after results are announced.
+					Until results are announced, these sessions are stored.
+				</p>
 				<p className={styles.note}>
 					A browser cannot see other devices, other people or screenshots taken outside the page, so
 					these signals are observations, not proof.
