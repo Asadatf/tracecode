@@ -2,6 +2,7 @@ import type { ProblemDefinition } from '../trace/problem'
 import { buildGradingJob, judgeOutputs, parseRunnerStdout, type HiddenCaseLike } from './grading'
 import { CASE_PY, RUNNER_PY, RUNNER_VERSION } from './runner-program'
 import type { Grader } from './service'
+import { failureCounts } from '../exam/failures'
 
 // The sandbox grader (ADR-0007), independent of any particular sandbox product: it needs
 // something that can create an isolated, network-less machine, write three files and run
@@ -72,13 +73,16 @@ export function createSandboxGrader(
 				if (run.exitCode !== 0) return { ok: false, code: 'runner_failed' }
 				const stdout = await run.stdout()
 				if (stdout.length > MAX_RUNNER_STDOUT_CHARS) return { ok: false, code: 'runner_failed' }
-				const judged = judgeOutputs(parseRunnerStdout(stdout), subject.cases)
+				const outputs = parseRunnerStdout(stdout)
+				const judged = judgeOutputs(outputs, subject.cases)
 				if (!judged.ok) return { ok: false, code: judged.code }
 				return {
 					ok: true,
 					testsPassed: judged.testsPassed,
 					testsTotal: judged.testsTotal,
-					graderVersion: RUNNER_VERSION
+					graderVersion: RUNNER_VERSION,
+					// Aggregate categories only (the exam shows and assesses them; M9 ignores them).
+					failures: failureCounts(outputs, subject.cases)
 				}
 			} catch {
 				return { ok: false, code: 'sandbox_unavailable' }

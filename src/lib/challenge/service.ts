@@ -1,3 +1,4 @@
+import type { FailureCounts } from '../exam/failures'
 import { MAX_SOURCE_BYTES, deadlineFor, elapsedFor, phaseOf, type Phase } from './exam-rules'
 import { weekStartOf } from './week'
 
@@ -149,7 +150,13 @@ export async function submitAttempt(
 // ---- Grading ------------------------------------------------------------------------
 
 export type GradeOutcome =
-	| { ok: true; testsPassed: number; testsTotal: number; graderVersion: string }
+	| {
+			ok: true
+			testsPassed: number
+			testsTotal: number
+			graderVersion: string
+			failures?: FailureCounts
+	  }
 	| { ok: false; code: string }
 
 // The server-side grader. It receives the learner's source and the challenge's problem
