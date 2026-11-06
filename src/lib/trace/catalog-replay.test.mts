@@ -58,7 +58,10 @@ test('every reference solution produces a valid, bounded trace on a mid-size off
 				assert.deepEqual(
 					result.actual?.kind === 'bool'
 						? result.actual.value
-						: (result.actual as { value?: number })?.value,
+						: listItems(result.actual) != null
+							? // A list answer (Two Sum's indexes) compares item by item.
+								listItems(result.actual)!.map((item) => (item as { value?: number }).value)
+							: (result.actual as { value?: number })?.value,
 					test.expected,
 					`${slug}/${sol.name}: traced result equals the official expected`
 				)

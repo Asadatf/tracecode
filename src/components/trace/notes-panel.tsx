@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useEffectEvent, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
 import { authHref } from '@/lib/auth/return-to'
 import { MAX_NOTE_CHARS, NOTE_SAVE_DEBOUNCE_MS } from '@/lib/learning/problem-notes'
 import { saveProblemNote } from '@/server/actions/notes'
