@@ -435,6 +435,16 @@ const publication: JobHandler = {
 		const e = await exam(j)
 		if (e == null) return { ok: false, code: 'exam_missing', permanent: true }
 		if (e.status === 'cancelled' || e.problemId == null) return { ok: true }
+		// Accelerated test exams are isolated from production learning activity: no Attempt,
+		// progress, streak or review is written, and nothing is published to Practice (see
+		// publishedExamProblem). They only archive.
+		if (e.scheduleVersion.startsWith('test')) {
+			await db.dailyExam.updateMany({
+				where: { examDate: e.examDate, status: 'published' },
+				data: { status: 'archived', archivedAt: new Date() }
+			})
+			return { ok: true }
+		}
 		const problem = await db.examProblem.findUnique({
 			where: { id: e.problemId },
 			select: { slug: true }

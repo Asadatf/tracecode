@@ -23,10 +23,16 @@ export async function publishedExamProblem(slug: string): Promise<ProblemDefinit
 	if (p == null) return null
 	const exams = await db.dailyExam.findMany({
 		where: { problemId: p.id },
-		select: { status: true, publishAt: true, openedAt: true }
+		select: { status: true, publishAt: true, openedAt: true, scheduleVersion: true }
 	})
 	const now = Date.now()
-	const published = exams.some((e) => e.status === 'archived' && now >= e.publishAt.getTime())
+	// Only a real exam publishes a problem; an isolated test exam never does.
+	const published = exams.some(
+		(e) =>
+			e.status === 'archived' &&
+			now >= e.publishAt.getTime() &&
+			!e.scheduleVersion.startsWith('test')
+	)
 	// Locked while examined: opened but not yet archived (credit written).
 	const locked = exams.some(
 		(e) => e.openedAt != null && e.status !== 'archived' && e.status !== 'cancelled'
